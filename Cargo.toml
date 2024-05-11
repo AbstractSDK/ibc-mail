@@ -1,5 +1,5 @@
 [workspace]
-members = ["contracts/*"]
+members = ["contracts/*", "packages/ibcmail"]
 resolver = "2"
 
 [profile.release]
@@ -21,17 +21,19 @@ cw-storage-plus = "1.2.0"
 thiserror = { version = "1.0.50" }
 schemars = "0.8"
 cw-asset = { version = "3.0.0" }
+abstract-app = { version = "0.22.0" }
 abstract-adapter = { version = "0.22.0" }
 abstract-std = { version = "0.22.0" }
 abstract-interface = { version = "0.22.0" }
+abstract-sdk = { version = "0.22.0" }
 
 
 cw-orch = { version = "0.22.2" }
 
+ibcmail = { path = "packages/ibcmail", package = "ibcmail" }
 client = { path = "contracts/client", package = "ibcmail-client" }
-#server = { path = "contracts/server", features = ["interface"] }
+server = { path = "contracts/server", package = "ibcmail-server" }
 abstract-client = { version = "0.22.0" }
-abstract-app = { version = "0.22.0" }
 speculoos = "0.11.0"
 semver = "1.0"
 dotenv = "0.15.0"

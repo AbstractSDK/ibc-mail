@@ -1,25 +1,15 @@
 use crate::msg::AppMigrateMsg;
-use crate::{
-    error::AppError,
-    handlers,
-    msg::{AppExecuteMsg, AppInstantiateMsg, AppQueryMsg},
-    replies::{self, INSTANTIATE_REPLY_ID},
-};
+use crate::{IBCMAIL_CLIENT, APP_VERSION, error::AdapterError, handlers, msg::{AppExecuteMsg, AppInstantiateMsg, AppQueryMsg}, replies::{self, INSTANTIATE_REPLY_ID}};
 use abstract_app::AppContract;
 use cosmwasm_std::Response;
 
-/// The version of your client
-pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
-/// The id of the client
-pub const APP_ID: &str = "ibcmail:client";
-
 /// The type of the result returned by your client's entry points.
-pub type AppResult<T = Response> = Result<T, AppError>;
+pub type AppResult<T = Response> = Result<T, AdapterError>;
 
 /// The type of the client that is used to build your client and access the Abstract SDK features.
-pub type App = AppContract<AppError, AppInstantiateMsg, AppExecuteMsg, AppQueryMsg, AppMigrateMsg>;
+pub type App = AppContract<AdapterError, AppInstantiateMsg, AppExecuteMsg, AppQueryMsg, AppMigrateMsg>;
 
-const APP: App = App::new(APP_ID, APP_VERSION, None)
+const APP: App = App::new(IBCMAIL_CLIENT, APP_VERSION, None)
     .with_instantiate(handlers::instantiate_handler)
     .with_execute(handlers::execute_handler)
     .with_query(handlers::query_handler)
