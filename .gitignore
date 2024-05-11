@@ -1,0 +1,14 @@
+/target
+
+artifacts
+
+Cargo.lock
+
+.env
+
+.vscode
+.idea
+
+state.json
+
+typescript/node_modules
