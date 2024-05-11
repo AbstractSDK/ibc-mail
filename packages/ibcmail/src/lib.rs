@@ -25,3 +25,9 @@ pub struct Message {
 pub enum Recipient {
     Account(AccountId),
 }
+
+impl Recipient {
+    pub fn account(account_id: AccountId) -> Self {
+        Recipient::Account(account_id)
+    }
+}

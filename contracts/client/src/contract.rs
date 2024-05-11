@@ -3,8 +3,9 @@ use abstract_app::std::manager::ModuleInstallConfig;
 use cosmwasm_std::Response;
 
 pub use ibcmail::client::ClientApp as App;
+use ibcmail::IBCMAIL_CLIENT;
 
-use crate::{APP_VERSION, error::ClientError, handlers, IBCMAIL_CLIENT};
+use crate::{APP_VERSION, error::ClientError, handlers};
 use crate::dependencies::MAIL_SERVER_DEP;
 
 /// The type of the result returned by your client's entry points.
