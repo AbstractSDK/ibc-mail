@@ -1,7 +1,7 @@
 
 use cosmwasm_schema::QueryResponses;
 use crate::client::ClientApp;
-use crate::Message;
+use crate::{Message, NewMessage};
 
 
 // This is used for type safety and re-exporting the contract endpoint structs.
@@ -19,6 +19,9 @@ pub struct ClientInstantiateMsg {}
 pub enum ClientExecuteMsg {
     /// Receive a message from the server
     ReceiveMessage(Message),
+    /// Send a message
+    SendMessage(NewMessage),
+    /// Update the client configuration
     UpdateConfig {},
 }
 

@@ -6,7 +6,7 @@ use cosmwasm_std::coins;
 // Use prelude to get all the necessary imports
 use cw_orch::{anyhow, prelude::*};
 
-use ibcmail::{IBCMAIL_NAMESPACE, Message, Recipient};
+use ibcmail::{IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID, Message, Recipient};
 use ibcmail::server::msg::ServerInstantiateMsg;
 use ibcmail_client::{
     *,
@@ -19,7 +19,9 @@ use speculoos::prelude::*;
 struct TestEnv<Env: CwEnv> {
     env: Env,
     abs: AbstractClient<Env>,
-    app: Application<Env, ClientInterface<Env>>
+    client1: Application<Env, ClientInterface<Env>>,
+    client2: Application<Env, ClientInterface<Env>>,
+    // server: Application<Env, ServerInterface<Env>>
 }
 
 impl TestEnv<MockBech32> {
@@ -44,11 +46,21 @@ impl TestEnv<MockBech32> {
         let app = publisher
             .account()
             .install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {},&[])?;
+        app.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
+
+        let app2 = publisher
+            .account()
+            .install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {},&[])?;
+        app2.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
+
+        // let server = app.account().application::<ServerInterface<MockBech32>>()?;
 
         Ok(TestEnv {
             env: mock,
             abs: abs_client,
-            app
+            client1: app,
+            client2: app2,
+            // server
         })
     }
 }
@@ -61,13 +73,14 @@ fn create_test_message(from: AccountId, to: AccountId) -> Message {
         subject: "test-subject".to_string(),
         body: "test-body".to_string(),
         timestamp: Default::default(),
+        version: "0.0.1".to_string()
     }
 }
 
 #[test]
 fn successful_install() -> anyhow::Result<()> {
     let env = TestEnv::setup()?;
-    let app = env.app;
+    let app = env.client1;
 
     let config = app.config()?;
     assert_eq!(config, ConfigResponse {});
@@ -84,7 +97,7 @@ mod receive_msg {
     #[test]
     fn can_receive_from_server() -> anyhow::Result<()> {
         let env = TestEnv::setup()?;
-        let app = env.app;
+        let app = env.client1;
 
         let server_account_id = app.account().id().unwrap();
         let app_account_id = app.account().id().unwrap();
@@ -100,7 +113,7 @@ mod receive_msg {
     #[test]
     fn cannot_receive_from_not_server() -> anyhow::Result<()> {
         let env = TestEnv::setup()?;
-        let app = env.app;
+        let app = env.client1;
 
         let app_account_id = app.account().id().unwrap();
 
@@ -114,4 +127,24 @@ mod receive_msg {
         Ok(())
     }
 
+}
+
+mod send_msg {
+    use ibcmail::NewMessage;
+    use super::*;
+
+    #[test]
+    fn can_send_basic_message() -> anyhow::Result<()> {
+        let env = TestEnv::setup()?;
+        let client1 = env.client1;
+        let client2 = env.client2;
+
+        let msg = NewMessage::new(Recipient::account(client2.account().id()?), "test-subject", "test-body");
+
+        let res = client1.send_message(msg);
+
+        assert_that!(res).is_ok();
+
+        Ok(())
+    }
 }

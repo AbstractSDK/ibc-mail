@@ -22,3 +22,4 @@ abstract-interface = { workspace = true, optional = true }
 thiserror = { workspace = true }
 cw-asset = { workspace = true }
 cw-controllers = { workspace = true }
+cw-semver = { workspace = true }
