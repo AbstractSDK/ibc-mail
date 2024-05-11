@@ -1,7 +1,11 @@
 use abstract_app::objects::AccountId;
 use abstract_app::objects::namespace::Namespace;
-use abstract_client::AbstractClient;
+use abstract_app::std::ibc_client::state::IbcInfrastructure;
+use abstract_app::std::manager::ExecuteMsgFns;
+use abstract_client::{AbstractClient, Environment};
 use abstract_client::Application;
+use abstract_cw_orch_polytone::Polytone;
+use abstract_interface::AbstractIbc;
 use cosmwasm_std::coins;
 // Use prelude to get all the necessary imports
 use cw_orch::{anyhow, prelude::*};
@@ -15,6 +19,7 @@ use ibcmail_client::{
 use ibcmail_client::contract::interface::ClientInterface;
 use server::ServerInterface;
 use speculoos::prelude::*;
+use abstract_interchain_tests::setup::ibc_connect_polytone_and_abstract;
 
 struct TestEnv<Env: CwEnv> {
     env: Env,
@@ -24,19 +29,18 @@ struct TestEnv<Env: CwEnv> {
     // server: Application<Env, ServerInterface<Env>>
 }
 
-impl TestEnv<MockBech32> {
+impl<Env: CwEnv> TestEnv<Env> {
     /// Set up the test environment with an Account that has the App installed
     #[allow(clippy::type_complexity)]
-    fn setup() -> anyhow::Result<TestEnv<MockBech32>> {
-        // Create a sender and mock env
-        let mock = MockBech32::new("mock");
-        let sender = mock.sender();
+    fn setup(env: Env) -> anyhow::Result<TestEnv<Env>> {
         let namespace = Namespace::new(IBCMAIL_NAMESPACE)?;
 
         // You can set up Abstract with a builder.
-        let abs_client = AbstractClient::builder(mock.clone()).build()?;
-        // The client supports setting balances for addresses and configuring ANS.
-        abs_client.set_balance(sender, &coins(123, "ucosm"))?;
+        let abs_client = AbstractClient::builder(env.clone()).build()?;
+
+        // // The client supports setting balances for addresses and configuring ANS.
+        // let sender = mock.sender();
+        // abs_client.set_balance(sender, &coins(123, "ucosm"))?;
 
         // Publish both the client and the server
         let publisher = abs_client.publisher_builder(namespace).build()?;
@@ -56,12 +60,20 @@ impl TestEnv<MockBech32> {
         // let server = app.account().application::<ServerInterface<MockBech32>>()?;
 
         Ok(TestEnv {
-            env: mock,
+            env,
             abs: abs_client,
             client1: app,
             client2: app2,
             // server
         })
+    }
+
+    fn enable_ibc(&self) -> anyhow::Result<()> {
+        Polytone::deploy_on(self.abs.environment().clone(), None)?;
+
+        self.client1.account().as_ref().manager.update_settings(Some(true))?;
+        self.client2.account().as_ref().manager.update_settings(Some(true))?;
+        Ok(())
     }
 }
 
@@ -69,7 +81,7 @@ fn create_test_message(from: AccountId, to: AccountId) -> Message {
     Message {
         id: "test-id".to_string(),
         sender: from.clone(),
-        recipient: Recipient::account(to.clone()),
+        recipient: Recipient::account(to.clone(), None),
         subject: "test-subject".to_string(),
         body: "test-body".to_string(),
         timestamp: Default::default(),
@@ -79,7 +91,9 @@ fn create_test_message(from: AccountId, to: AccountId) -> Message {
 
 #[test]
 fn successful_install() -> anyhow::Result<()> {
-    let env = TestEnv::setup()?;
+    // Create a sender and mock env
+    let mock = MockBech32::new("mock");
+    let env = TestEnv::setup(mock)?;
     let app = env.client1;
 
     let config = app.config()?;
@@ -96,7 +110,9 @@ mod receive_msg {
 
     #[test]
     fn can_receive_from_server() -> anyhow::Result<()> {
-        let env = TestEnv::setup()?;
+        // Create a sender and mock env
+        let mock = MockBech32::new("mock");
+        let env = TestEnv::setup(mock)?;
         let app = env.client1;
 
         let server_account_id = app.account().id().unwrap();
@@ -112,7 +128,9 @@ mod receive_msg {
 
     #[test]
     fn cannot_receive_from_not_server() -> anyhow::Result<()> {
-        let env = TestEnv::setup()?;
+        // Create a sender and mock env
+        let mock = MockBech32::new("mock");
+        let env = TestEnv::setup(mock)?;
         let app = env.client1;
 
         let app_account_id = app.account().id().unwrap();
@@ -130,18 +148,54 @@ mod receive_msg {
 }
 
 mod send_msg {
+    use abstract_app::objects::chain_name::ChainName;
+    use cw_orch::daemon::networks::{ARCHWAY_1, JUNO_1};
+    use cw_orch::tokio::runtime::Runtime;
     use ibcmail::NewMessage;
     use super::*;
 
     #[test]
-    fn can_send_basic_message() -> anyhow::Result<()> {
-        let env = TestEnv::setup()?;
+    fn can_send_local_message() -> anyhow::Result<()> {
+        // Create a sender and mock env
+        let mock = MockBech32::new("mock");
+        let env = TestEnv::setup(mock)?;
         let client1 = env.client1;
         let client2 = env.client2;
 
-        let msg = NewMessage::new(Recipient::account(client2.account().id()?), "test-subject", "test-body");
+        let msg = NewMessage::new(Recipient::account(client2.account().id()?, None), "test-subject", "test-body");
 
         let res = client1.send_message(msg);
+
+        assert_that!(res).is_ok();
+
+        Ok(())
+    }
+
+    #[test]
+    fn can_send_remote_message() -> anyhow::Result<()> {
+        // Create a sender and mock env
+        let interchain = MockBech32InterchainEnv::new(
+           vec![("archway-1", "archway18k2uq7srsr8lwrae6zr0qahpn29rsp7td7wvfd"), ("juno-1","juno18k2uq7srsr8lwrae6zr0qahpn29rsp7tw83nyx")]
+        );
+
+        // /Users/adair/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cw-orch-mock-0.22.0/src/queriers/env.rs:12:70:
+        // index out of bounds: the len is 1 but the index is 1
+        let myos_env = TestEnv::setup(interchain.chain("archway-1")?)?;
+        let juno_env = TestEnv::setup(interchain.chain("juno-1")?)?;
+
+        myos_env.enable_ibc()?;
+        juno_env.enable_ibc()?;
+
+        // TODO: put somewhere better
+        ibc_connect_polytone_and_abstract(&interchain, "archway-1", "juno-1")?;
+
+        let myos_client = myos_env.client1;
+        let juno_client = juno_env.client1;
+
+        // the trait `From<&str>` is not implemented for `abstract_app::objects::chain_name::ChainName`
+        let msg = NewMessage::new(Recipient::account(juno_client.account().id()?, Some(ChainName::from_string("juno".into())?)), "test-subject", "test-body");
+
+        let res = myos_client.send_message(msg);
 
         assert_that!(res).is_ok();
 

@@ -1,16 +1,20 @@
 use abstract_adapter::traits::AbstractResponse;
-use abstract_sdk::AccountVerification;
+use abstract_sdk::{AccountVerification, IbcInterface, ModuleInterface};
+use abstract_sdk::features::ModuleIdentification;
 use abstract_std::app::{AppExecuteMsg, ExecuteMsg};
-use abstract_std::manager;
+use abstract_std::ibc::ModuleIbcMsg;
+use abstract_std::{ibc_client, IBC_CLIENT, manager};
+use abstract_std::ibc_client::InstalledModuleIdentification;
 use abstract_std::manager::ModuleAddressesResponse;
-use abstract_std::objects::account::AccountTrace;
-use cosmwasm_std::{DepsMut, Empty, Env, MessageInfo, wasm_execute, WasmMsg};
+use abstract_std::objects::account::{AccountId, AccountTrace};
+use abstract_std::objects::module::ModuleInfo;
+use cosmwasm_std::{CosmosMsg, DepsMut, Empty, Env, MessageInfo, to_json_binary, wasm_execute, WasmMsg};
 
 use ibcmail::{IBCMAIL_CLIENT, Message, Recipient};
 use ibcmail::client::error::ClientError;
 use ibcmail::client::msg::ClientExecuteMsg;
 
-use crate::contract::{Adapter, AppResult};
+use crate::contract::{Adapter, ServerResult};
 use crate::error::ServerError;
 use ibcmail::server::msg::ServerExecuteMsg;
 use crate::state::CONFIG;
@@ -21,21 +25,21 @@ pub fn execute_handler(
     info: MessageInfo,
     app: Adapter,
     msg: ServerExecuteMsg,
-) -> AppResult {
+) -> ServerResult {
     match msg {
         ServerExecuteMsg::RouteMessage(msg) => route_msg(deps, info, msg, app),
         ServerExecuteMsg::UpdateConfig {} => update_config(deps, info, app),
     }
 }
 
-fn route_msg(deps: DepsMut, _info: MessageInfo, msg: Message, app: Adapter) -> AppResult {
+fn route_msg(deps: DepsMut, _info: MessageInfo, msg: Message, app: Adapter) -> ServerResult {
 
     let registry = app.account_registry(deps.as_ref())?;
 
-    let msg = match msg.recipient {
-        Recipient::Account(ref account_id) => {
-            match account_id.trace() {
-                AccountTrace::Local => {
+    let msg = match &msg.recipient {
+        Recipient::Account { id: ref account_id, chain } => {
+            match chain {
+                None => {
                     // This is a local message
                     let manager = registry.manager_address(&account_id)?;
                     let module_addresses = deps.querier.query_wasm_smart::<ModuleAddressesResponse>(manager, &manager::QueryMsg::ModuleAddresses {
@@ -52,13 +56,27 @@ fn route_msg(deps: DepsMut, _info: MessageInfo, msg: Message, app: Adapter) -> A
                         client_address,
                         &ExecuteMsg::<ClientExecuteMsg, Empty>::from(ClientExecuteMsg::ReceiveMessage(msg)),
                         vec![]
-                    )?;
+                    )?.into();
 
-                    Ok::<WasmMsg, ServerError>(exec_msg)
+                    Ok::<CosmosMsg, ServerError>(exec_msg)
                 },
-                _ => {
-                    // This is a remote message
-                    return Err(ServerError::NotImplemented("Remote messages".to_string()))
+                Some(chain) => {
+                    // TODO verify that the chain is a valid chain
+
+                    let current_module_info = ModuleInfo::from_id(app.module_id(), app.version().into())?;
+
+                    let ibc_msg = ibc_client::ExecuteMsg::ModuleIbcAction {
+                        // TODO: why is host chain not chain name
+                        host_chain: chain.to_string(),
+                        target_module: current_module_info,
+                        msg: to_json_binary(&ServerExecuteMsg::RouteMessage(msg))?,
+                        callback_info: None,
+                    };
+
+                    let ibc_client_addr = app.modules(deps.as_ref()).module_address(IBC_CLIENT)?;
+                    let exec_msg = wasm_execute(ibc_client_addr, &ibc_msg, vec![])?.into();
+
+                    Ok::<CosmosMsg, ServerError>(exec_msg)
                 }
             }
         },
@@ -72,7 +90,7 @@ fn route_msg(deps: DepsMut, _info: MessageInfo, msg: Message, app: Adapter) -> A
 }
 
 /// Update the configuration of the client
-fn update_config(deps: DepsMut, _msg_info: MessageInfo, app: Adapter) -> AppResult {
+fn update_config(deps: DepsMut, _msg_info: MessageInfo, app: Adapter) -> ServerResult {
     // Only the admin should be able to call this
     let mut _config = CONFIG.load(deps.storage)?;
 

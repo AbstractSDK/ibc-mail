@@ -21,23 +21,34 @@ cw-storage-plus = "1.2.0"
 thiserror = { version = "1.0.50" }
 schemars = "0.8"
 cw-asset = { version = "3.0.0" }
-abstract-app = { version = "0.22.0" }
-abstract-adapter = { version = "0.22.0" }
-abstract-std = { version = "0.22.0" }
-abstract-interface = { version = "0.22.0" }
-abstract-sdk = { version = "0.22.0" }
+abstract-app = { version = "0.22.1" }
+abstract-adapter = { version = "0.22.1" }
+abstract-std = { version = "0.22.1" }
+abstract-interface = { version = "0.22.1" }
+abstract-sdk = { version = "0.22.1" }
 lazy_static = "1.4.0"
 cw-semver = { version = "1.0", features = ["serde" ]}
-
-
-cw-orch = { version = "0.22.2" }
+cw-orch = { package = "cw-orch-interchain", git = "ssh://git@github.com/AbstractSDK/cw-orch-interchain.git", tag = "v0.22.0" }
+abstract-cw-orch-polytone = "2.0.0"
+abstract-interchain-tests = { git = "https://github.com/AbstractSDK/abstract", version = "0.22.1", branch = "removemm" }
+# TODO: cannot use this because of money-market adapter trait issue
+#abstract-interchain-tests = { git = "https://github.com/AbstractSDK/abstract", version = "0.22.1", tag = "v0.22.1" }
 
 ibcmail = { path = "packages/ibcmail", package = "ibcmail" }
 client = { path = "contracts/client", package = "ibcmail-client" }
 server = { path = "contracts/server", package = "ibcmail-server" }
-abstract-client = { version = "0.22.0" }
+abstract-client = { version = "0.22.1" }
 speculoos = "0.11.0"
 semver = "1.0"
 dotenv = "0.15.0"
 env_logger = "0.10.0"
 clap = { version = "4.3.7" }
+
+# We have to patch everything because of abstract-interchain-tests
+[patch.crates-io]
+#abstract-money-market-standard = { git = "https://github.com/AbstractSDK/abstract", version = "0.22.1", tag = "v0.22.1" }
+#abstract-money-market-adapter = { git = "https://github.com/AbstractSDK/abstract", version = "0.22.1", branch = "removemm" }
+#abstract-money-market-adapter = { git = "https://github.com/AbstractSDK/abstract", version = "0.22.1", rev = "985c558d90e38817fceb3681272b788607608689" }
+#abstract-adapter = { git = "https://github.com/AbstractSDK/abstract", version = "0.22.1", tag = "v0.22.1" }
+#abstract-std = { git = "https://github.com/AbstractSDK/abstract", version = "0.22.1", tag = "v0.22.1" }
+#abstract-sdk = { git = "https://github.com/AbstractSDK/abstract", version = "0.22.1", tag = "v0.22.1" }

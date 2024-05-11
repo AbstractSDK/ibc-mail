@@ -2,9 +2,9 @@
 name = "ibcmail-client"
 version = "0.0.1"
 authors = [
-  "CyberHoward <cyberhoward@protonmail.com>",
-  "Adair <adair@abstract.money>",
-  "Abstract Money <contact@abstract.money>",
+    "CyberHoward <cyberhoward@protonmail.com>",
+    "Adair <adair@abstract.money>",
+    "Abstract Money <contact@abstract.money>",
 ]
 edition = "2021"
 homepage = ""
@@ -66,3 +66,6 @@ dotenv = { workspace = true }
 env_logger = { workspace = true }
 cw-orch = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
+abstract-cw-orch-polytone = { workspace = true }
+abstract-interchain-tests = { workspace = true }
+#abstract-scripts = { workspace = true }

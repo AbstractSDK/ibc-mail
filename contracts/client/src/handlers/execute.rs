@@ -54,13 +54,12 @@ fn receive_msg(deps: DepsMut, info: MessageInfo, msg: Message, app: App) -> Clie
     ensure_eq!(sender_module.info.id(), IBCMAIL_SERVER_ID, ClientError::NotMailServer {});
 
     match msg.recipient {
-        Recipient::Account(ref account_id) => {
+        Recipient::Account { id: ref account_id, .. } => {
             let our_id = app.account_id(deps.as_ref())?;
             // check that the recipient is the current account
             ensure_eq!(account_id, &our_id, ClientError::NotRecipient {} );
         }
         _ => Err(ClientError::NotImplemented("recipients".to_string()))?,
-
     }
 
     RECEIVED.save(deps.storage, msg.id.clone(), &msg)?;

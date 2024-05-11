@@ -2,6 +2,7 @@ pub mod server;
 pub mod client;
 
 use abstract_sdk::std::objects::AccountId;
+use abstract_std::objects::chain_name::ChainName;
 use abstract_std::objects::module::ModuleVersion;
 use cosmwasm_std::Timestamp;
 
@@ -44,11 +45,17 @@ pub struct Message {
 #[non_exhaustive]
 #[cosmwasm_schema::cw_serde]
 pub enum Recipient {
-    Account(AccountId),
+    Account {
+        id: AccountId,
+        chain: Option<ChainName>
+    }
 }
 
 impl Recipient {
-    pub fn account(account_id: AccountId) -> Self {
-        Recipient::Account(account_id)
+    pub fn account(account_id: AccountId, chain_name: Option<ChainName>) -> Self {
+        Recipient::Account {
+            id: account_id,
+            chain: chain_name
+        }
     }
 }
