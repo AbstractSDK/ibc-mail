@@ -3,7 +3,7 @@ use abstract_app::objects::namespace::Namespace;
 use abstract_client::AbstractClient;
 use abstract_client::Application;
 
-use app::{
+use client::{
     contract::APP_ID,
     error::AppError,
     msg::{AppInstantiateMsg, ConfigResponse, CountResponse},

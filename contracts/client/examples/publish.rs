@@ -1,4 +1,4 @@
-//! Publishes the module to the Abstract platform by uploading it and registering it on the app store.
+//! Publishes the module to the Abstract platform by uploading it and registering it on the client store.
 //!
 //! Info: The mnemonic used to register the module must be the same as the owner of the account that claimed the namespace.
 //!
@@ -9,7 +9,7 @@
 //! ```
 use abstract_app::objects::namespace::Namespace;
 use abstract_client::{AbstractClient, Publisher};
-use app::{contract::APP_ID, AppInterface};
+use client::{contract::APP_ID, AppInterface};
 use clap::Parser;
 use cw_orch::{
     anyhow,

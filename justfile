@@ -69,11 +69,11 @@ wasm:
     --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
     ${image}:0.14.0
 
-# Generate the schemas for the app contract
+# Generate the schemas for the client contract
 schema:
   cargo schema
 
-# Generate the schemas for this app and publish them to the schemas repository for access in the Abstract frontend
+# Generate the schemas for this client and publish them to the schemas repository for access in the Abstract frontend
 publish-schemas namespace name version: schema
   #!/usr/bin/env bash
   set -euxo pipefail

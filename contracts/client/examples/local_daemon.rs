@@ -10,7 +10,7 @@
 
 use abstract_app::objects::namespace::Namespace;
 use abstract_client::{AbstractClient, Publisher};
-use app::{
+use client::{
     contract::{APP_ID, APP_VERSION},
     msg::AppInstantiateMsg,
     AppInterface,
@@ -55,11 +55,11 @@ fn main() -> anyhow::Result<()> {
     // Install the App on a new account
 
     let account = abstract_client.account_builder().build()?;
-    // Installs the app on the Account
+    // Installs the client on the Account
     let app = account.install_app::<AppInterface<_>>(&AppInstantiateMsg { count: 0 }, &[])?;
 
-    // Import app's endpoint function traits for easy interactions.
-    use app::{AppExecuteMsgFns, AppQueryMsgFns};
+    // Import client's endpoint function traits for easy interactions.
+    use client::{AppExecuteMsgFns, AppQueryMsgFns};
     assert_that!(app.count()?.count).is_equal_to(0);
 
     // Execute the App

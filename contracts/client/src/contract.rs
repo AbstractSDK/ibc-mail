@@ -8,15 +8,15 @@ use crate::{
 use abstract_app::AppContract;
 use cosmwasm_std::Response;
 
-/// The version of your app
+/// The version of your client
 pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
-/// The id of the app
-pub const APP_ID: &str = "my-namespace:app";
+/// The id of the client
+pub const APP_ID: &str = "ibcmail:client";
 
-/// The type of the result returned by your app's entry points.
+/// The type of the result returned by your client's entry points.
 pub type AppResult<T = Response> = Result<T, AppError>;
 
-/// The type of the app that is used to build your app and access the Abstract SDK features.
+/// The type of the client that is used to build your client and access the Abstract SDK features.
 pub type App = AppContract<AppError, AppInstantiateMsg, AppExecuteMsg, AppQueryMsg, AppMigrateMsg>;
 
 const APP: App = App::new(APP_ID, APP_VERSION, None)

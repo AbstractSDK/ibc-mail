@@ -1,0 +1,65 @@
+[package]
+name = "ibcmail-client"
+version = "0.0.1"
+authors = [
+  "CyberHoward <cyberhoward@protonmail.com>",
+  "Adair <adair@abstract.money>",
+  "Abstract Money <contact@abstract.money>",
+]
+edition = "2021"
+homepage = ""
+documentation = ""
+repository = ""
+license = "GPL-3.0-or-later"
+keywords = ["cosmos", "cosmwasm", "abstractsdk"]
+resolver = "2"
+
+exclude = ["contract.wasm", "hash.txt"]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[[example]]
+name = "schema"
+required-features = ["schema"]
+
+[[example]]
+name = "local_daemon"
+required-features = ["daemon"]
+
+[[example]]
+name = "publish"
+required-features = ["daemon"]
+
+[features]
+default = ["export"]
+export = []
+schema = ["abstract-app/schema"]
+#interface = ["export", "dep:cw-orch"]
+interface = ["export", "dep:abstract-interface", "dep:cw-orch"]
+daemon = ["interface", "cw-orch/daemon"]
+
+[dependencies]
+cosmwasm-std = { workspace = true }
+cosmwasm-schema = { workspace = true }
+cw-controllers = { workspace = true }
+cw-storage-plus = { workspace = true }
+thiserror = { workspace = true }
+schemars = { workspace = true }
+cw-asset = { workspace = true }
+abstract-app = { workspace = true }
+abstract-interface = { workspace = true, optional = true }
+
+# Dependencies for interface
+cw-orch = { workspace = true, optional = true }
+
+[dev-dependencies]
+client = { workspace = true, features = ["interface"] }
+abstract-client = { workspace = true }
+abstract-app = { workspace = true, features = ["test-utils"] }
+speculoos = { workspace = true }
+semver = { workspace = true }
+dotenv = { workspace = true }
+env_logger = { workspace = true }
+cw-orch = { workspace = true }
+clap = { workspace = true, features = ["derive"] }

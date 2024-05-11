@@ -33,7 +33,7 @@ fn reset(deps: DepsMut, info: MessageInfo, count: i32, app: App) -> AppResult {
     Ok(app.response("reset"))
 }
 
-/// Update the configuration of the app
+/// Update the configuration of the client
 fn update_config(deps: DepsMut, msg_info: MessageInfo, app: App) -> AppResult {
     // Only the admin should be able to call this
     app.admin.assert_admin(deps.as_ref(), &msg_info.sender)?;
