@@ -9,10 +9,7 @@ abstract_app::app_msg_types!(ClientApp, ClientExecuteMsg, ClientQueryMsg);
 
 /// App instantiate message
 #[cosmwasm_schema::cw_serde]
-pub struct AppInstantiateMsg {
-    /// Initial count
-    pub count: i32,
-}
+pub struct ClientInstantiateMsg {}
 
 
 /// App execute messages
@@ -37,16 +34,7 @@ pub struct AppMigrateMsg {}
 pub enum ClientQueryMsg {
     #[returns(ConfigResponse)]
     Config {},
-    #[returns(CountResponse)]
-    Count {},
 }
 
 #[cosmwasm_schema::cw_serde]
 pub struct ConfigResponse {}
-
-#[cosmwasm_schema::cw_serde]
-pub struct CountResponse {
-    pub count: i32,
-}
-
-

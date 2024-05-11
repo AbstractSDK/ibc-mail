@@ -12,7 +12,7 @@ use abstract_app::objects::namespace::Namespace;
 use abstract_client::{AbstractClient, Publisher};
 use client::{
     AppInterface,
-    msg::AppInstantiateMsg,
+    msg::ClientInstantiateMsg,
 };
 use cw_orch::{anyhow, prelude::*, tokio::runtime::Runtime};
 use semver::Version;
@@ -56,7 +56,7 @@ fn main() -> anyhow::Result<()> {
 
     let account = abstract_client.account_builder().build()?;
     // Installs the client on the Account
-    let app = account.install_app::<AppInterface<_>>(&AppInstantiateMsg { count: 0 }, &[])?;
+    let app = account.install_app::<AppInterface<_>>(&ClientInstantiateMsg { count: 0 }, &[])?;
 
     // Import client's endpoint function traits for easy interactions.
     use client::{AppExecuteMsgFns, AppQueryMsgFns};

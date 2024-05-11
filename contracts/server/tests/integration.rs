@@ -1,19 +1,20 @@
-use abstract_app::objects::namespace::Namespace;
 
 use abstract_client::AbstractClient;
 use abstract_client::Application;
+use abstract_std::objects::namespace::Namespace;
 
 use client::{
     *,
     error::ClientError,
-    msg::{AppInstantiateMsg, ConfigResponse, CountResponse},
+    msg::{ClientInstantiateMsg, ConfigResponse, CountResponse},
 };
 use cw_controllers::AdminError;
 // Use prelude to get all the necessary imports
 use cw_orch::{anyhow, prelude::*};
 
 use cosmwasm_std::{Addr, coins};
-use ibcmail_client::APP_ID;
+use ibcmail::server::msg::ServerInstantiateMsg;
+use ibcmail_server::ServerInterface;
 
 /// Set up the test environment with an Account that has the App installed
 #[allow(clippy::type_complexity)]
@@ -21,7 +22,7 @@ fn setup(
     count: i32,
 ) -> anyhow::Result<(
     AbstractClient<MockBech32>,
-    Application<MockBech32, AppInterface<MockBech32>>,
+    Application<MockBech32, ServerInterface<MockBech32>>,
 )> {
     // Create a sender and mock env
     let mock = MockBech32::new("mock");
@@ -36,11 +37,11 @@ fn setup(
     // Build a Publisher Account
     let publisher = client.publisher_builder(namespace).build()?;
 
-    publisher.publish_app::<AppInterface<_>>()?;
+    publisher.publish_app::<ServerInterface<_>>()?;
 
     let app = publisher
         .account()
-        .install_app::<AppInterface<_>>(&AppInstantiateMsg { count }, &[])?;
+        .install_app::<ServerInterface<_>>(&ServerInstantiateMsg { count }, &[])?;
 
     Ok((client, app))
 }

@@ -7,10 +7,7 @@ abstract_adapter::adapter_msg_types!(ServerAdapter, ServerExecuteMsg, ServerQuer
 
 /// App instantiate message
 #[cosmwasm_schema::cw_serde]
-pub struct ServerInstantiateMsg {
-    /// Initial count
-    pub count: i32,
-}
+pub struct ServerInstantiateMsg {}
 
 
 /// App execute messages

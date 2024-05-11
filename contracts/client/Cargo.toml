@@ -52,9 +52,11 @@ abstract-interface = { workspace = true, optional = true }
 
 # Dependencies for interface
 cw-orch = { workspace = true, optional = true }
+#client = { workspace = true, optional = true }
 
 [dev-dependencies]
 client = { workspace = true, features = ["interface"] }
+server = { workspace = true, features = ["interface"] }
 abstract-client = { workspace = true }
 abstract-app = { workspace = true, features = ["test-utils"] }
 speculoos = { workspace = true }

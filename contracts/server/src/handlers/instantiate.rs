@@ -14,7 +14,6 @@ pub fn instantiate_handler(
     let config: Config = Config {};
 
     CONFIG.save(deps.storage, &config)?;
-    COUNT.save(deps.storage, &msg.count)?;
 
     // Example instantiation that doesn't do anything
     Ok(Response::new())
