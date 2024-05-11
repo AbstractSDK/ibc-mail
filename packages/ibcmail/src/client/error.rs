@@ -7,7 +7,7 @@ use cw_controllers::AdminError;
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
-pub enum AdapterError {
+pub enum ClientError {
     #[error("{0}")]
     Std(#[from] StdError),
 
@@ -25,4 +25,13 @@ pub enum AdapterError {
 
     #[error("{0}")]
     DappError(#[from] AbstractAppError),
+
+    #[error("Sender is not mail server")]
+    NotMailServer {},
+
+    #[error("Recipient is not the current account")]
+    NotRecipient {},
+
+    #[error("{0} is not implemented")]
+    NotImplemented(String),
 }

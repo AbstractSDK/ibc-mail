@@ -1,5 +1,11 @@
+pub mod server;
+pub mod client;
+
 use abstract_sdk::std::objects::AccountId;
 use cosmwasm_std::Timestamp;
+
+pub const IBCMAIL_CLIENT: &str = "ibcmail:client";
+pub const IBCMAIL_SERVER: &str = "ibcmail:server";
 
 pub type MessageId = String;
 

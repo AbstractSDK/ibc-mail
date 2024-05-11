@@ -5,12 +5,11 @@ use abstract_std::manager::ModuleAddressesResponse;
 use abstract_std::objects::account::AccountTrace;
 use cosmwasm_std::{DepsMut, Env, MessageInfo};
 
-use client::IBCMAIL_CLIENT;
-use ibcmail::{Message, Recipient};
+use ibcmail::{IBCMAIL_CLIENT, Message, Recipient};
 
 use crate::contract::{Adapter, AppResult};
 use crate::error::ServerError;
-use crate::msg::ServerExecuteMsg;
+use ibcmail::server::msg::ServerExecuteMsg;
 use crate::state::CONFIG;
 
 pub fn execute_handler(
@@ -26,7 +25,7 @@ pub fn execute_handler(
     }
 }
 
-fn route_msg(deps: DepsMut, info: MessageInfo, msg: Message, app: Adapter) -> AppResult {
+fn route_msg(deps: DepsMut, _info: MessageInfo, msg: Message, app: Adapter) -> AppResult {
 
     let registry = app.account_registry(deps.as_ref())?;
 
@@ -42,7 +41,7 @@ fn route_msg(deps: DepsMut, info: MessageInfo, msg: Message, app: Adapter) -> Ap
                     if module_addresses.modules.is_empty() {
                         return Err(ServerError::NotImplemented("Module not installed".to_string()))
                     }
-                    let client_address = module_addresses.modules[0].1.clone();
+                    let _client_address = module_addresses.modules[0].1.clone();
                     // TODO: send the message to the local client
                     panic!();
                 },
@@ -58,11 +57,11 @@ fn route_msg(deps: DepsMut, info: MessageInfo, msg: Message, app: Adapter) -> Ap
     }
 
 
-    Ok(app.response("reset"))
+    Ok(app.response("route"))
 }
 
 /// Update the configuration of the client
-fn update_config(deps: DepsMut, msg_info: MessageInfo, app: Adapter) -> AppResult {
+fn update_config(deps: DepsMut, _msg_info: MessageInfo, app: Adapter) -> AppResult {
     // Only the admin should be able to call this
     let mut _config = CONFIG.load(deps.storage)?;
 

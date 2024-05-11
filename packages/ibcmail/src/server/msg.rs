@@ -1,10 +1,9 @@
 use cosmwasm_schema::QueryResponses;
-use ibcmail::Message;
-
-use crate::contract::Adapter;
+use crate::Message;
+use crate::server::ServerAdapter;
 
 // This is used for type safety and re-exporting the contract endpoint structs.
-abstract_adapter::adapter_msg_types!(Adapter, ServerExecuteMsg, ServerQueryMsg);
+abstract_adapter::adapter_msg_types!(ServerAdapter, ServerExecuteMsg, ServerQueryMsg);
 
 /// App instantiate message
 #[cosmwasm_schema::cw_serde]
@@ -12,6 +11,7 @@ pub struct ServerInstantiateMsg {
     /// Initial count
     pub count: i32,
 }
+
 
 /// App execute messages
 #[cosmwasm_schema::cw_serde]

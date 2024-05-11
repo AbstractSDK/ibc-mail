@@ -9,7 +9,6 @@
 //! ```
 use abstract_app::objects::namespace::Namespace;
 use abstract_client::{AbstractClient, Publisher};
-use client::{contract::APP_ID, AppInterface};
 use clap::Parser;
 use cw_orch::{
     anyhow,
@@ -18,6 +17,7 @@ use cw_orch::{
     prelude::{networks::parse_network, DaemonBuilder},
     tokio::runtime::Runtime,
 };
+use cw_orch::prelude::*;
 
 fn publish(networks: Vec<ChainInfo>) -> anyhow::Result<()> {
     // run for each requested network

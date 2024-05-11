@@ -1,36 +1,46 @@
-use abstract_app::traits::AbstractResponse;
-use cosmwasm_std::{DepsMut, Env, MessageInfo};
+use abstract_app::traits::{AbstractResponse, AccountIdentification, ModuleInterface};
+use cosmwasm_std::{DepsMut, ensure_eq, Env, MessageInfo};
+
+use ibcmail::{IBCMAIL_SERVER, Message, Recipient};
+use ibcmail::client::state::RECEIVED;
 
 use crate::contract::{App, AppResult};
-
-use crate::msg::AppExecuteMsg;
-use crate::state::{CONFIG, COUNT};
+use crate::error::ClientError;
+use crate::msg::ClientExecuteMsg;
+use crate::state::CONFIG;
 
 pub fn execute_handler(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
     app: App,
-    msg: AppExecuteMsg,
+    msg: ClientExecuteMsg,
 ) -> AppResult {
     match msg {
-        AppExecuteMsg::Increment {} => increment(deps, app),
-        AppExecuteMsg::Reset { count } => reset(deps, info, count, app),
-        AppExecuteMsg::UpdateConfig {} => update_config(deps, info, app),
+        ClientExecuteMsg::ReceiveMessage(message) => receive_msg(deps, info, message, app),
+        ClientExecuteMsg::UpdateConfig {} => update_config(deps, info, app),
     }
 }
 
-fn increment(deps: DepsMut, app: App) -> AppResult {
-    COUNT.update(deps.storage, |count| AppResult::Ok(count + 1))?;
+/// Receive a message from the server
+fn receive_msg(deps: DepsMut, info: MessageInfo, msg: Message, app: App) -> AppResult {
+   // check that the message sender is the server
+    let server_addr = app.modules(deps.as_ref()).module_address(IBCMAIL_SERVER)?;
+    ensure_eq!(info.sender, server_addr, ClientError::NotMailServer {});
 
-    Ok(app.response("increment"))
-}
+    match msg.recipient {
+        Recipient::Account(ref account_id) => {
+            let our_id = app.account_id(deps.as_ref())?;
+            // check that the recipient is the current account
+            ensure_eq!(account_id, &our_id, ClientError::NotRecipient {} );
+        }
+        _ => Err(ClientError::NotImplemented("recipients".to_string()))?,
 
-fn reset(deps: DepsMut, info: MessageInfo, count: i32, app: App) -> AppResult {
-    app.admin.assert_admin(deps.as_ref(), &info.sender)?;
-    COUNT.save(deps.storage, &count)?;
+    }
 
-    Ok(app.response("reset"))
+    RECEIVED.save(deps.storage, msg.id.clone(), &msg)?;
+
+    Ok(app.response("received").add_attribute("message_id", &msg.id))
 }
 
 /// Update the configuration of the client

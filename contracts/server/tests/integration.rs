@@ -5,7 +5,7 @@ use abstract_client::Application;
 
 use client::{
     *,
-    error::AdapterError,
+    error::ClientError,
     msg::{AppInstantiateMsg, ConfigResponse, CountResponse},
 };
 use cw_controllers::AdminError;
@@ -78,12 +78,12 @@ fn successful_reset() -> anyhow::Result<()> {
 fn failed_reset() -> anyhow::Result<()> {
     let (_, app) = setup(0)?;
 
-    let err: AdapterError = app
+    let err: ClientError = app
         .call_as(&Addr::unchecked("NotAdmin"))
         .reset(9)
         .unwrap_err()
         .downcast()
         .unwrap();
-    assert_eq!(err, AdapterError::Admin(AdminError::NotAdmin {}));
+    assert_eq!(err, ClientError::Admin(AdminError::NotAdmin {}));
     Ok(())
 }

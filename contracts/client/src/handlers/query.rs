@@ -1,12 +1,12 @@
 use crate::contract::{App, AppResult};
-use crate::msg::{AppQueryMsg, ConfigResponse, CountResponse};
+use crate::msg::{ClientQueryMsg, ConfigResponse, CountResponse};
 use crate::state::{CONFIG, COUNT};
 use cosmwasm_std::{to_json_binary, Binary, Deps, Env, StdResult};
 
-pub fn query_handler(deps: Deps, _env: Env, _app: &App, msg: AppQueryMsg) -> AppResult<Binary> {
+pub fn query_handler(deps: Deps, _env: Env, _app: &App, msg: ClientQueryMsg) -> AppResult<Binary> {
     match msg {
-        AppQueryMsg::Config {} => to_json_binary(&query_config(deps)?),
-        AppQueryMsg::Count {} => to_json_binary(&query_count(deps)?),
+        ClientQueryMsg::Config {} => to_json_binary(&query_config(deps)?),
+        ClientQueryMsg::Count {} => to_json_binary(&query_count(deps)?),
     }
     .map_err(Into::into)
 }

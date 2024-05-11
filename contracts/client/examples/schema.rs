@@ -1,7 +1,7 @@
-use client::contract::App;
 use cosmwasm_schema::remove_schemas;
 use std::env::current_dir;
 use std::fs::create_dir_all;
+use ibcmail::client::ClientApp;
 
 fn main() {
     let mut out_dir = current_dir().unwrap();
@@ -10,5 +10,5 @@ fn main() {
     remove_schemas(&out_dir).unwrap();
 
     #[cfg(feature = "schema")]
-    App::export_schema(&out_dir);
+    ClientApp::export_schema(&out_dir);
 }

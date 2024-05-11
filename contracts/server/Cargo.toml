@@ -35,7 +35,7 @@ required-features = ["daemon"]
 default = ["export"]
 export = []
 schema = ["abstract-adapter/schema"]
-interface = ["export", "dep:abstract-interface", "dep:cw-orch"]
+interface = ["export", "dep:abstract-interface", "dep:cw-orch", "ibcmail/interface"]
 daemon = ["interface", "cw-orch/daemon"]
 
 [dependencies]
@@ -54,7 +54,6 @@ ibcmail = { workspace = true }
 
 # Dependencies for interface
 cw-orch = { workspace = true, optional = true }
-client = { workspace = true, default-features = false }
 
 [dev-dependencies]
 client = { workspace = true, features = ["interface"] }

@@ -35,8 +35,7 @@ required-features = ["daemon"]
 default = ["export"]
 export = []
 schema = ["abstract-app/schema"]
-#interface = ["export", "dep:cw-orch"]
-interface = ["export", "dep:abstract-interface", "dep:cw-orch"]
+interface = ["export", "dep:abstract-interface", "dep:cw-orch", "ibcmail/interface"]
 daemon = ["interface", "cw-orch/daemon"]
 
 [dependencies]
@@ -48,6 +47,7 @@ thiserror = { workspace = true }
 schemars = { workspace = true }
 cw-asset = { workspace = true }
 abstract-app = { workspace = true }
+ibcmail = { workspace = true }
 abstract-interface = { workspace = true, optional = true }
 
 # Dependencies for interface

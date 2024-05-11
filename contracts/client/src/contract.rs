@@ -1,20 +1,21 @@
-use crate::msg::AppMigrateMsg;
-use crate::{IBCMAIL_CLIENT, APP_VERSION, error::AdapterError, handlers, msg::{AppExecuteMsg, AppInstantiateMsg, AppQueryMsg}, replies::{self, INSTANTIATE_REPLY_ID}};
-use abstract_app::AppContract;
 use cosmwasm_std::Response;
 
-/// The type of the result returned by your client's entry points.
-pub type AppResult<T = Response> = Result<T, AdapterError>;
+pub use ibcmail::client::ClientApp as App;
 
-/// The type of the client that is used to build your client and access the Abstract SDK features.
-pub type App = AppContract<AdapterError, AppInstantiateMsg, AppExecuteMsg, AppQueryMsg, AppMigrateMsg>;
+use crate::{APP_VERSION, error::ClientError, handlers, IBCMAIL_CLIENT};
+use crate::dependencies::MAIL_SERVER_DEP;
+
+/// The type of the result returned by your client's entry points.
+pub type AppResult<T = Response> = Result<T, ClientError>;
+
+
 
 const APP: App = App::new(IBCMAIL_CLIENT, APP_VERSION, None)
     .with_instantiate(handlers::instantiate_handler)
     .with_execute(handlers::execute_handler)
     .with_query(handlers::query_handler)
     .with_migrate(handlers::migrate_handler)
-    .with_replies(&[(INSTANTIATE_REPLY_ID, replies::instantiate_reply)]);
+    .with_dependencies(&[MAIL_SERVER_DEP]);
 
 // Export handlers
 #[cfg(feature = "export")]

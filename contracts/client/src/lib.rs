@@ -1,9 +1,7 @@
 pub mod contract;
-pub mod error;
 mod handlers;
-pub mod msg;
 mod replies;
-pub mod state;
+mod dependencies;
 
 /// The version of your app
 pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -14,5 +12,9 @@ pub const IBCMAIL_CLIENT: &str = "ibcmail:client";
 #[cfg(feature = "interface")]
 pub use contract::interface::AppInterface;
 #[cfg(feature = "interface")]
-pub use msg::{AppExecuteMsgFns, AppQueryMsgFns};
+pub use ibcmail::client::msg::{ClientExecuteMsgFns, ClientQueryMsgFns};
 
+
+pub use ibcmail::client::error as error;
+pub use ibcmail::client::msg as msg;
+pub use ibcmail::client::state as state;
