@@ -55,7 +55,10 @@ fn receive_msg(deps: DepsMut, info: MessageInfo, msg: Message, app: App) -> Clie
 
     match msg.recipient {
         Recipient::Account { id: ref account_id, .. } => {
+
+            println!("account_id: {:?}", account_id);
             let our_id = app.account_id(deps.as_ref())?;
+            println!("our_id: {:?}", our_id);
             // check that the recipient is the current account
             ensure_eq!(account_id, &our_id, ClientError::NotRecipient {} );
         }

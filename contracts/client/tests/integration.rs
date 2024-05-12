@@ -118,11 +118,19 @@ mod receive_msg {
         let server_account_id = app.account().id().unwrap();
         let app_account_id = app.account().id().unwrap();
 
+        println!("server_account_id: {:?}, app_account_id: {:?}", server_account_id, app_account_id);
+
         let msg = create_test_message(server_account_id.clone(), app_account_id.clone());
-        let server_adr = app.account().module_addresses(vec![IBCMAIL_SERVER_ID.into()])?.modules[0].1.clone();
-        let res = app.call_as(&server_adr).receive_message(msg);
+        let server_addr = app.account().module_addresses(vec![IBCMAIL_SERVER_ID.into()])?.modules[0].1.clone();
+
+        println!("app_account_id: {:?}", app.account().id());
+        let res = app.call_as(&server_addr).receive_message(msg);
 
         assert_that!(res).is_ok();
+
+        let messages = app.messages(None, None, None)?;
+        assert_that!(messages.messages).has_length(1);
+
         Ok(())
     }
 
@@ -198,6 +206,12 @@ mod send_msg {
         let res = myos_client.send_message(msg);
 
         assert_that!(res).is_ok();
+
+        let myos_messages = myos_client.messages(None, None, None)?;
+        assert_that!(myos_messages.messages).is_empty();
+
+        let juno_messages = juno_client.messages(None, None, None)?;
+        assert_that!(juno_messages.messages).has_length(1);
 
         Ok(())
     }

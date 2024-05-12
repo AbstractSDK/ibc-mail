@@ -59,3 +59,12 @@ impl Recipient {
         }
     }
 }
+
+#[non_exhaustive]
+#[cosmwasm_schema::cw_serde]
+pub enum Sender {
+    Account {
+        id: AccountId,
+        chain: Option<ChainName>
+    }
+}

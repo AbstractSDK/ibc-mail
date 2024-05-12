@@ -31,6 +31,7 @@ cw-semver = { version = "1.0", features = ["serde" ]}
 cw-orch = { package = "cw-orch-interchain", git = "ssh://git@github.com/AbstractSDK/cw-orch-interchain.git", tag = "v0.22.0" }
 abstract-cw-orch-polytone = "2.0.0"
 abstract-interchain-tests = { git = "https://github.com/AbstractSDK/abstract", version = "0.22.1", branch = "removemm" }
+cw-paginate = "0.2.1"
 # TODO: cannot use this because of money-market adapter trait issue
 #abstract-interchain-tests = { git = "https://github.com/AbstractSDK/abstract", version = "0.22.1", tag = "v0.22.1" }
 

@@ -49,6 +49,7 @@ cw-asset = { workspace = true }
 abstract-app = { workspace = true }
 ibcmail = { workspace = true }
 abstract-interface = { workspace = true, optional = true }
+cw-paginate = { workspace = true }
 
 # Dependencies for interface
 cw-orch = { workspace = true, optional = true }
