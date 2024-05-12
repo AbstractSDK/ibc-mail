@@ -132,6 +132,7 @@ mod receive_msg {
         let msg = create_test_message(server_account_id.clone(), app_account_id.clone());
         let server_addr = app.account().module_addresses(vec![IBCMAIL_SERVER_ID.into()])?.modules[0].1.clone();
 
+        // TODO: for some reason, the accounts are conflicting with one another. I've fixed this test by removing the "two" accounts... it's probably the same bug
         println!("app_account_id: {:?}", app.account().id());
         let res = app.call_as(&server_addr).receive_message(msg);
 

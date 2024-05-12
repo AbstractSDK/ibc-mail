@@ -1,23 +1,27 @@
-# Abstract App Module Template
+# IBC Mail
 
-The Abstract App Module Template is a starting point for developing composable smart-contracts, or "Apps" on the Abstract platform. An App is instantiated for each Account individually and is migratable. Apps are allowed to perform actions on Abstract Accounts and can integrate with other Apps and Adapters installed on the Account. To learn more about Abstract Accounts, please see the [abstract accounts documentation](https://docs.abstract.money/3_framework/3_architecture.html). To read more about apps, please see the [app module documentation](https://docs.abstract.money/3_framework/6_module_types.html).
+This project is a simple mail application that demonstrates the use of the IBC module in Abstract. The application allows users to send and receive messages to and from other users on different chains.
+It supports:
+- Sending messages to other users on the same chain.
+- Sending messages to users on other chains one hop away
 
-## Getting Started
+It's designed with two contracts, the Client and the Server. Every user has their own mail Client, which can send and receive messages. It routes these messages to the Server, which then forwards them to the recipient's Client. This is beneficial for a few reasons:
+- Multiplexing between different versions of clients. Users will likely want their own version of the client, which can be updated independently of the server. The server will be able to support sending messages to multiple clients.
+- When sending multi-hop messages, the mail Server will send the message to the recipient's chain's mail Server, which will then forward it to the recipient's Client. If there is a hop in between, it will just hop between servers. The big question is "which client should the message be sent to? for routing?"
 
-### Requirements
+See [this document](https://www.notion.so/abstract-money/IBC-Mail-744feaac39cb412ba8b5b4147cf8fb32?pvs=4) for more information.
 
-Learn more about the requirements for developing Abstract apps in the [getting started documentation](https://docs.abstract.money/4_get_started/1_index.html).
-
-### Setup
-
-To get started, clone this repository and run the following command:
-
-```shell
-chmod +x ./template-setup.sh
-./template-setup.sh
-```
-
-The setup will suggest you to install a few tools that are used in the template. You can skip this step if you already have them installed or if you're not planning on using them.
+**Desired Features**
+- [x] Send / receive messages to users on the same chain
+- [x] Send / receive messages to users on other chains
+- [ ] Sending to namespaces
+- [ ] Sending to "namespace@remote.local"
+- [ ] Contacts contract
+- [ ] Sending funds in messages
+- [ ] Sending NFTs in messages
+- [ ] Send messages to users on other chains with hops in between
+- [ ] Support for multiple versions of the client
+- [ ] (frontend) Encrypting messages with the recipient's public key
 
 ## Using the Justfile
 
