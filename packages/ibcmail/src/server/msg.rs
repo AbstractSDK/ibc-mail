@@ -20,6 +20,14 @@ pub enum ServerExecuteMsg {
     UpdateConfig {},
 }
 
+/// App execute messages
+#[non_exhaustive]
+#[cosmwasm_schema::cw_serde]
+pub enum ServerIbcMessage {
+    /// Route a message
+    RouteMessage(Message),
+}
+
 /// App query messages
 #[cosmwasm_schema::cw_serde]
 #[cfg_attr(feature = "interface", derive(cw_orch::QueryFns))]

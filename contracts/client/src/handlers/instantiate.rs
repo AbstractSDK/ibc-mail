@@ -1,5 +1,5 @@
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
-use ibcmail::client::state::RECEIVED;
+use ibcmail::client::state::{RECEIVED, TEST};
 
 use crate::contract::{App, ClientResult};
 use crate::msg::ClientInstantiateMsg;
@@ -15,6 +15,7 @@ pub fn instantiate_handler(
     let config: Config = Config {};
 
     CONFIG.save(deps.storage, &config)?;
+    TEST.save(deps.storage, &_env.contract.address)?;
 
     // Example instantiation that doesn't do anything
     Ok(Response::new())

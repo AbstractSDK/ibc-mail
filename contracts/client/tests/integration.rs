@@ -10,7 +10,7 @@ use cosmwasm_std::coins;
 // Use prelude to get all the necessary imports
 use cw_orch::{anyhow, prelude::*};
 
-use ibcmail::{IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID, Message, Recipient};
+use ibcmail::{IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID, Message, Recipient, Sender};
 use ibcmail::server::msg::ServerInstantiateMsg;
 use ibcmail_client::{
     *,
@@ -47,13 +47,19 @@ impl<Env: CwEnv> TestEnv<Env> {
         publisher.publish_app::<ClientInterface<_>>()?;
         publisher.publish_adapter::<ServerInstantiateMsg, ServerInterface<_>>(ServerInstantiateMsg {})?;
 
-        let app = publisher
-            .account()
+        // let app = publisher.account()
+        //     .install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {},&[])?;
+        // app.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
+        //
+        // let app2 = publisher.account()
+        //     .install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {},&[])?;
+        // app2.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
+
+        let app = abs_client.account_builder().install_on_sub_account(false).build()?
             .install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {},&[])?;
         app.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
 
-        let app2 = publisher
-            .account()
+        let app2 = abs_client.account_builder().install_on_sub_account(false).build()?
             .install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {},&[])?;
         app2.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
 
@@ -80,7 +86,7 @@ impl<Env: CwEnv> TestEnv<Env> {
 fn create_test_message(from: AccountId, to: AccountId) -> Message {
     Message {
         id: "test-id".to_string(),
-        sender: from.clone(),
+        sender: Sender::account(from.clone(), None),
         recipient: Recipient::account(to.clone(), None),
         subject: "test-subject".to_string(),
         body: "test-body".to_string(),
@@ -108,6 +114,9 @@ mod receive_msg {
     use ibcmail::client::error::ClientError;
     use super::*;
 
+
+    /// Sending a message from the same account to the same account
+    /// TODO: this test is failing because of an issue with state management...
     #[test]
     fn can_receive_from_server() -> anyhow::Result<()> {
         // Create a sender and mock env
@@ -159,7 +168,7 @@ mod send_msg {
     use abstract_app::objects::chain_name::ChainName;
     use cw_orch::daemon::networks::{ARCHWAY_1, JUNO_1};
     use cw_orch::tokio::runtime::Runtime;
-    use ibcmail::NewMessage;
+    use ibcmail::{IBCMAIL_CLIENT, NewMessage};
     use super::*;
 
     #[test]
@@ -183,32 +192,53 @@ mod send_msg {
     fn can_send_remote_message() -> anyhow::Result<()> {
         // Create a sender and mock env
         let interchain = MockBech32InterchainEnv::new(
-           vec![("archway-1", "archway18k2uq7srsr8lwrae6zr0qahpn29rsp7td7wvfd"), ("juno-1","juno18k2uq7srsr8lwrae6zr0qahpn29rsp7tw83nyx")]
+           vec![("juno-1","juno18k2uq7srsr8lwrae6zr0qahpn29rsp7tw83nyx"), ("archway-1", "archway18k2uq7srsr8lwrae6zr0qahpn29rsp7td7wvfd")]
         );
 
         // /Users/adair/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cw-orch-mock-0.22.0/src/queriers/env.rs:12:70:
-        // index out of bounds: the len is 1 but the index is 1
-        let myos_env = TestEnv::setup(interchain.chain("archway-1")?)?;
+        // index out of bounds: the len is 1 but the index is 1 (when initializing with "juno")
+        let arch_env = TestEnv::setup(interchain.chain("archway-1")?)?;
         let juno_env = TestEnv::setup(interchain.chain("juno-1")?)?;
 
-        myos_env.enable_ibc()?;
+        arch_env.enable_ibc()?;
         juno_env.enable_ibc()?;
 
         // TODO: put somewhere better
         ibc_connect_polytone_and_abstract(&interchain, "archway-1", "juno-1")?;
 
-        let myos_client = myos_env.client1;
+        let arch_client = arch_env.client1;
         let juno_client = juno_env.client1;
 
         // the trait `From<&str>` is not implemented for `abstract_app::objects::chain_name::ChainName`
         let msg = NewMessage::new(Recipient::account(juno_client.account().id()?, Some(ChainName::from_string("juno".into())?)), "test-subject", "test-body");
 
-        let res = myos_client.send_message(msg);
+        let res = arch_client.send_message(msg);
 
         assert_that!(res).is_ok();
 
-        let myos_messages = myos_client.messages(None, None, None)?;
+        interchain.wait_ibc("archway-1", res?)?;
+
+        let myos_messages = arch_client.messages(None, None, None)?;
         assert_that!(myos_messages.messages).is_empty();
+
+
+
+        let juno_client_1_module_addresses = juno_client.account().module_addresses(vec![IBCMAIL_CLIENT.into()])?;
+        let acc_id = juno_client.account().id()?;
+        println!("juno_client_1 addresses: {:?}, account_id: {:?}", juno_client_1_module_addresses, acc_id);
+        // TESTING:
+        let addresses = juno_env.client2.account().module_addresses(vec![IBCMAIL_CLIENT.into()])?;
+        let acc_id = juno_env.client2.account().id()?;
+        println!("juno_client_2 addresses: {:?}, account_id: {:?}", addresses, acc_id);
+
+        let test_address = juno_client.address()?;
+        let test_id = juno_client.id();
+        println!("test_address: {:?}, test_id: {:?}", test_address, test_id);
+
+        let mut juno_mail_client = ClientInterface::new(IBCMAIL_CLIENT, juno_env.env.clone());
+        juno_mail_client.set_address(&juno_client_1_module_addresses.modules[0].1.clone());
+        let juno_mail_client_messages = juno_mail_client.messages(None, None, None)?;
+        assert_that!(juno_mail_client_messages.messages).has_length(1);
 
         let juno_messages = juno_client.messages(None, None, None)?;
         assert_that!(juno_messages.messages).has_length(1);

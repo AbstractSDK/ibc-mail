@@ -1,6 +1,7 @@
 use abstract_adapter::AdapterError as AbstractAdapterError;
 use abstract_adapter::sdk::AbstractSdkError;
 use abstract_adapter::std::AbstractError;
+use abstract_std::objects::module::ModuleInfo;
 use cosmwasm_std::StdError;
 use cw_asset::AssetError;
 use cw_controllers::AdminError;
@@ -27,5 +28,11 @@ pub enum ServerError {
     AdapterError(#[from] AbstractAdapterError),
 
     #[error("{0} are not implemented")]
-    NotImplemented(String)
+    NotImplemented(String),
+
+    #[error("Unauthorized IBC message from module: {0}")]
+    UnauthorizedIbcModule(ModuleInfo),
+
+    #[error("Unauthorized IBC message")]
+    UnauthorizedIbcMessage
 }

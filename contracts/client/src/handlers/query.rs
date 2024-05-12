@@ -1,11 +1,11 @@
 use crate::contract::{App, ClientResult};
 use crate::msg::{ClientQueryMsg, ConfigResponse};
 use crate::state::{CONFIG};
-use cosmwasm_std::{to_json_binary, Binary, Deps, Env, StdResult};
+use cosmwasm_std::{to_json_binary, Binary, Deps, Env, StdResult, Order};
 use cw_storage_plus::Bound;
 use ibcmail::client::error::ClientError;
 use ibcmail::client::msg::{MessageFilter, MessagesResponse};
-use ibcmail::client::state::RECEIVED;
+use ibcmail::client::state::{RECEIVED, TEST};
 use ibcmail::MessageId;
 
 pub const DEFAULT_LIMIT: u32 = 50;
@@ -26,6 +26,10 @@ fn query_messages(deps: Deps, filter: Option<MessageFilter>, start: Option<Messa
         limit,
         |_id, message| Ok::<_, ClientError>(message),
     )?;
+
+    let len = RECEIVED.keys(deps.storage, None, None, Order::Ascending).count();
+
+    println!("Messages: {:?}, test: {:?}, len: {:?}", messages, TEST.load(deps.storage)?, len);
 
     Ok(MessagesResponse { messages })
 }

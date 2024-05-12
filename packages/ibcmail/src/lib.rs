@@ -33,7 +33,7 @@ impl NewMessage {
 #[cosmwasm_schema::cw_serde]
 pub struct Message {
     pub id: MessageId,
-    pub sender: AccountId,
+    pub sender: Sender,
     pub recipient: Recipient,
     pub subject: String,
     pub body: String,
@@ -66,5 +66,14 @@ pub enum Sender {
     Account {
         id: AccountId,
         chain: Option<ChainName>
+    }
+}
+
+impl Sender {
+    pub fn account(account_id: AccountId, chain_name: Option<ChainName>) -> Self {
+        Sender::Account {
+            id: account_id,
+            chain: chain_name
+        }
     }
 }

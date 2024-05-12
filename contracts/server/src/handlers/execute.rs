@@ -16,7 +16,7 @@ use ibcmail::client::msg::ClientExecuteMsg;
 
 use crate::contract::{Adapter, ServerResult};
 use crate::error::ServerError;
-use ibcmail::server::msg::ServerExecuteMsg;
+use ibcmail::server::msg::{ServerExecuteMsg, ServerIbcMessage};
 use crate::state::CONFIG;
 
 pub fn execute_handler(
@@ -32,9 +32,9 @@ pub fn execute_handler(
     }
 }
 
-fn route_msg(deps: DepsMut, _info: MessageInfo, msg: Message, app: Adapter) -> ServerResult {
-
+pub(crate) fn route_msg(deps: DepsMut, _info: MessageInfo, msg: Message, app: Adapter) -> ServerResult {
     let registry = app.account_registry(deps.as_ref())?;
+    println!("routing message: {:?}", msg);
 
     let msg = match &msg.recipient {
         Recipient::Account { id: ref account_id, chain } => {
@@ -61,6 +61,7 @@ fn route_msg(deps: DepsMut, _info: MessageInfo, msg: Message, app: Adapter) -> S
                     Ok::<CosmosMsg, ServerError>(exec_msg)
                 },
                 Some(chain) => {
+                    println!("routing to chain: {:?}", chain);
                     // TODO verify that the chain is a valid chain
 
                     let current_module_info = ModuleInfo::from_id(app.module_id(), app.version().into())?;
@@ -69,7 +70,7 @@ fn route_msg(deps: DepsMut, _info: MessageInfo, msg: Message, app: Adapter) -> S
                         // TODO: why is host chain not chain name
                         host_chain: chain.to_string(),
                         target_module: current_module_info,
-                        msg: to_json_binary(&ServerExecuteMsg::RouteMessage(msg))?,
+                        msg: to_json_binary(&ServerIbcMessage::RouteMessage(msg))?,
                         callback_info: None,
                     };
 
