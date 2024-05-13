@@ -2,6 +2,7 @@ pub mod server;
 pub mod client;
 
 use abstract_sdk::std::objects::AccountId;
+use abstract_std::objects::account::AccountTrace;
 use abstract_std::objects::chain_name::ChainName;
 use abstract_std::objects::module::ModuleVersion;
 use cosmwasm_std::Timestamp;
@@ -47,15 +48,15 @@ pub struct Message {
 pub enum Recipient {
     Account {
         id: AccountId,
-        chain: Option<ChainName>
+        route: AccountTrace
     }
 }
 
 impl Recipient {
-    pub fn account(account_id: AccountId, chain_name: Option<ChainName>) -> Self {
+    pub fn account(account_id: AccountId, route: Option<AccountTrace>) -> Self {
         Recipient::Account {
             id: account_id,
-            chain: chain_name
+            route: route.unwrap_or(AccountTrace::Local)
         }
     }
 }
@@ -65,15 +66,15 @@ impl Recipient {
 pub enum Sender {
     Account {
         id: AccountId,
-        chain: Option<ChainName>
+        route: AccountTrace
     }
 }
 
 impl Sender {
-    pub fn account(account_id: AccountId, chain_name: Option<ChainName>) -> Self {
+    pub fn account(account_id: AccountId, route: Option<AccountTrace>) -> Self {
         Sender::Account {
             id: account_id,
-            chain: chain_name
+            route: route.unwrap_or(AccountTrace::Local)
         }
     }
 }

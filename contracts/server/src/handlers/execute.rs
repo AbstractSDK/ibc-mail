@@ -37,9 +37,9 @@ pub(crate) fn route_msg(deps: DepsMut, _info: MessageInfo, msg: Message, app: Ad
     println!("routing message: {:?}", msg);
 
     let msg = match &msg.recipient {
-        Recipient::Account { id: ref account_id, chain } => {
+        Recipient::Account { id: ref account_id, route: chain } => {
             match chain {
-                None => {
+                AccountTrace::Local => {
                     // This is a local message
                     let manager = registry.manager_address(&account_id)?;
                     let module_addresses = deps.querier.query_wasm_smart::<ModuleAddressesResponse>(manager, &manager::QueryMsg::ModuleAddresses {
@@ -60,15 +60,16 @@ pub(crate) fn route_msg(deps: DepsMut, _info: MessageInfo, msg: Message, app: Ad
 
                     Ok::<CosmosMsg, ServerError>(exec_msg)
                 },
-                Some(chain) => {
-                    println!("routing to chain: {:?}", chain);
+                AccountTrace::Remote(chains) => {
+                    println!("routing to chain: {:?}", chains);
                     // TODO verify that the chain is a valid chain
 
                     let current_module_info = ModuleInfo::from_id(app.module_id(), app.version().into())?;
 
                     let ibc_msg = ibc_client::ExecuteMsg::ModuleIbcAction {
                         // TODO: why is host chain not chain name
-                        host_chain: chain.to_string(),
+                        // We take the first chain in the hop
+                        host_chain: chains.first().clone().unwrap().to_string(),
                         target_module: current_module_info,
                         msg: to_json_binary(&ServerIbcMessage::RouteMessage(msg))?,
                         callback_info: None,
