@@ -45,6 +45,7 @@ fn send_msg(
     let hash = <sha2::Sha256 as sha2::Digest>::digest(to_hash);
 
     let to_send = Message {
+        // TODO: base64 encode this
         id: format!("{:x}", hash),
         sender: Sender::account(
             app.account_id(deps.as_ref()).unwrap(),
@@ -67,6 +68,7 @@ fn send_msg(
 
 /// Receive a message from the server
 fn receive_msg(deps: DepsMut, info: MessageInfo, msg: Message, app: App) -> ClientResult {
+    // TODO: remove print
     println!("Received message: {:?}", msg);
     // check that the message sender is the server... this requires the server to be the proper version
     let sender_module = app
@@ -82,6 +84,7 @@ fn receive_msg(deps: DepsMut, info: MessageInfo, msg: Message, app: App) -> Clie
     ensure_correct_recipient(deps.as_ref(), &msg.recipient, &app)?;
 
     RECEIVED.save(deps.storage, msg.id.clone(), &msg)?;
+    // TODO: remove, could run out of gas!!
     let len = RECEIVED
         .keys(deps.storage, None, None, Order::Ascending)
         .count();

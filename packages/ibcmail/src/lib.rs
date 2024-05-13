@@ -6,6 +6,8 @@ use abstract_sdk::std::objects::AccountId;
 use abstract_std::objects::account::AccountTrace;
 use abstract_std::objects::chain_name::ChainName;
 use abstract_std::objects::namespace::Namespace;
+// TODO: this crate is 75kb. should we really include it for this basic functionality?
+// https://crates.io/crates/const_format
 use const_format::concatcp;
 
 use cosmwasm_std::Timestamp;
@@ -16,7 +18,7 @@ pub const IBCMAIL_SERVER_ID: &str = concatcp!(IBCMAIL_NAMESPACE, ":", "server");
 
 pub type MessageId = String;
 
-/// STruct representing new message to send to another client
+/// Struct representing new message to send to another client
 #[cosmwasm_schema::cw_serde]
 pub struct NewMessage {
     pub recipient: Recipient,

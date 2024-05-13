@@ -8,8 +8,6 @@ use ibcmail::client::msg::{MessageFilter, MessagesResponse};
 use ibcmail::client::state::{RECEIVED, SENT, TEST};
 use ibcmail::{MessageId, MessageStatus};
 
-pub const DEFAULT_LIMIT: u32 = 50;
-
 pub fn query_handler(
     deps: Deps,
     _env: Env,

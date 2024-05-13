@@ -1,9 +1,6 @@
 use abstract_app::objects::dependency::StaticDependency;
-use abstract_app::objects::module::ModuleInfo;
-
-use abstract_app::std::manager::ModuleInstallConfig;
-
-use crate::APP_VERSION;
+#[cfg(feature = "interface")]
+use abstract_app::{std::manager::ModuleInstallConfig, objects::module::ModuleInfo};
 use ibcmail::IBCMAIL_SERVER_ID;
 
 pub const MAIL_SERVER_DEP: StaticDependency =
@@ -19,7 +16,7 @@ impl<Chain: cw_orch::environment::CwEnv> abstract_interface::DependencyCreation
         _configuration: Self::DependenciesConfig,
     ) -> Result<Vec<ModuleInstallConfig>, abstract_interface::AbstractInterfaceError> {
         let adapter_install_config = ModuleInstallConfig::new(
-            ModuleInfo::from_id(ibcmail::IBCMAIL_SERVER_ID, APP_VERSION.into())?,
+            ModuleInfo::from_id(ibcmail::IBCMAIL_SERVER_ID, crate::APP_VERSION.into())?,
             None,
         );
 
