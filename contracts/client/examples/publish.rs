@@ -17,7 +17,7 @@ use cw_orch::{
     tokio::runtime::Runtime,
 };
 use cw_orch::prelude::*;
-use ibcmail::IBCMAIL_CLIENT;
+use ibcmail::IBCMAIL_CLIENT_ID;
 use ibcmail_client::ClientInterface;
 
 fn publish(networks: Vec<ChainInfo>) -> anyhow::Result<()> {
@@ -30,7 +30,7 @@ fn publish(networks: Vec<ChainInfo>) -> anyhow::Result<()> {
             .chain(network)
             .build()?;
 
-        let app_namespace = Namespace::from_id(IBCMAIL_CLIENT)?;
+        let app_namespace = Namespace::from_id(IBCMAIL_CLIENT_ID)?;
 
         // Create an [`AbstractClient`]
         let abstract_client: AbstractClient<Daemon> = AbstractClient::new(chain.clone())?;

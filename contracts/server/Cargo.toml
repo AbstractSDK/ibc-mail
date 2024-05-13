@@ -54,6 +54,7 @@ ibcmail = { workspace = true }
 
 # Dependencies for interface
 cw-orch = { workspace = true, optional = true }
+log = "0.4.21"
 
 [dev-dependencies]
 client = { workspace = true, features = ["interface"] }

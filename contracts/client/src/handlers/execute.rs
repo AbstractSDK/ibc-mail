@@ -1,4 +1,4 @@
-
+use abstract_app::objects::chain_name::ChainName;
 use abstract_app::sdk::ModuleRegistryInterface;
 use abstract_app::traits::{AbstractResponse, AccountIdentification};
 use cosmwasm_std::{Deps, DepsMut, ensure_eq, Env, MessageInfo, Order};
@@ -7,7 +7,6 @@ use ibcmail::{IBCMAIL_SERVER_ID, Message, NewMessage, Recipient, Route, Sender};
 use ibcmail::client::ClientApp;
 use ibcmail::client::state::{RECEIVED, SENT};
 use ibcmail::server::api::ServerInterface;
-use uuid::{Uuid};
 
 use crate::contract::{App, ClientResult};
 use crate::error::ClientError;
@@ -32,9 +31,13 @@ pub fn execute_handler(
 
 fn send_msg(deps: DepsMut, env: Env, _info: MessageInfo, msg: NewMessage, route: Option<Route>, app: ClientApp) -> ClientResult {
     // validate basic fields of message, construct message to send to server
+
+    let to_hash = format!("{:?}{:?}{:?}", env.block.time, msg.subject, msg.recipient);
+    let hash = <sha2::Sha256 as sha2::Digest>::digest(to_hash);
+
     let to_send = Message {
-        id: Uuid::new_v4().to_string(),
-        sender: Sender::account(app.account_id(deps.as_ref()).unwrap(), None),
+        id: format!("{:x}", hash),
+        sender: Sender::account(app.account_id(deps.as_ref()).unwrap(), Some(ChainName::new(&env))),
         recipient: msg.recipient,
         subject: msg.subject,
         body: msg.body,
@@ -45,7 +48,7 @@ fn send_msg(deps: DepsMut, env: Env, _info: MessageInfo, msg: NewMessage, route:
     SENT.save(deps.storage, to_send.id.clone(), &to_send)?;
 
     let server = app.mail_server(deps.as_ref());
-    let route_msg = server.route_msg(to_send, route)?;
+    let route_msg = server.process_msg(to_send, route)?;
 
     Ok(app.response("send").add_message(route_msg))
 }

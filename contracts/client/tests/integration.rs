@@ -55,12 +55,14 @@ impl<Env: CwEnv> TestEnv<Env> {
         //     .install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {},&[])?;
         // app2.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
 
-        let app = abs_client.account_builder().install_on_sub_account(false).build()?
-            .install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {},&[])?;
+        let acc = abs_client.account_builder().install_on_sub_account(false).build()?;
+        // acc.as_ref().manager.update_settings(Some(true))?;
+        let app = acc.install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {},&[])?;
         app.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
 
-        let app2 = abs_client.account_builder().install_on_sub_account(false).build()?
-            .install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {},&[])?;
+        let acc2 = abs_client.account_builder().install_on_sub_account(false).build()?;
+        // acc2.as_ref().manager.update_settings(Some(true))?;
+        let app2 = acc2.install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {},&[])?;
         app2.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
 
         // let server = app.account().application::<ServerInterface<MockBech32>>()?;
@@ -76,9 +78,6 @@ impl<Env: CwEnv> TestEnv<Env> {
 
     fn enable_ibc(&self) -> anyhow::Result<()> {
         Polytone::deploy_on(self.abs.environment().clone(), None)?;
-
-        self.client1.account().as_ref().manager.update_settings(Some(true))?;
-        self.client2.account().as_ref().manager.update_settings(Some(true))?;
         Ok(())
     }
 }
@@ -166,10 +165,13 @@ mod receive_msg {
 }
 
 mod send_msg {
+    use std::str::FromStr;
+    use abstract_app::objects::account::AccountTrace;
     use abstract_app::objects::chain_name::ChainName;
-    
-    
-    use ibcmail::{IBCMAIL_CLIENT, NewMessage};
+    use abstract_interface::AbstractIbc;
+
+
+    use ibcmail::{IBCMAIL_CLIENT_ID, NewMessage};
     use super::*;
 
     #[test]
@@ -223,11 +225,11 @@ mod send_msg {
         assert_that!(myos_messages.messages).is_empty();
 
 
-        let juno_client_1_module_addresses = juno_client.account().module_addresses(vec![IBCMAIL_CLIENT.into()])?;
+        let juno_client_1_module_addresses = juno_client.account().module_addresses(vec![IBCMAIL_CLIENT_ID.into()])?;
         let acc_id = juno_client.account().id()?;
         println!("juno_client_1 addresses: {:?}, account_id: {:?}", juno_client_1_module_addresses, acc_id);
         // TESTING:
-        let addresses = juno_env.client2.account().module_addresses(vec![IBCMAIL_CLIENT.into()])?;
+        let addresses = juno_env.client2.account().module_addresses(vec![IBCMAIL_CLIENT_ID.into()])?;
         let acc_id = juno_env.client2.account().id()?;
         println!("juno_client_2 addresses: {:?}, account_id: {:?}", addresses, acc_id);
 
@@ -235,13 +237,71 @@ mod send_msg {
         let test_id = juno_client.id();
         println!("test_address: {:?}, test_id: {:?}", test_address, test_id);
 
-        let juno_mail_client = ClientInterface::new(IBCMAIL_CLIENT, juno_env.env.clone());
+        let juno_mail_client = ClientInterface::new(IBCMAIL_CLIENT_ID, juno_env.env.clone());
         juno_mail_client.set_address(&juno_client_1_module_addresses.modules[0].1.clone());
         let juno_mail_client_messages = juno_mail_client.messages(None, None, None)?;
         assert_that!(juno_mail_client_messages.messages).has_length(1);
 
         let juno_messages = juno_client.messages(None, None, None)?;
         assert_that!(juno_messages.messages).has_length(1);
+
+        Ok(())
+    }
+
+    #[test]
+    fn can_send_remote_message_2_hop() -> anyhow::Result<()> {
+        // Create a sender and mock env
+        let interchain = MockBech32InterchainEnv::new(
+            vec![("juno-1","juno18k2uq7srsr8lwrae6zr0qahpn29rsp7tw83nyx"), ("archway-1", "archway18k2uq7srsr8lwrae6zr0qahpn29rsp7td7wvfd"), ("neutron-1", "neutron18k2uq7srsr8lwrae6zr0qahpn29rsp7tu2m2ea")]
+        );
+
+        // /Users/adair/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cw-orch-mock-0.22.0/src/queriers/env.rs:12:70:
+        // index out of bounds: the len is 1 but the index is 1 (when initializing with "juno")
+        let arch_env = TestEnv::setup(interchain.chain("archway-1")?)?;
+        let juno_env = TestEnv::setup(interchain.chain("juno-1")?)?;
+        let neutron_env = TestEnv::setup(interchain.chain("neutron-1")?)?;
+
+        arch_env.enable_ibc()?;
+        juno_env.enable_ibc()?;
+        neutron_env.enable_ibc()?;
+
+        // TODO: put somewhere better
+        ibc_connect_polytone_and_abstract(&interchain, "archway-1", "juno-1")?;
+        ibc_connect_polytone_and_abstract(&interchain, "juno-1", "neutron-1")?;
+
+        let arch_client = arch_env.client1;
+        let juno_client = juno_env.client1;
+        let neutron_client = neutron_env.client1;
+
+        // the trait `From<&str>` is not implemented for `abstract_app::objects::chain_name::ChainName`
+        let arch_to_neutron_msg = NewMessage::new(Recipient::account(neutron_client.account().id()?, Some(ChainName::from_string("neutron".into())?)), "test-subject", "test-body");
+
+        let res = arch_client.send_message(arch_to_neutron_msg, Some(AccountTrace::Remote(vec!["juno".parse()?, ChainName::from_str("neutron")?])))?;
+
+        interchain.wait_ibc("archway-1", res.clone())?;
+
+        let arch_messages = arch_client.messages(None, None, None)?;
+        assert_that!(arch_messages.messages).is_empty();
+
+        let neutron_client_1_module_addresses = neutron_client.account().module_addresses(vec![IBCMAIL_CLIENT_ID.into()])?;
+        // let acc_id = neutron_client.account().id()?;
+        // println!("neutron_client_1 addresses: {:?}, account_id: {:?}", neutron_client_1_module_addresses, acc_id);
+        // // TESTING:
+        // let addresses = juno_env.client2.account().module_addresses(vec![IBCMAIL_CLIENT_ID.into()])?;
+        // let acc_id = juno_env.client2.account().id()?;
+        // println!("neutron_client_2 addresses: {:?}, account_id: {:?}", addresses, acc_id);
+        //
+        // let test_address = neutron_client.address()?;
+        // let test_id = neutron_client.id();
+        // println!("test_address: {:?}, test_id: {:?}", test_address, test_id);
+
+        let neutron_mail_client = ClientInterface::new(IBCMAIL_CLIENT_ID, neutron_env.env.clone());
+        neutron_mail_client.set_address(&neutron_client_1_module_addresses.modules[0].1.clone());
+        let neutron_mail_client_messages = neutron_mail_client.messages(None, None, None)?;
+        assert_that!(neutron_mail_client_messages.messages).has_length(1);
+
+        // let juno_messages = neutron_client.messages(None, None, None)?;
+        // assert_that!(juno_messages.messages).has_length(1);
 
         Ok(())
     }

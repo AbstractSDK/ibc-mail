@@ -29,50 +29,12 @@ pub fn module_ibc_handler(
     println!("parsed_msg: {:?}", server_msg);
 
     match server_msg {
-        ServerIbcMessage::RouteMessage { msg, mut metadata } => {
-            // Update the sender to the proper remote account?
-            // let updated_sender = match &msg.sender {
-            //     // Update the sender
-            //     Sender::Account { id, chain: mut route } => {
-            //         route.push_chain(ibc_msg.client_chain);
-            //         Sender::Account { id: id.clone(), route: chain }
-            //     }
-            //     _ => msg.sender
-            // };
-            //
-            // let updated_recipient = match &msg.recipient {
-            //     // Update the recipient
-            //     Recipient::Account { id, chain: mut route } => {
-            //         route.verify()?;
-            //         route = match route {
-            //             // Unreachable because we just sent it to this chain
-            //             AccountTrace::Local => unreachable!(),
-            //             AccountTrace::Remote(trace) => {
-            //                 let mut new_trace = trace.clone();
-            //                 let _popped = new_trace.remove(0);
-            //                 // TODO: could verify trace is correct
-            //
-            //                 if new_trace.is_empty() {
-            //                     AccountTrace::Local
-            //                 } else {
-            //                     new_trace.into()
-            //                 }
-            //             }
-            //         };
-            //         Recipient::Account { id: id.clone(), chain: route }
-            //     }
-            //     _ => msg.recipient
-            // };
+        ServerIbcMessage::RouteMessage { msg, header: mut header } => {
+            // We've hopped one more time
+            header.current_hop += 1;
+            let msg = dbg!(route_msg(deps, msg, header, &app))?;
 
-            // let updated = Message {
-            //     sender: updated_sender,
-            //     recipient: updated_recipient,
-            //     ..msg
-            // };
-
-            metadata.current_hop += 1;
-
-            let msg = route_msg(deps, msg, metadata, &app)?;
+            println!("routed_msg: {:?}", msg);
 
             Ok(app.response("module_ibc").add_message(msg))
         }

@@ -5,6 +5,7 @@ use crate::client::msg::{ClientInstantiateMsg, AppMigrateMsg, ClientExecuteMsg, 
 pub mod msg;
 pub mod state;
 pub mod error;
+pub mod api;
 
 
 /// The type of the client that is used to build your client and access the Abstract SDK features.

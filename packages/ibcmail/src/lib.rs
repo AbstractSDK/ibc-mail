@@ -4,12 +4,14 @@ pub mod client;
 use abstract_sdk::std::objects::AccountId;
 use abstract_std::objects::account::AccountTrace;
 use abstract_std::objects::chain_name::ChainName;
+use const_format::concatcp;
+
 
 use cosmwasm_std::Timestamp;
 
 pub const IBCMAIL_NAMESPACE: &str = "ibcmail";
-pub const IBCMAIL_CLIENT: &str = "ibcmail:client";
-pub const IBCMAIL_SERVER_ID: &str = "ibcmail:server";
+pub const IBCMAIL_CLIENT_ID: &str = concatcp!(IBCMAIL_NAMESPACE, ":", "client");
+pub const IBCMAIL_SERVER_ID: &str = concatcp!(IBCMAIL_NAMESPACE, ":", "server");
 
 pub type MessageId = String;
 
@@ -44,9 +46,9 @@ pub struct Message {
 }
 
 #[cosmwasm_schema::cw_serde]
-pub struct Metadata {
+pub struct Header {
     pub current_hop: u32,
-    pub route: AccountTrace
+    pub route: Route
 }
 
 pub type Route = AccountTrace;
@@ -57,7 +59,7 @@ pub enum Recipient {
     Account {
         id: AccountId,
         chain: Option<ChainName>
-    }
+    },
 }
 
 impl Recipient {
@@ -75,7 +77,7 @@ pub enum Sender {
     Account {
         id: AccountId,
         chain: Option<ChainName>
-    }
+    },
 }
 
 impl Sender {

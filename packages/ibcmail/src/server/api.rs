@@ -44,7 +44,7 @@ impl<'a, T: ServerInterface> MailServer<'a, T> {
 
 
     /// returns the HUB module id
-    fn server_module_id(&self) -> ModuleId {
+    fn module_id(&self) -> ModuleId {
         self.module_id
     }
 
@@ -53,13 +53,13 @@ impl<'a, T: ServerInterface> MailServer<'a, T> {
         let adapters = self.base.adapters(self.deps);
 
         adapters.execute(
-            self.server_module_id(),
+            self.module_id(),
             msg,
         )
     }
 
     /// Route message
-    pub fn route_msg(
+    pub fn process_msg(
         &self,
         msg: Message,
         route: Option<Route>,
@@ -76,7 +76,7 @@ impl<'a, T: ServerInterface> MailServer<'a, T> {
         query_msg: ServerQueryMsg,
     ) -> AbstractSdkResult<R> {
         let adapters = self.base.adapters(self.deps);
-        adapters.query(self.server_module_id(), query_msg)
+        adapters.query(self.module_id(), query_msg)
     }
 
     // Queries

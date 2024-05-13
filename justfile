@@ -70,11 +70,11 @@ wasm:
     ${image}:0.14.0
 
 # Generate the schemas for the client contract
-schema:
-  cargo schema
+#schema:
+#  cargo schema
 
 # Generate the schemas for this client and publish them to the schemas repository for access in the Abstract frontend
-publish-schemas namespace name version: schema
+publish-schemas namespace name version:
   #!/usr/bin/env bash
   set -euxo pipefail
 

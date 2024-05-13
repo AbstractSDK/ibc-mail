@@ -14,12 +14,14 @@ See [this document](https://www.notion.so/abstract-money/IBC-Mail-744feaac39cb41
 **Desired Features**
 - [x] Send / receive messages to users on the same chain
 - [x] Send / receive messages to users on other chains
-- [ ] Sending to namespaces
+- [x] Send messages to users on other chains with hops in between
+- [ ] Batch messages in the server
+- [ ] messages to groups
+- [ ] Sending to namespaces OR
 - [ ] Sending to "namespace@remote.local"
-- [ ] Contacts contract
 - [ ] Sending funds in messages
 - [ ] Sending NFTs in messages
-- [ ] Send messages to users on other chains with hops in between
+- [ ] Contacts contract
 - [ ] Support for multiple versions of the client
 - [ ] (frontend) Encrypting messages with the recipient's public key
 

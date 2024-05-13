@@ -44,6 +44,7 @@ semver = "1.0"
 dotenv = "0.15.0"
 env_logger = "0.10.0"
 clap = { version = "4.3.7" }
+const_format = "0.2.32"
 
 # We have to patch everything because of abstract-interchain-tests
 [patch.crates-io]

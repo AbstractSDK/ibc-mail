@@ -13,7 +13,7 @@ use abstract_client::{AbstractClient, Publisher};
 use cw_orch::{anyhow, prelude::*, tokio::runtime::Runtime};
 use semver::Version;
 use ibcmail::client::msg::ClientInstantiateMsg;
-use ibcmail::IBCMAIL_CLIENT;
+use ibcmail::IBCMAIL_CLIENT_ID;
 use ibcmail_client::{APP_VERSION, ClientInterface};
 
 const LOCAL_MNEMONIC: &str = "clip hire initial neck maid actor venue client foam budget lock catalog sweet steak waste crater broccoli pipe steak sister coyote moment obvious choose";
@@ -32,7 +32,7 @@ fn main() -> anyhow::Result<()> {
         .build()
         .unwrap();
 
-    let app_namespace = Namespace::from_id(IBCMAIL_CLIENT)?;
+    let app_namespace = Namespace::from_id(IBCMAIL_CLIENT_ID)?;
 
     // Create an [`AbstractClient`]
     let abstract_client: AbstractClient<Daemon> = AbstractClient::new(daemon.clone())?;
