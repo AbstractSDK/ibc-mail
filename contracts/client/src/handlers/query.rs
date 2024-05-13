@@ -5,8 +5,8 @@ use cosmwasm_std::{to_json_binary, Binary, Deps, Env, Order, StdResult};
 use cw_storage_plus::Bound;
 use ibcmail::client::error::ClientError;
 use ibcmail::client::msg::{MessageFilter, MessagesResponse};
-use ibcmail::client::state::{RECEIVED, TEST};
-use ibcmail::MessageId;
+use ibcmail::client::state::{RECEIVED, SENT, TEST};
+use ibcmail::{MessageId, MessageStatus};
 
 pub const DEFAULT_LIMIT: u32 = 50;
 
@@ -19,31 +19,37 @@ pub fn query_handler(
     match msg {
         ClientQueryMsg::Config {} => to_json_binary(&query_config(deps)?),
         ClientQueryMsg::Messages {
+            message_type: status,
             filter,
             start_after,
             limit,
-        } => to_json_binary(&query_messages(deps, filter, start_after, limit)?),
+        } => to_json_binary(&query_messages(deps, status, filter, start_after, limit)?),
     }
     .map_err(Into::into)
 }
 
 fn query_messages(
     deps: Deps,
+    status: MessageStatus,
     _filter: Option<MessageFilter>,
     start: Option<MessageId>,
     limit: Option<u32>,
 ) -> ClientResult<MessagesResponse> {
+    let map = match status {
+        MessageStatus::Received => RECEIVED,
+        MessageStatus::Sent => SENT,
+        _ => return Err(ClientError::NotImplemented("message type".to_string())),
+    };
+
     let messages = cw_paginate::paginate_map(
-        &RECEIVED,
+        &map,
         deps.storage,
         start.as_ref().map(Bound::exclusive),
         limit,
         |_id, message| Ok::<_, ClientError>(message),
     )?;
 
-    let len = RECEIVED
-        .keys(deps.storage, None, None, Order::Ascending)
-        .count();
+    let len = map.keys(deps.storage, None, None, Order::Ascending).count();
 
     println!(
         "Messages: {:?}, test: {:?}, len: {:?}",

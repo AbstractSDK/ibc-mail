@@ -121,7 +121,7 @@ fn successful_install() -> anyhow::Result<()> {
 
 mod receive_msg {
 
-    use ibcmail::IBCMAIL_SERVER_ID;
+    use ibcmail::{MessageStatus, IBCMAIL_SERVER_ID};
     use speculoos::assert_that;
 
     use super::*;
@@ -157,7 +157,7 @@ mod receive_msg {
 
         assert_that!(res).is_ok();
 
-        let messages = app.messages(None, None, None)?;
+        let messages = app.messages(MessageStatus::Received, None, None, None)?;
         assert_that!(messages.messages).has_length(1);
 
         Ok(())
@@ -189,7 +189,7 @@ mod send_msg {
     use std::str::FromStr;
 
     use super::*;
-    use ibcmail::{NewMessage, IBCMAIL_CLIENT_ID};
+    use ibcmail::{MessageStatus, NewMessage, IBCMAIL_CLIENT_ID};
 
     #[test]
     fn can_send_local_message() -> anyhow::Result<()> {
@@ -253,7 +253,7 @@ mod send_msg {
 
         interchain.wait_ibc("archway-1", res?)?;
 
-        let myos_messages = arch_client.messages(None, None, None)?;
+        let myos_messages = arch_client.messages(MessageStatus::Received, None, None, None)?;
         assert_that!(myos_messages.messages).is_empty();
 
         let juno_client_1_module_addresses = juno_client
@@ -281,10 +281,11 @@ mod send_msg {
 
         let juno_mail_client = ClientInterface::new(IBCMAIL_CLIENT_ID, juno_env.env.clone());
         juno_mail_client.set_address(&juno_client_1_module_addresses.modules[0].1.clone());
-        let juno_mail_client_messages = juno_mail_client.messages(None, None, None)?;
+        let juno_mail_client_messages =
+            juno_mail_client.messages(MessageStatus::Received, None, None, None)?;
         assert_that!(juno_mail_client_messages.messages).has_length(1);
 
-        let juno_messages = juno_client.messages(None, None, None)?;
+        let juno_messages = juno_client.messages(MessageStatus::Received, None, None, None)?;
         assert_that!(juno_messages.messages).has_length(1);
 
         Ok(())
@@ -343,7 +344,7 @@ mod send_msg {
 
         interchain.wait_ibc("archway-1", res.clone())?;
 
-        let arch_messages = arch_client.messages(None, None, None)?;
+        let arch_messages = arch_client.messages(MessageStatus::Received, None, None, None)?;
         assert_that!(arch_messages.messages).is_empty();
 
         let neutron_client_1_module_addresses = neutron_client
@@ -362,7 +363,8 @@ mod send_msg {
 
         let neutron_mail_client = ClientInterface::new(IBCMAIL_CLIENT_ID, neutron_env.env.clone());
         neutron_mail_client.set_address(&neutron_client_1_module_addresses.modules[0].1.clone());
-        let neutron_mail_client_messages = neutron_mail_client.messages(None, None, None)?;
+        let neutron_mail_client_messages =
+            neutron_mail_client.messages(MessageStatus::Received, None, None, None)?;
         assert_that!(neutron_mail_client_messages.messages).has_length(1);
 
         // let juno_messages = neutron_client.messages(None, None, None)?;

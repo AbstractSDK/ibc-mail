@@ -1,5 +1,5 @@
 use crate::client::ClientApp;
-use crate::{Message, MessageId, NewMessage, Route, Sender};
+use crate::{Message, MessageId, MessageStatus, NewMessage, Route, Sender};
 use cosmwasm_schema::QueryResponses;
 
 // This is used for type safety and re-exporting the contract endpoint structs.
@@ -34,6 +34,7 @@ pub enum ClientExecuteMsg {
 pub enum ClientQueryMsg {
     #[returns(MessagesResponse)]
     Messages {
+        message_type: MessageStatus,
         filter: Option<MessageFilter>,
         limit: Option<u32>,
         start_after: Option<MessageId>,

@@ -96,3 +96,10 @@ impl Sender {
         }
     }
 }
+
+#[non_exhaustive]
+#[cosmwasm_schema::cw_serde]
+pub enum MessageStatus {
+    Sent,
+    Received,
+}
