@@ -43,20 +43,28 @@ pub struct Message {
     pub version: String
 }
 
+#[cosmwasm_schema::cw_serde]
+pub struct Metadata {
+    pub current_hop: u32,
+    pub route: AccountTrace
+}
+
+pub type Route = AccountTrace;
+
 #[non_exhaustive]
 #[cosmwasm_schema::cw_serde]
 pub enum Recipient {
     Account {
         id: AccountId,
-        route: AccountTrace
+        chain: Option<ChainName>
     }
 }
 
 impl Recipient {
-    pub fn account(account_id: AccountId, route: Option<AccountTrace>) -> Self {
+    pub fn account(account_id: AccountId, chain: Option<ChainName>) -> Self {
         Recipient::Account {
             id: account_id,
-            route: route.unwrap_or(AccountTrace::Local)
+            chain
         }
     }
 }
@@ -66,15 +74,15 @@ impl Recipient {
 pub enum Sender {
     Account {
         id: AccountId,
-        route: AccountTrace
+        chain: Option<ChainName>
     }
 }
 
 impl Sender {
-    pub fn account(account_id: AccountId, route: Option<AccountTrace>) -> Self {
+    pub fn account(account_id: AccountId, chain: Option<ChainName>) -> Self {
         Sender::Account {
             id: account_id,
-            route: route.unwrap_or(AccountTrace::Local)
+            chain
         }
     }
 }

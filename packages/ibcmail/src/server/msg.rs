@@ -1,5 +1,5 @@
 use cosmwasm_schema::QueryResponses;
-use crate::Message;
+use crate::{Message, Metadata, Route};
 use crate::server::ServerAdapter;
 
 // This is used for type safety and re-exporting the contract endpoint structs.
@@ -16,7 +16,7 @@ pub struct ServerInstantiateMsg {}
 #[cfg_attr(feature = "interface", impl_into(ExecuteMsg))]
 pub enum ServerExecuteMsg {
     /// Route a message
-    RouteMessage(Message),
+    ProcessMessage { msg: Message, route: Option<Route> },
     UpdateConfig {},
 }
 
@@ -25,7 +25,7 @@ pub enum ServerExecuteMsg {
 #[cosmwasm_schema::cw_serde]
 pub enum ServerIbcMessage {
     /// Route a message
-    RouteMessage(Message),
+    RouteMessage { msg: Message, metadata: Metadata },
 }
 
 /// App query messages

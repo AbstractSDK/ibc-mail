@@ -182,7 +182,7 @@ mod send_msg {
 
         let msg = NewMessage::new(Recipient::account(client2.account().id()?, None), "test-subject", "test-body");
 
-        let res = client1.send_message(msg);
+        let res = client1.send_message(msg, None);
 
         assert_that!(res).is_ok();
 
@@ -211,9 +211,9 @@ mod send_msg {
         let juno_client = juno_env.client1;
 
         // the trait `From<&str>` is not implemented for `abstract_app::objects::chain_name::ChainName`
-        let msg = NewMessage::new(Recipient::account(juno_client.account().id()?, Some(ChainName::from_string("juno".into())?)), "test-subject", "test-body");
+        let arch_to_juno_msg = NewMessage::new(Recipient::account(juno_client.account().id()?, Some(ChainName::from_string("juno".into())?)), "test-subject", "test-body");
 
-        let res = arch_client.send_message(msg);
+        let res = arch_client.send_message(arch_to_juno_msg, None);
 
         assert_that!(res).is_ok();
 
@@ -221,7 +221,6 @@ mod send_msg {
 
         let myos_messages = arch_client.messages(None, None, None)?;
         assert_that!(myos_messages.messages).is_empty();
-
 
 
         let juno_client_1_module_addresses = juno_client.account().module_addresses(vec![IBCMAIL_CLIENT.into()])?;

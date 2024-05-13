@@ -1,8 +1,9 @@
+use abstract_app::objects::account::AccountTrace;
 use abstract_app::sdk::ModuleRegistryInterface;
 use abstract_app::traits::{AbstractResponse, AccountIdentification, ModuleInterface};
 use cosmwasm_std::{Deps, DepsMut, ensure_eq, Env, MessageInfo, Order};
 
-use ibcmail::{IBCMAIL_SERVER_ID, Message, NewMessage, Recipient, Sender};
+use ibcmail::{IBCMAIL_SERVER_ID, Message, Metadata, NewMessage, Recipient, Route, Sender};
 use ibcmail::client::ClientApp;
 use ibcmail::client::state::{RECEIVED, SENT};
 use ibcmail::server::api::ServerInterface;
@@ -22,13 +23,14 @@ pub fn execute_handler(
 ) -> ClientResult {
     println!("Env: {:?}", env);
     match msg {
-        ClientExecuteMsg::SendMessage(message) => send_msg(deps, env, info, message, app),
+        ClientExecuteMsg::SendMessage { message, route } => send_msg(deps, env, info, message, route, app),
         ClientExecuteMsg::ReceiveMessage(message) => receive_msg(deps, info, message, app),
         ClientExecuteMsg::UpdateConfig {} => update_config(deps, info, app),
+        _ => Err(ClientError::NotImplemented("execute".to_string())),
     }
 }
 
-fn send_msg(deps: DepsMut, env: Env, info: MessageInfo, msg: NewMessage, app: ClientApp) -> ClientResult {
+fn send_msg(deps: DepsMut, env: Env, info: MessageInfo, msg: NewMessage, route: Option<Route>, app: ClientApp) -> ClientResult {
     // validate basic fields of message, construct message to send to server
     let to_send = Message {
         id: Uuid::new_v4().to_string(),
@@ -43,7 +45,7 @@ fn send_msg(deps: DepsMut, env: Env, info: MessageInfo, msg: NewMessage, app: Cl
     SENT.save(deps.storage, to_send.id.clone(), &to_send)?;
 
     let server = app.mail_server(deps.as_ref());
-    let route_msg = server.route_msg(to_send)?;
+    let route_msg = server.route_msg(to_send, route)?;
 
     Ok(app.response("send").add_message(route_msg))
 }

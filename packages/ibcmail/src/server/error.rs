@@ -1,6 +1,7 @@
 use abstract_adapter::AdapterError as AbstractAdapterError;
 use abstract_adapter::sdk::AbstractSdkError;
 use abstract_adapter::std::AbstractError;
+use abstract_std::objects::account::AccountTrace;
 use abstract_std::objects::module::ModuleInfo;
 use cosmwasm_std::StdError;
 use cw_asset::AssetError;
@@ -34,5 +35,11 @@ pub enum ServerError {
     UnauthorizedIbcModule(ModuleInfo),
 
     #[error("Unauthorized IBC message")]
-    UnauthorizedIbcMessage
+    UnauthorizedIbcMessage,
+
+    #[error("Invalid route hop")]
+    InvalidRoute {
+        route: AccountTrace,
+        hop: u32
+    }
 }

@@ -6,7 +6,7 @@ use abstract_adapter::std::objects::module::ModuleId;
 use cosmwasm_schema::serde::de::DeserializeOwned;
 use cosmwasm_std::{CosmosMsg, Deps};
 use cosmwasm_std::Uint128;
-use crate::{IBCMAIL_SERVER_ID, Message};
+use crate::{IBCMAIL_SERVER_ID, Message, Metadata, Route};
 
 use crate::server::msg::ServerQueryMsg;
 
@@ -62,8 +62,9 @@ impl<'a, T: ServerInterface> MailServer<'a, T> {
     pub fn route_msg(
         &self,
         msg: Message,
+        route: Option<Route>,
     ) -> AbstractSdkResult<CosmosMsg> {
-        self.request(ServerExecuteMsg::RouteMessage(msg))
+        self.request(ServerExecuteMsg::ProcessMessage { msg, route })
     }
 }
 

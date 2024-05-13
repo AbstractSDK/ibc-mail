@@ -1,7 +1,7 @@
-
+use abstract_std::objects::account::AccountTrace;
 use cosmwasm_schema::QueryResponses;
 use crate::client::ClientApp;
-use crate::{Message, MessageId, NewMessage, Recipient, Sender};
+use crate::{Message, MessageId, NewMessage, Recipient, Route, Sender};
 
 
 // This is used for type safety and re-exporting the contract endpoint structs.
@@ -13,6 +13,7 @@ pub struct ClientInstantiateMsg {}
 
 
 /// App execute messages
+#[non_exhaustive]
 #[cosmwasm_schema::cw_serde]
 #[cfg_attr(feature = "interface", derive(cw_orch::ExecuteFns))]
 #[cfg_attr(feature = "interface", impl_into(ExecuteMsg))]
@@ -20,7 +21,7 @@ pub enum ClientExecuteMsg {
     /// Receive a message from the server
     ReceiveMessage(Message),
     /// Send a message
-    SendMessage(NewMessage),
+    SendMessage { message: NewMessage, route: Option<Route> },
     /// Update the client configuration
     UpdateConfig {},
 }
