@@ -157,7 +157,7 @@ mod receive_msg {
 
         assert_that!(res).is_ok();
 
-        let messages = app.messages(MessageStatus::Received, None, None, None)?;
+        let messages = app.list_messages(MessageStatus::Received, None, None, None)?;
         assert_that!(messages.messages).has_length(1);
 
         Ok(())
@@ -186,9 +186,11 @@ mod receive_msg {
 mod send_msg {
     use abstract_app::objects::account::AccountTrace;
     use abstract_app::objects::chain_name::ChainName;
+    use abstract_app::std::version_control::ExecuteMsgFns;
     use std::str::FromStr;
 
     use super::*;
+    use ibcmail::server::error::ServerError;
     use ibcmail::{MessageStatus, NewMessage, IBCMAIL_CLIENT_ID};
 
     #[test]
@@ -208,6 +210,60 @@ mod send_msg {
         let res = client1.send_message(msg, None);
 
         assert_that!(res).is_ok();
+
+        Ok(())
+    }
+
+    #[test]
+    fn can_send_local_message_to_namespace() -> anyhow::Result<()> {
+        // Create a sender and mock env
+        let mock = MockBech32::new("mock");
+        let env = TestEnv::setup(mock)?;
+        let client1 = env.client1;
+        let client2 = env.client2;
+
+        let namespace = "test";
+
+        env.abs
+            .version_control()
+            .claim_namespace(client2.account().id()?, namespace.to_string())?;
+
+        let msg = NewMessage::new(
+            Recipient::namespace(namespace.try_into()?, None),
+            "test-subject",
+            "test-body",
+        );
+
+        let res = client1.send_message(msg, None);
+        assert_that!(res).is_ok();
+
+        Ok(())
+    }
+
+    #[test]
+    fn send_to_non_existent_namespace_fails() -> anyhow::Result<()> {
+        // Create a sender and mock env
+        let mock = MockBech32::new("mock");
+        let env = TestEnv::setup(mock)?;
+        let client1 = env.client1;
+
+        client1.account()
+
+        let bad_namespace: Namespace = "nope".try_into()?;
+
+        let msg = NewMessage::new(
+            Recipient::namespace(bad_namespace.clone(), None),
+            "test-subject",
+            "test-body",
+        );
+
+        let res = client1.send_message(msg, None);
+
+        assert_that!(res).is_err().matches(|e| {
+            e.root()
+                .to_string()
+                .contains(&ServerError::UnclaimedNamespace(bad_namespace.clone()).to_string())
+        });
 
         Ok(())
     }
@@ -253,7 +309,7 @@ mod send_msg {
 
         interchain.wait_ibc("archway-1", res?)?;
 
-        let myos_messages = arch_client.messages(MessageStatus::Received, None, None, None)?;
+        let myos_messages = arch_client.list_messages(MessageStatus::Received, None, None, None)?;
         assert_that!(myos_messages.messages).is_empty();
 
         let juno_client_1_module_addresses = juno_client
@@ -282,10 +338,10 @@ mod send_msg {
         let juno_mail_client = ClientInterface::new(IBCMAIL_CLIENT_ID, juno_env.env.clone());
         juno_mail_client.set_address(&juno_client_1_module_addresses.modules[0].1.clone());
         let juno_mail_client_messages =
-            juno_mail_client.messages(MessageStatus::Received, None, None, None)?;
+            juno_mail_client.list_messages(MessageStatus::Received, None, None, None)?;
         assert_that!(juno_mail_client_messages.messages).has_length(1);
 
-        let juno_messages = juno_client.messages(MessageStatus::Received, None, None, None)?;
+        let juno_messages = juno_client.list_messages(MessageStatus::Received, None, None, None)?;
         assert_that!(juno_messages.messages).has_length(1);
 
         Ok(())
@@ -344,7 +400,7 @@ mod send_msg {
 
         interchain.wait_ibc("archway-1", res.clone())?;
 
-        let arch_messages = arch_client.messages(MessageStatus::Received, None, None, None)?;
+        let arch_messages = arch_client.list_messages(MessageStatus::Received, None, None, None)?;
         assert_that!(arch_messages.messages).is_empty();
 
         let neutron_client_1_module_addresses = neutron_client
@@ -364,10 +420,10 @@ mod send_msg {
         let neutron_mail_client = ClientInterface::new(IBCMAIL_CLIENT_ID, neutron_env.env.clone());
         neutron_mail_client.set_address(&neutron_client_1_module_addresses.modules[0].1.clone());
         let neutron_mail_client_messages =
-            neutron_mail_client.messages(MessageStatus::Received, None, None, None)?;
+            neutron_mail_client.list_messages(MessageStatus::Received, None, None, None)?;
         assert_that!(neutron_mail_client_messages.messages).has_length(1);
 
-        // let juno_messages = neutron_client.messages(None, None, None)?;
+        // let juno_messages = neutron_client.list_messages(None, None, None)?;
         // assert_that!(juno_messages.messages).has_length(1);
 
         Ok(())

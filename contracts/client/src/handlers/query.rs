@@ -18,17 +18,26 @@ pub fn query_handler(
 ) -> ClientResult<Binary> {
     match msg {
         ClientQueryMsg::Config {} => to_json_binary(&query_config(deps)?),
-        ClientQueryMsg::Messages {
-            message_type: status,
+        ClientQueryMsg::ListMessages {
+            status,
             filter,
             start_after,
             limit,
-        } => to_json_binary(&query_messages(deps, status, filter, start_after, limit)?),
+        } => to_json_binary(&query_messages_list(
+            deps,
+            status,
+            filter,
+            start_after,
+            limit,
+        )?),
+        // ClientQueryMsg::Messages {
+        //     ids,
+        // } => to_json_binary(&query_messages_list(deps, ids)?),
     }
     .map_err(Into::into)
 }
 
-fn query_messages(
+fn query_messages_list(
     deps: Deps,
     status: MessageStatus,
     _filter: Option<MessageFilter>,

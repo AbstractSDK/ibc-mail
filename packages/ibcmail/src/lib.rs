@@ -2,8 +2,10 @@ pub mod client;
 pub mod server;
 
 use abstract_sdk::std::objects::AccountId;
+
 use abstract_std::objects::account::AccountTrace;
 use abstract_std::objects::chain_name::ChainName;
+use abstract_std::objects::namespace::Namespace;
 use const_format::concatcp;
 
 use cosmwasm_std::Timestamp;
@@ -59,6 +61,10 @@ pub enum Recipient {
         id: AccountId,
         chain: Option<ChainName>,
     },
+    Namespace {
+        namespace: Namespace,
+        chain: Option<ChainName>,
+    },
 }
 
 impl From<AccountId> for Recipient {
@@ -76,6 +82,9 @@ impl Recipient {
             id: account_id,
             chain,
         }
+    }
+    pub fn namespace(namespace: Namespace, chain: Option<ChainName>) -> Self {
+        Recipient::Namespace { namespace, chain }
     }
 }
 

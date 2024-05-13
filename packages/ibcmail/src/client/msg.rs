@@ -33,12 +33,17 @@ pub enum ClientExecuteMsg {
 #[derive(QueryResponses)]
 pub enum ClientQueryMsg {
     #[returns(MessagesResponse)]
-    Messages {
-        message_type: MessageStatus,
+    ListMessages {
+        status: MessageStatus,
         filter: Option<MessageFilter>,
         limit: Option<u32>,
         start_after: Option<MessageId>,
     },
+    // #[returns(MessagesResponse)]
+    // Messages {
+    //     status: MessageStatus,
+    //     ids: Vec<MessageId>,
+    // },
     #[returns(ConfigResponse)]
     Config {},
 }

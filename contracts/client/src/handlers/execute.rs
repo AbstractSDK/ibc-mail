@@ -79,7 +79,7 @@ fn receive_msg(deps: DepsMut, info: MessageInfo, msg: Message, app: App) -> Clie
         ClientError::NotMailServer {}
     );
 
-    check_recipient(deps.as_ref(), &msg.recipient, &app)?;
+    ensure_correct_recipient(deps.as_ref(), &msg.recipient, &app)?;
 
     RECEIVED.save(deps.storage, msg.id.clone(), &msg)?;
     let len = RECEIVED
@@ -93,18 +93,29 @@ fn receive_msg(deps: DepsMut, info: MessageInfo, msg: Message, app: App) -> Clie
         .add_attribute("message_id", &msg.id))
 }
 
-fn check_recipient(deps: Deps, recipient: &Recipient, app: &ClientApp) -> ClientResult<()> {
+fn ensure_correct_recipient(
+    deps: Deps,
+    recipient: &Recipient,
+    app: &ClientApp,
+) -> ClientResult<()> {
     println!("Checking recipient: {:?}", recipient);
     match recipient {
         Recipient::Account {
             id: ref account_id, ..
         } => {
-            // TODO: this check is screwed up in the tests somehow
             let our_id = app.account_id(deps)?;
             println!("recipient_id: {:?}, our_id: {:?}", account_id, our_id);
 
             // check that the recipient is the current account
             ensure_eq!(account_id, &our_id, ClientError::NotRecipient {});
+        }
+        Recipient::Namespace {
+            namespace,
+            chain: _,
+        } => {
+            let _namespace = app
+                .module_registry(deps)?
+                .query_namespace(namespace.to_owned())?;
         }
         _ => Err(ClientError::NotImplemented("recipients".to_string()))?,
     }
