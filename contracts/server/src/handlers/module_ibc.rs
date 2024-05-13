@@ -32,6 +32,9 @@ pub fn module_ibc_handler(
         ServerIbcMessage::RouteMessage { msg, mut header } => {
             // We've hopped one more time
             header.current_hop += 1;
+            if header.current_hop >= 1 {
+                return Err(ServerError::NotImplemented("test".to_string()))
+            }
             let msg = dbg!(route_msg(deps, msg, header, &app))?;
 
             println!("routed_msg: {:?}", msg);
