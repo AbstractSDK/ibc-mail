@@ -1,17 +1,17 @@
 use abstract_adapter::traits::AbstractResponse;
-use abstract_sdk::{AccountRegistry, AccountVerification, IbcInterface, ModuleInterface};
+use abstract_sdk::{AccountVerification, ModuleInterface};
 use abstract_sdk::features::ModuleIdentification;
-use abstract_std::app::{AppExecuteMsg, ExecuteMsg};
-use abstract_std::ibc::ModuleIbcMsg;
+use abstract_std::app::{ExecuteMsg};
+
 use abstract_std::{ibc_client, IBC_CLIENT, manager};
-use abstract_std::ibc_client::InstalledModuleIdentification;
+
 use abstract_std::manager::ModuleAddressesResponse;
 use abstract_std::objects::account::{AccountId, AccountTrace};
 use abstract_std::objects::module::ModuleInfo;
-use cosmwasm_std::{CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo, to_json_binary, wasm_execute, WasmMsg};
+use cosmwasm_std::{CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo, to_json_binary, wasm_execute};
 
 use ibcmail::{IBCMAIL_CLIENT, Message, Metadata, Recipient, Route};
-use ibcmail::client::error::ClientError;
+
 use ibcmail::client::msg::ClientExecuteMsg;
 
 use crate::contract::{Adapter, ServerResult};
@@ -41,7 +41,7 @@ fn process_message(deps: DepsMut, _info: MessageInfo, msg: Message, route: Optio
     } else {
         match msg.recipient.clone() {
             // TODO: add smarter routing
-            Recipient::Account { id, chain } => {
+            Recipient::Account { id: _, chain } => {
                 Ok(chain.map_or(AccountTrace::Local, |chain| AccountTrace::Remote(vec![chain.clone()])))
             },
             _ => return Err(ServerError::NotImplemented("Non-account recipients not supported".to_string()))
@@ -62,17 +62,17 @@ pub(crate) fn route_msg(deps: DepsMut, msg: Message, metadata: Metadata, app: &S
     println!("routing message: {:?}, metadata: {:?}", msg, metadata);
 
     match &msg.recipient {
-        Recipient::Account { id: ref account_id, ref chain } => {
+        Recipient::Account { id: ref account_id, chain: _ } => {
             match metadata.route {
                 AccountTrace::Local => {
                     // TODO: fix clone
-                    route_to_local_account(deps.as_ref(), msg.clone(), &account_id, app)
+                    route_to_local_account(deps.as_ref(), msg.clone(), account_id, app)
                 },
                 AccountTrace::Remote(ref chains) => {
                     println!("routing to chains: {:?}", chains);
                     // check index of hop. If we are on the final hop, route to local account
                     if metadata.current_hop == chains.len() as u32 {
-                        return route_to_local_account(deps.as_ref(), msg.clone(), &account_id, app)
+                        return route_to_local_account(deps.as_ref(), msg.clone(), account_id, app)
                     }
                     // TODO verify that the chain is a valid chain
 
@@ -80,7 +80,7 @@ pub(crate) fn route_msg(deps: DepsMut, msg: Message, metadata: Metadata, app: &S
 
                     let ibc_msg = ibc_client::ExecuteMsg::ModuleIbcAction {
                         // TODO: why is host chain not chain name
-                        host_chain: chains.get(metadata.current_hop as usize).ok_or(ServerError::InvalidRoute { route: metadata.route.clone(), hop: metadata.current_hop.clone() })?.to_string(),
+                        host_chain: chains.get(metadata.current_hop as usize).ok_or(ServerError::InvalidRoute { route: metadata.route.clone(), hop: metadata.current_hop })?.to_string(),
                         target_module: current_module_info,
                         msg: to_json_binary(&ServerIbcMessage::RouteMessage { msg, metadata })?,
                         callback_info: None,
@@ -94,7 +94,7 @@ pub(crate) fn route_msg(deps: DepsMut, msg: Message, metadata: Metadata, app: &S
             }
         },
         _ => {
-            return Err(ServerError::NotImplemented("Non-account recipients not supported".to_string()))
+            Err(ServerError::NotImplemented("Non-account recipients not supported".to_string()))
         }
     }
 }
@@ -104,7 +104,7 @@ fn route_to_local_account(deps: Deps, msg: Message, account_id: &AccountId, app:
 
     println!("routing to local account: {:?}", account_id);
     // This is a local message
-    let manager = registry.manager_address(&account_id)?;
+    let manager = registry.manager_address(account_id)?;
     let module_addresses = deps.querier.query_wasm_smart::<ModuleAddressesResponse>(manager, &manager::QueryMsg::ModuleAddresses {
         ids: vec![IBCMAIL_CLIENT.to_string()]
     })?;
@@ -121,7 +121,7 @@ fn route_to_local_account(deps: Deps, msg: Message, account_id: &AccountId, app:
         vec![]
     )?.into();
 
-    Ok::<CosmosMsg, ServerError>(exec_msg)
+    Ok(exec_msg)
 }
 
 /// Update the configuration of the client

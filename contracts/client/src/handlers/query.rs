@@ -18,7 +18,7 @@ pub fn query_handler(deps: Deps, _env: Env, _app: &App, msg: ClientQueryMsg) -> 
     .map_err(Into::into)
 }
 
-fn query_messages(deps: Deps, filter: Option<MessageFilter>, start: Option<MessageId>, limit: Option<u32>) -> ClientResult<MessagesResponse> {
+fn query_messages(deps: Deps, _filter: Option<MessageFilter>, start: Option<MessageId>, limit: Option<u32>) -> ClientResult<MessagesResponse> {
     let messages = cw_paginate::paginate_map(
         &RECEIVED,
         deps.storage,

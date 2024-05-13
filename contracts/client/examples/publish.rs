@@ -12,12 +12,13 @@ use abstract_client::{AbstractClient, Publisher};
 use clap::Parser;
 use cw_orch::{
     anyhow,
-    daemon::{ChainInfo, Daemon},
     environment::TxHandler,
     prelude::{networks::parse_network, DaemonBuilder},
     tokio::runtime::Runtime,
 };
 use cw_orch::prelude::*;
+use ibcmail::IBCMAIL_CLIENT;
+use ibcmail_client::ClientInterface;
 
 fn publish(networks: Vec<ChainInfo>) -> anyhow::Result<()> {
     // run for each requested network
@@ -29,7 +30,7 @@ fn publish(networks: Vec<ChainInfo>) -> anyhow::Result<()> {
             .chain(network)
             .build()?;
 
-        let app_namespace = Namespace::from_id(APP_ID)?;
+        let app_namespace = Namespace::from_id(IBCMAIL_CLIENT)?;
 
         // Create an [`AbstractClient`]
         let abstract_client: AbstractClient<Daemon> = AbstractClient::new(chain.clone())?;
@@ -42,7 +43,7 @@ fn publish(networks: Vec<ChainInfo>) -> anyhow::Result<()> {
         }
 
         // Publish the App to the Abstract Platform
-        publisher.publish_app::<AppInterface<Daemon>>()?;
+        publisher.publish_app::<ClientInterface<Daemon>>()?;
     }
     Ok(())
 }

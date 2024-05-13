@@ -4,7 +4,7 @@ pub mod client;
 use abstract_sdk::std::objects::AccountId;
 use abstract_std::objects::account::AccountTrace;
 use abstract_std::objects::chain_name::ChainName;
-use abstract_std::objects::module::ModuleVersion;
+
 use cosmwasm_std::Timestamp;
 
 pub const IBCMAIL_NAMESPACE: &str = "ibcmail";

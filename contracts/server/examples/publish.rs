@@ -7,18 +7,20 @@
 //! ```bash
 //! $ just publish uni-6 osmo-test-5
 //! ```
-use abstract_app::objects::namespace::Namespace;
+use abstract_adapter::objects::namespace::Namespace;
 use abstract_client::{AbstractClient, Publisher};
-use client::AppInterface;
 use clap::Parser;
 use cw_orch::{
     anyhow,
-    daemon::{ChainInfo, Daemon},
     environment::TxHandler,
     prelude::{DaemonBuilder, networks::parse_network},
     tokio::runtime::Runtime,
 };
-use ibcmail_client::APP_ID;
+use cw_orch::daemon::Daemon;
+use cw_orch::environment::ChainInfo;
+use ibcmail::IBCMAIL_SERVER_ID;
+use ibcmail::server::msg::ServerInstantiateMsg;
+use ibcmail_server::ServerInterface;
 
 fn publish(networks: Vec<ChainInfo>) -> anyhow::Result<()> {
     // run for each requested network
@@ -30,7 +32,7 @@ fn publish(networks: Vec<ChainInfo>) -> anyhow::Result<()> {
             .chain(network)
             .build()?;
 
-        let app_namespace = Namespace::from_id(APP_ID)?;
+        let app_namespace = Namespace::from_id(IBCMAIL_SERVER_ID)?;
 
         // Create an [`AbstractClient`]
         let abstract_client: AbstractClient<Daemon> = AbstractClient::new(chain.clone())?;
@@ -43,7 +45,7 @@ fn publish(networks: Vec<ChainInfo>) -> anyhow::Result<()> {
         }
 
         // Publish the App to the Abstract Platform
-        publisher.publish_app::<AppInterface<Daemon>>()?;
+        publisher.publish_adapter::<ServerInstantiateMsg, ServerInterface<Daemon>>(ServerInstantiateMsg {})?;
     }
     Ok(())
 }

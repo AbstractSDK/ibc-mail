@@ -1,12 +1,12 @@
 use abstract_app::objects::AccountId;
 use abstract_app::objects::namespace::Namespace;
-use abstract_app::std::ibc_client::state::IbcInfrastructure;
+
 use abstract_app::std::manager::ExecuteMsgFns;
 use abstract_client::{AbstractClient, Environment};
 use abstract_client::Application;
 use abstract_cw_orch_polytone::Polytone;
-use abstract_interface::AbstractIbc;
-use cosmwasm_std::coins;
+
+
 // Use prelude to get all the necessary imports
 use cw_orch::{anyhow, prelude::*};
 
@@ -108,10 +108,10 @@ fn successful_install() -> anyhow::Result<()> {
 }
 
 mod receive_msg {
-    use abstract_app::objects::AccountId;
+    
     use speculoos::assert_that;
-    use ibcmail::{IBCMAIL_SERVER_ID, Message, Recipient};
-    use ibcmail::client::error::ClientError;
+    use ibcmail::{IBCMAIL_SERVER_ID};
+    
     use super::*;
 
 
@@ -167,8 +167,8 @@ mod receive_msg {
 
 mod send_msg {
     use abstract_app::objects::chain_name::ChainName;
-    use cw_orch::daemon::networks::{ARCHWAY_1, JUNO_1};
-    use cw_orch::tokio::runtime::Runtime;
+    
+    
     use ibcmail::{IBCMAIL_CLIENT, NewMessage};
     use super::*;
 
@@ -235,7 +235,7 @@ mod send_msg {
         let test_id = juno_client.id();
         println!("test_address: {:?}, test_id: {:?}", test_address, test_id);
 
-        let mut juno_mail_client = ClientInterface::new(IBCMAIL_CLIENT, juno_env.env.clone());
+        let juno_mail_client = ClientInterface::new(IBCMAIL_CLIENT, juno_env.env.clone());
         juno_mail_client.set_address(&juno_client_1_module_addresses.modules[0].1.clone());
         let juno_mail_client_messages = juno_mail_client.messages(None, None, None)?;
         assert_that!(juno_mail_client_messages.messages).has_length(1);

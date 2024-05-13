@@ -1,4 +1,4 @@
-use abstract_app::objects::module::{ModuleInfo, ModuleVersion};
+use abstract_app::objects::module::{ModuleInfo};
 use abstract_app::std::manager::ModuleInstallConfig;
 use cosmwasm_std::Response;
 

@@ -1,7 +1,7 @@
-use abstract_std::objects::account::AccountTrace;
+
 use cosmwasm_schema::QueryResponses;
 use crate::client::ClientApp;
-use crate::{Message, MessageId, NewMessage, Recipient, Route, Sender};
+use crate::{Message, MessageId, NewMessage, Route, Sender};
 
 
 // This is used for type safety and re-exporting the contract endpoint structs.

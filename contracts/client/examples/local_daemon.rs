@@ -10,14 +10,11 @@
 
 use abstract_app::objects::namespace::Namespace;
 use abstract_client::{AbstractClient, Publisher};
-use client::{
-    contract::{APP_ID, APP_VERSION},
-    msg::AppInstantiateMsg,
-    AppInterface,
-};
 use cw_orch::{anyhow, prelude::*, tokio::runtime::Runtime};
 use semver::Version;
-use speculoos::assert_that;
+use ibcmail::client::msg::ClientInstantiateMsg;
+use ibcmail::IBCMAIL_CLIENT;
+use ibcmail_client::{APP_VERSION, ClientInterface};
 
 const LOCAL_MNEMONIC: &str = "clip hire initial neck maid actor venue client foam budget lock catalog sweet steak waste crater broccoli pipe steak sister coyote moment obvious choose";
 
@@ -35,7 +32,7 @@ fn main() -> anyhow::Result<()> {
         .build()
         .unwrap();
 
-    let app_namespace = Namespace::from_id(APP_ID)?;
+    let app_namespace = Namespace::from_id(IBCMAIL_CLIENT)?;
 
     // Create an [`AbstractClient`]
     let abstract_client: AbstractClient<Daemon> = AbstractClient::new(daemon.clone())?;
@@ -50,26 +47,13 @@ fn main() -> anyhow::Result<()> {
     }
 
     // Publish the App to the Abstract Platform
-    publisher.publish_app::<AppInterface<Daemon>>()?;
+    publisher.publish_app::<ClientInterface<Daemon>>()?;
 
     // Install the App on a new account
 
     let account = abstract_client.account_builder().build()?;
     // Installs the client on the Account
-    let app = account.install_app::<AppInterface<_>>(&AppInstantiateMsg { count: 0 }, &[])?;
-
-    // Import client's endpoint function traits for easy interactions.
-    use client::{AppExecuteMsgFns, AppQueryMsgFns};
-    assert_that!(app.count()?.count).is_equal_to(0);
-
-    // Execute the App
-    app.increment()?;
-
-    // Query the App again
-    assert_that!(app.count()?.count).is_equal_to(1);
-
-    // Note: the App is installed on a sub-account of the main account!
-    assert_ne!(account.id()?, app.account().id()?);
+    let _app = account.install_app::<ClientInterface<_>>(&ClientInstantiateMsg { }, &[])?;
 
     Ok(())
 }

@@ -1,5 +1,5 @@
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
-use ibcmail::client::state::{RECEIVED, TEST};
+use ibcmail::client::state::{TEST};
 
 use crate::contract::{App, ClientResult};
 use crate::msg::ClientInstantiateMsg;
@@ -10,7 +10,7 @@ pub fn instantiate_handler(
     _env: Env,
     _info: MessageInfo,
     _app: App,
-    msg: ClientInstantiateMsg,
+    _msg: ClientInstantiateMsg,
 ) -> ClientResult {
     let config: Config = Config {};
 

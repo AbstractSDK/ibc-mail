@@ -1,13 +1,13 @@
-use abstract_app::objects::account::AccountTrace;
+
 use abstract_app::sdk::ModuleRegistryInterface;
-use abstract_app::traits::{AbstractResponse, AccountIdentification, ModuleInterface};
+use abstract_app::traits::{AbstractResponse, AccountIdentification};
 use cosmwasm_std::{Deps, DepsMut, ensure_eq, Env, MessageInfo, Order};
 
-use ibcmail::{IBCMAIL_SERVER_ID, Message, Metadata, NewMessage, Recipient, Route, Sender};
+use ibcmail::{IBCMAIL_SERVER_ID, Message, NewMessage, Recipient, Route, Sender};
 use ibcmail::client::ClientApp;
 use ibcmail::client::state::{RECEIVED, SENT};
 use ibcmail::server::api::ServerInterface;
-use uuid::{uuid, Uuid};
+use uuid::{Uuid};
 
 use crate::contract::{App, ClientResult};
 use crate::error::ClientError;
@@ -30,7 +30,7 @@ pub fn execute_handler(
     }
 }
 
-fn send_msg(deps: DepsMut, env: Env, info: MessageInfo, msg: NewMessage, route: Option<Route>, app: ClientApp) -> ClientResult {
+fn send_msg(deps: DepsMut, env: Env, _info: MessageInfo, msg: NewMessage, route: Option<Route>, app: ClientApp) -> ClientResult {
     // validate basic fields of message, construct message to send to server
     let to_send = Message {
         id: Uuid::new_v4().to_string(),

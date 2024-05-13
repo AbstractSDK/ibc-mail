@@ -6,14 +6,15 @@ use abstract_std::objects::namespace::Namespace;
 use client::{
     *,
     error::ClientError,
-    msg::{ClientInstantiateMsg, ConfigResponse, CountResponse},
+    msg::{ClientInstantiateMsg, ConfigResponse},
 };
 use cw_controllers::AdminError;
 // Use prelude to get all the necessary imports
 use cw_orch::{anyhow, prelude::*};
 
 use cosmwasm_std::{Addr, coins};
-use ibcmail::server::msg::ServerInstantiateMsg;
+use ibcmail::IBCMAIL_SERVER_ID;
+use ibcmail::server::msg::{ServerInstantiateMsg, ServerQueryMsgFns};
 use ibcmail_server::ServerInterface;
 
 /// Set up the test environment with an Account that has the App installed
@@ -27,7 +28,7 @@ fn setup(
     // Create a sender and mock env
     let mock = MockBech32::new("mock");
     let sender = mock.sender();
-    let namespace = Namespace::from_id(IBCMAIL_CLIENT)?;
+    let namespace = Namespace::from_id(IBCMAIL_SERVER_ID)?;
 
     // You can set up Abstract with a builder.
     let client = AbstractClient::builder(mock).build()?;
@@ -37,11 +38,11 @@ fn setup(
     // Build a Publisher Account
     let publisher = client.publisher_builder(namespace).build()?;
 
-    publisher.publish_app::<ServerInterface<_>>()?;
+    publisher.publish_adapter::<ServerInstantiateMsg, ServerInterface<_>>(ServerInstantiateMsg {})?;
 
     let app = publisher
         .account()
-        .install_app::<ServerInterface<_>>(&ServerInstantiateMsg { count }, &[])?;
+        .install_adapter::<ServerInterface<_>>( &[])?;
 
     Ok((client, app))
 }
@@ -52,39 +53,5 @@ fn successful_install() -> anyhow::Result<()> {
 
     let config = app.config()?;
     assert_eq!(config, ConfigResponse {});
-    Ok(())
-}
-
-#[test]
-fn successful_increment() -> anyhow::Result<()> {
-    let (_, app) = setup(0)?;
-
-    app.increment()?;
-    let count: CountResponse = app.count()?;
-    assert_eq!(count.count, 1);
-    Ok(())
-}
-
-#[test]
-fn successful_reset() -> anyhow::Result<()> {
-    let (_, app) = setup(0)?;
-
-    app.reset(42)?;
-    let count: CountResponse = app.count()?;
-    assert_eq!(count.count, 42);
-    Ok(())
-}
-
-#[test]
-fn failed_reset() -> anyhow::Result<()> {
-    let (_, app) = setup(0)?;
-
-    let err: ClientError = app
-        .call_as(&Addr::unchecked("NotAdmin"))
-        .reset(9)
-        .unwrap_err()
-        .downcast()
-        .unwrap();
-    assert_eq!(err, ClientError::Admin(AdminError::NotAdmin {}));
     Ok(())
 }
