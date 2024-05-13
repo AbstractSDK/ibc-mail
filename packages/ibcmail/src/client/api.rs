@@ -1,5 +1,5 @@
 use abstract_adapter::sdk::{
-    features::{AccountIdentification, Dependencies, ModuleIdentification},
+    features::{Dependencies, ModuleIdentification},
     AbstractSdkResult,
 };
 use abstract_adapter::std::objects::module::ModuleId;
@@ -68,7 +68,7 @@ impl<'a, T: ClientInterface> MailClient<'a, T> {
             .query_wasm_smart::<ModuleAddressesResponse>(
                 manager,
                 &manager::QueryMsg::ModuleAddresses {
-                    ids: vec![IBCMAIL_CLIENT_ID.to_string()],
+                    ids: vec![self.module_id().to_string()],
                 },
             )?;
 

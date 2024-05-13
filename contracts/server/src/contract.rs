@@ -15,6 +15,7 @@ const ADAPTER: Adapter = Adapter::new(IBCMAIL_SERVER_ID, APP_VERSION, None)
     .with_query(handlers::query_handler)
     .with_module_ibc(handlers::module_ibc_handler)
     .with_dependencies(&[
+        // As we call the IBC client directly, we don't need to depend on the IBC client
         // IBC_CLIENT_DEP
     ]);
 

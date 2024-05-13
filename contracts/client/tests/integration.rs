@@ -247,8 +247,6 @@ mod send_msg {
         let env = TestEnv::setup(mock)?;
         let client1 = env.client1;
 
-        client1.account()
-
         let bad_namespace: Namespace = "nope".try_into()?;
 
         let msg = NewMessage::new(

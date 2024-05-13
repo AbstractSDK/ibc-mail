@@ -1,7 +1,6 @@
 pub mod contract;
 mod dependencies;
 mod handlers;
-mod replies;
 
 #[cfg(feature = "interface")]
 pub use contract::interface::ServerInterface;

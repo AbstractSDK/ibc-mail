@@ -1,7 +1,6 @@
 pub mod contract;
 mod dependencies;
 mod handlers;
-mod replies;
 
 /// The version of your app
 pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
