@@ -1,8 +1,6 @@
-
-use cosmwasm_schema::QueryResponses;
 use crate::client::ClientApp;
 use crate::{Message, MessageId, NewMessage, Route, Sender};
-
+use cosmwasm_schema::QueryResponses;
 
 // This is used for type safety and re-exporting the contract endpoint structs.
 abstract_app::app_msg_types!(ClientApp, ClientExecuteMsg, ClientQueryMsg);
@@ -10,7 +8,6 @@ abstract_app::app_msg_types!(ClientApp, ClientExecuteMsg, ClientQueryMsg);
 /// App instantiate message
 #[cosmwasm_schema::cw_serde]
 pub struct ClientInstantiateMsg {}
-
 
 /// App execute messages
 #[non_exhaustive]
@@ -21,7 +18,10 @@ pub enum ClientExecuteMsg {
     /// Receive a message from the server
     ReceiveMessage(Message),
     /// Send a message
-    SendMessage { message: NewMessage, route: Option<Route> },
+    SendMessage {
+        message: NewMessage,
+        route: Option<Route>,
+    },
     /// Update the client configuration
     UpdateConfig {},
 }
@@ -49,7 +49,6 @@ pub struct MessageFilter {
 
 #[cosmwasm_schema::cw_serde]
 pub struct AppMigrateMsg {}
-
 
 #[cosmwasm_schema::cw_serde]
 pub struct ConfigResponse {}

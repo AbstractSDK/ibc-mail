@@ -1,6 +1,6 @@
+use crate::{Message, MessageId};
 use cosmwasm_std::Addr;
 use cw_storage_plus::{Item, Map};
-use crate::{Message, MessageId};
 
 #[cosmwasm_schema::cw_serde]
 pub struct Config {}

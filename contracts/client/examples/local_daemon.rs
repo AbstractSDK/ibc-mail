@@ -11,10 +11,10 @@
 use abstract_app::objects::namespace::Namespace;
 use abstract_client::{AbstractClient, Publisher};
 use cw_orch::{anyhow, prelude::*, tokio::runtime::Runtime};
-use semver::Version;
 use ibcmail::client::msg::ClientInstantiateMsg;
 use ibcmail::IBCMAIL_CLIENT_ID;
-use ibcmail_client::{APP_VERSION, ClientInterface};
+use ibcmail_client::{ClientInterface, APP_VERSION};
+use semver::Version;
 
 const LOCAL_MNEMONIC: &str = "clip hire initial neck maid actor venue client foam budget lock catalog sweet steak waste crater broccoli pipe steak sister coyote moment obvious choose";
 
@@ -53,7 +53,7 @@ fn main() -> anyhow::Result<()> {
 
     let account = abstract_client.account_builder().build()?;
     // Installs the client on the Account
-    let _app = account.install_app::<ClientInterface<_>>(&ClientInstantiateMsg { }, &[])?;
+    let _app = account.install_app::<ClientInterface<_>>(&ClientInstantiateMsg {}, &[])?;
 
     Ok(())
 }

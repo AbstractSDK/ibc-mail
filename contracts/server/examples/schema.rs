@@ -1,5 +1,5 @@
-use ibcmail_server::contract::Adapter;
 use cosmwasm_schema::remove_schemas;
+use ibcmail_server::contract::Adapter;
 use std::env::current_dir;
 use std::fs::create_dir_all;
 

@@ -35,7 +35,12 @@ required-features = ["daemon"]
 default = ["export"]
 export = []
 schema = ["abstract-adapter/schema"]
-interface = ["export", "dep:abstract-interface", "dep:cw-orch", "ibcmail/interface"]
+interface = [
+  "export",
+  "dep:abstract-interface",
+  "dep:cw-orch",
+  "ibcmail/interface",
+]
 daemon = ["interface", "cw-orch/daemon"]
 
 [dependencies]

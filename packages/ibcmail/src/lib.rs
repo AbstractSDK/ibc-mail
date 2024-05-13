@@ -1,11 +1,10 @@
-pub mod server;
 pub mod client;
+pub mod server;
 
 use abstract_sdk::std::objects::AccountId;
 use abstract_std::objects::account::AccountTrace;
 use abstract_std::objects::chain_name::ChainName;
 use const_format::concatcp;
-
 
 use cosmwasm_std::Timestamp;
 
@@ -28,7 +27,7 @@ impl NewMessage {
         Self {
             recipient,
             subject: subject.into(),
-            body: body.into()
+            body: body.into(),
         }
     }
 }
@@ -42,13 +41,13 @@ pub struct Message {
     pub body: String,
     pub timestamp: Timestamp,
     // TODO : use semver
-    pub version: String
+    pub version: String,
 }
 
 #[cosmwasm_schema::cw_serde]
 pub struct Header {
     pub current_hop: u32,
-    pub route: Route
+    pub route: Route,
 }
 
 pub type Route = AccountTrace;
@@ -58,15 +57,24 @@ pub type Route = AccountTrace;
 pub enum Recipient {
     Account {
         id: AccountId,
-        chain: Option<ChainName>
+        chain: Option<ChainName>,
     },
+}
+
+impl From<AccountId> for Recipient {
+    fn from(account_id: AccountId) -> Self {
+        Recipient::Account {
+            id: account_id,
+            chain: None,
+        }
+    }
 }
 
 impl Recipient {
     pub fn account(account_id: AccountId, chain: Option<ChainName>) -> Self {
         Recipient::Account {
             id: account_id,
-            chain
+            chain,
         }
     }
 }
@@ -76,7 +84,7 @@ impl Recipient {
 pub enum Sender {
     Account {
         id: AccountId,
-        chain: Option<ChainName>
+        chain: Option<ChainName>,
     },
 }
 
@@ -84,7 +92,7 @@ impl Sender {
     pub fn account(account_id: AccountId, chain: Option<ChainName>) -> Self {
         Sender::Account {
             id: account_id,
-            chain
+            chain,
         }
     }
 }

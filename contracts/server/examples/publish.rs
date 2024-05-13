@@ -10,16 +10,16 @@
 use abstract_adapter::objects::namespace::Namespace;
 use abstract_client::{AbstractClient, Publisher};
 use clap::Parser;
+use cw_orch::daemon::Daemon;
+use cw_orch::environment::ChainInfo;
 use cw_orch::{
     anyhow,
     environment::TxHandler,
-    prelude::{DaemonBuilder, networks::parse_network},
+    prelude::{networks::parse_network, DaemonBuilder},
     tokio::runtime::Runtime,
 };
-use cw_orch::daemon::Daemon;
-use cw_orch::environment::ChainInfo;
-use ibcmail::IBCMAIL_SERVER_ID;
 use ibcmail::server::msg::ServerInstantiateMsg;
+use ibcmail::IBCMAIL_SERVER_ID;
 use ibcmail_server::ServerInterface;
 
 fn publish(networks: Vec<ChainInfo>) -> anyhow::Result<()> {
@@ -45,7 +45,9 @@ fn publish(networks: Vec<ChainInfo>) -> anyhow::Result<()> {
         }
 
         // Publish the App to the Abstract Platform
-        publisher.publish_adapter::<ServerInstantiateMsg, ServerInterface<Daemon>>(ServerInstantiateMsg {})?;
+        publisher.publish_adapter::<ServerInstantiateMsg, ServerInterface<Daemon>>(
+            ServerInstantiateMsg {},
+        )?;
     }
     Ok(())
 }

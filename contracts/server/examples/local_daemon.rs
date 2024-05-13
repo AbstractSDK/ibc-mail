@@ -14,9 +14,9 @@ use abstract_std::objects::namespace::Namespace;
 use cw_orch::{anyhow, prelude::*, tokio::runtime::Runtime};
 use semver::Version;
 
-use ibcmail::IBCMAIL_SERVER_ID;
 use ibcmail::server::msg::ServerInstantiateMsg;
-use ibcmail_server::{APP_VERSION, ServerInterface};
+use ibcmail::IBCMAIL_SERVER_ID;
+use ibcmail_server::{ServerInterface, APP_VERSION};
 
 const LOCAL_MNEMONIC: &str = "clip hire initial neck maid actor venue client foam budget lock catalog sweet steak waste crater broccoli pipe steak sister coyote moment obvious choose";
 
@@ -49,7 +49,9 @@ fn main() -> anyhow::Result<()> {
     }
 
     // Publish the App to the Abstract Platform
-    publisher.publish_adapter::<ServerInstantiateMsg, ServerInterface<Daemon>>(ServerInstantiateMsg {})?;
+    publisher.publish_adapter::<ServerInstantiateMsg, ServerInterface<Daemon>>(
+        ServerInstantiateMsg {},
+    )?;
 
     // Install the App on a new account
 

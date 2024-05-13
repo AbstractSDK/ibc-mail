@@ -10,13 +10,13 @@
 use abstract_app::objects::namespace::Namespace;
 use abstract_client::{AbstractClient, Publisher};
 use clap::Parser;
+use cw_orch::prelude::*;
 use cw_orch::{
     anyhow,
     environment::TxHandler,
     prelude::{networks::parse_network, DaemonBuilder},
     tokio::runtime::Runtime,
 };
-use cw_orch::prelude::*;
 use ibcmail::IBCMAIL_CLIENT_ID;
 use ibcmail_client::ClientInterface;
 

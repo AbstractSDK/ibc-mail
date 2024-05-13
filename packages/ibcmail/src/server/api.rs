@@ -1,12 +1,12 @@
+use crate::{Message, Route, IBCMAIL_SERVER_ID};
 use abstract_adapter::sdk::{
-    AbstractSdkResult,
-    AdapterInterface, features::{AccountIdentification, Dependencies, ModuleIdentification},
+    features::{AccountIdentification, Dependencies, ModuleIdentification},
+    AbstractSdkResult, AdapterInterface,
 };
 use abstract_adapter::std::objects::module::ModuleId;
 use cosmwasm_schema::serde::de::DeserializeOwned;
-use cosmwasm_std::{CosmosMsg, Deps};
 use cosmwasm_std::Uint128;
-use crate::{IBCMAIL_SERVER_ID, Message, Route};
+use cosmwasm_std::{CosmosMsg, Deps};
 
 use crate::server::msg::ServerQueryMsg;
 
@@ -14,9 +14,7 @@ use crate::server::msg::ServerExecuteMsg;
 
 // API for Abstract SDK users
 /// Interact with the hub adapter in your module.
-pub trait ServerInterface:
-AccountIdentification + Dependencies + ModuleIdentification
-{
+pub trait ServerInterface: AccountIdentification + Dependencies + ModuleIdentification {
     /// Construct a new money_market interface.
     fn mail_server<'a>(&'a self, deps: Deps<'a>) -> MailServer<Self> {
         MailServer {
@@ -42,7 +40,6 @@ impl<'a, T: ServerInterface> MailServer<'a, T> {
         Self { module_id, ..self }
     }
 
-
     /// returns the HUB module id
     fn module_id(&self) -> ModuleId {
         self.module_id
@@ -52,18 +49,11 @@ impl<'a, T: ServerInterface> MailServer<'a, T> {
     fn request(&self, msg: ServerExecuteMsg) -> AbstractSdkResult<CosmosMsg> {
         let adapters = self.base.adapters(self.deps);
 
-        adapters.execute(
-            self.module_id(),
-            msg,
-        )
+        adapters.execute(self.module_id(), msg)
     }
 
     /// Route message
-    pub fn process_msg(
-        &self,
-        msg: Message,
-        route: Option<Route>,
-    ) -> AbstractSdkResult<CosmosMsg> {
+    pub fn process_msg(&self, msg: Message, route: Option<Route>) -> AbstractSdkResult<CosmosMsg> {
         self.request(ServerExecuteMsg::ProcessMessage { msg, route })
     }
 }
@@ -71,18 +61,13 @@ impl<'a, T: ServerInterface> MailServer<'a, T> {
 /// Queries
 impl<'a, T: ServerInterface> MailServer<'a, T> {
     /// Do a query in the MONEY_MARKET
-    pub fn query<R: DeserializeOwned>(
-        &self,
-        query_msg: ServerQueryMsg,
-    ) -> AbstractSdkResult<R> {
+    pub fn query<R: DeserializeOwned>(&self, query_msg: ServerQueryMsg) -> AbstractSdkResult<R> {
         let adapters = self.base.adapters(self.deps);
         adapters.query(self.module_id(), query_msg)
     }
 
     // Queries
-    pub fn config(
-        &self,
-    ) -> AbstractSdkResult<Uint128> {
+    pub fn config(&self) -> AbstractSdkResult<Uint128> {
         self.query(ServerQueryMsg::Config {})
     }
 }

@@ -1,5 +1,5 @@
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
-use ibcmail::client::state::{TEST};
+use ibcmail::client::state::TEST;
 
 use crate::contract::{App, ClientResult};
 use crate::msg::ClientInstantiateMsg;
