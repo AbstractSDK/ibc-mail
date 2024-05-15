@@ -127,7 +127,9 @@ pub(crate) fn route_msg(
 
             println!("ibc_msg: {:?}", ibc_msg);
             // TODO: suggested syntax
-            // let ibc_msg = app.ibc_client().module_ibc_action(chain, module,msg, callback)
+            // let ibc_msg = app.ibc_client().module_ibc_action(chain, target_module, msg, callback)
+            // TODO: We could additionally have something like to avoid having to create the module info object
+            // let ibc_msg = app.ibc_client().self_module_ibc_action(chain, msg, callback)
 
             let ibc_client_addr = app
                 .module_registry(deps.as_ref())?

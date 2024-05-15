@@ -71,6 +71,7 @@ fn receive_msg(deps: DepsMut, info: MessageInfo, msg: Message, app: App) -> Clie
     // TODO: remove print
     println!("Received message: {:?}", msg);
     // check that the message sender is the server... this requires the server to be the proper version
+    // TODO, should we have a function that is able to check against a module ID directly in the SDK ?
     let sender_module = app
         .module_registry(deps.as_ref())?
         .module_info(info.sender)
@@ -88,7 +89,6 @@ fn receive_msg(deps: DepsMut, info: MessageInfo, msg: Message, app: App) -> Clie
     let len = RECEIVED
         .keys(deps.storage, None, None, Order::Ascending)
         .count();
-
     println!("Received length: {:?}", len);
 
     Ok(app
