@@ -15,15 +15,17 @@ See [this document](https://www.notion.so/abstract-money/IBC-Mail-744feaac39cb41
 - [x] Send / receive messages to users on the same chain
 - [x] Send / receive messages to users on other chains
 - [x] Send messages to users on other chains with hops in between
-- [ ] Batch messages in the server
+- [ ] Batch messages in the server (request the server to send certain messages by ids, and then the server will reach out to the clients to send the messages. This allows for batching messages to save on gas costs)
 - [ ] messages to groups
 - [ ] Sending to namespaces OR
 - [ ] Sending to "namespace@remote.local"
-- [ ] Sending funds in messages
-- [ ] Sending NFTs in messages
+- [ ] Sending funds in messages (attachments)
+- [ ] Sending NFTs in messages (attachments)
 - [ ] Contacts contract
 - [ ] Support for multiple versions of the client
 - [ ] (frontend) Encrypting messages with the recipient's public key
+- [ ] Idea: usernames for users, so that they can be identified by their username instead of their address. These would be preferable over using the namespaces, though the issue is that the Server is an adapter and state can't be shared between diferent adapter versions.
+
 
 ## Using the Justfile
 
