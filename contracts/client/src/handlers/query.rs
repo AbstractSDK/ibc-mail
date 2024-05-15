@@ -56,6 +56,7 @@ fn query_messages_list(
         |_id, message| Ok::<_, ClientError>(message),
     )?;
 
+    // TODO REMOVE, This could run out of gas
     let len = map.keys(deps.storage, None, None, Order::Ascending).count();
 
     println!(
