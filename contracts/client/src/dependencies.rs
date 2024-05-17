@@ -16,7 +16,7 @@ impl<Chain: cw_orch::environment::CwEnv> abstract_interface::DependencyCreation
         _configuration: Self::DependenciesConfig,
     ) -> Result<Vec<ModuleInstallConfig>, abstract_interface::AbstractInterfaceError> {
         let adapter_install_config = ModuleInstallConfig::new(
-            ModuleInfo::from_id(ibcmail::IBCMAIL_SERVER_ID, crate::APP_VERSION.into())?,
+            ModuleInfo::from_id_latest(ibcmail::IBCMAIL_SERVER_ID)?,
             None,
         );
 

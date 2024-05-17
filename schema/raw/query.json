@@ -51,6 +51,34 @@
     {
       "type": "object",
       "required": [
+        "messages"
+      ],
+      "properties": {
+        "messages": {
+          "type": "object",
+          "required": [
+            "ids",
+            "status"
+          ],
+          "properties": {
+            "ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "status": {
+              "$ref": "#/definitions/MessageStatus"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
         "config"
       ],
       "properties": {

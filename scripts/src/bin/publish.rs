@@ -50,10 +50,10 @@ fn publish(networks: Vec<ChainInfo>) -> anyhow::Result<()> {
         // Publish the App to the Abstract Platform
         publisher.publish_app::<ClientInterface<Daemon>>()?;
 
-        // // Publish the App to the Abstract Platform
-        // publisher.publish_adapter::<ServerInstantiateMsg, ServerInterface<Daemon>>(
-        //     ServerInstantiateMsg {},
-        // )?;
+        // Publish the App to the Abstract Platform
+        publisher.publish_adapter::<ServerInstantiateMsg, ServerInterface<Daemon>>(
+            ServerInstantiateMsg {},
+        )?;
 
     }
     Ok(())

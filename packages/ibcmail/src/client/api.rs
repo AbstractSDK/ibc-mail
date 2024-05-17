@@ -69,6 +69,8 @@ impl<'a, T: ClientInterface> MailClient<'a, T> {
                 },
             )?;
 
+        // TODO: this panics if the module is not found
+
         Ok(module_addresses.modules[0].1.clone())
     }
 

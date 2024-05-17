@@ -1,9 +1,9 @@
 {
-  "name": "App",
-  "description": "App description.",
+  "name": "IBC Mail Client",
+  "description": "Send and receive mail!",
   "website": "",
   "docs": "",
   "type": "app",
-  "icon": "GiTrade",
+  "icon": "FaMailBulk",
   "enabled": true
 }
