@@ -7,57 +7,32 @@
 //! ```bash
 //! $ just publish uni-6 osmo-test-5
 //! ```
-use abstract_app::{
-    objects::{
-        account::AccountTrace,
-        chain_name::ChainName,
-        module::{ModuleInfo, ModuleStatus, ModuleVersion},
-        module_reference::ModuleReference,
-        namespace::Namespace,
-    },
-    std::{
-        ibc_client::QueryMsgFns as IbcQueryFns,
-        version_control::{ExecuteMsgFns, ModuleFilter, QueryMsgFns},
-        IBC_HOST,
-    },
-};
+use abstract_app::objects::account::AccountTrace;
+use abstract_app::objects::chain_name::ChainName;
+use abstract_app::objects::module::{ModuleInfo, ModuleStatus, ModuleVersion};
+use abstract_app::objects::module_reference::ModuleReference;
+use abstract_app::objects::namespace::Namespace;
+use abstract_app::std::ibc_client::QueryMsgFns as IbcQueryFns;
+use abstract_app::std::version_control::{ExecuteMsgFns, ModuleFilter, QueryMsgFns};
+use abstract_app::std::IBC_HOST;
 use abstract_client::AbstractClient;
 use abstract_interface::{Abstract, VersionControl};
 use clap::Parser;
-use cw_orch::{
-    anyhow,
-    daemon::networks::{ARCHWAY_1, NEUTRON_1},
-    prelude::*,
-    tokio::runtime::Runtime,
-};
-use ibcmail::{client::msg::ClientExecuteMsgFns, NewMessage, IBCMAIL_NAMESPACE};
+use cw_orch::daemon::networks::{ARCHWAY_1, CONSTANTINE_3, NEUTRON_1};
+use cw_orch::prelude::*;
+use cw_orch::{anyhow, tokio::runtime::Runtime};
+use cw_orch::environment::{ChainKind, NetworkInfo};
+use client::ClientInterface;
 
-use ibcmail_client::ClientInterface;
-
-pub const MYOS_NETWORK: NetworkInfo = NetworkInfo {
-    chain_name: "celeswasm",
-    pub_address_prefix: "wasm",
-    coin_type: 118u32,
-};
-
-/// Archway Docs: <https://docs.archway.io/resources/networks>
-/// Parameters: <https://testnet.mintscan.io/archway-testnet/parameters>
-pub const MYOS: ChainInfo = ChainInfo {
-    kind: ChainKind::Testnet,
-    chain_id: "celeswasm",
-    gas_denom: "uwasm",
-    gas_price: 0.01,
-    grpc_urls: &["https://ec2-100-25-222-131.compute-1.amazonaws.com:36657"],
-    network_info: MYOS_NETWORK,
-    lcd_url: None,
-    fcd_url: None,
-};
+use ibcmail::client::msg::{ClientExecuteMsgFns, ClientInstantiateMsg, ClientQueryMsgFns};
+use ibcmail::{NewMessage, IBCMAIL_NAMESPACE, IBCMAIL_CLIENT_ID, IBCMAIL_SERVER_ID, MessageStatus};
+use ibcmail_scripts::MYOS;
 
 
 const SRC: ChainInfo = MYOS;
-const DST: ChainInfo = ARCHWAY_1;
+const DST: ChainInfo = CONSTANTINE_3;
 
-const TEST_NAMESPACE: &str = "mailtest";
+const TEST_NAMESPACE: &str = "mailtest010";
 
 fn test() -> anyhow::Result<()> {
     let rt = Runtime::new()?;
@@ -79,8 +54,8 @@ fn test() -> anyhow::Result<()> {
         .list_remote_hosts()?;
     println!("hosts: {:?}", hosts);
 
-    update_ibc_host(abs_src.version_control())?;
-    update_ibc_host(abs_dst.version_control())?;
+    // update_ibc_host(abs_src.version_control())?;
+    // update_ibc_host(abs_dst.version_control())?;
 
     approve_mail_modules(abs_src.version_control())?;
     approve_mail_modules(abs_dst.version_control())?;
@@ -102,18 +77,37 @@ fn test() -> anyhow::Result<()> {
         .install_on_sub_account(false)
         .namespace(Namespace::new(TEST_NAMESPACE)?)
         .build()?;
-    // let app = src_acc.install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {},&[])?;
-    // app.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
-    let src_client = src_acc.application::<ClientInterface<_>>()?;
+
+    let src_client = if src_acc.module_infos()?.module_infos.iter().any(|m| m.id == IBCMAIL_CLIENT_ID) {
+        let app = src_acc.application::<ClientInterface<_>>()?;
+        app.account().as_ref().manager.upgrade_module(IBCMAIL_CLIENT_ID, &cosmwasm_std::Empty {})?;
+        app
+    } else {
+        let app = src_acc.install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {},&[])?;
+        app.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
+        app
+    };
+
+    let sent_messages = src_client.list_messages(MessageStatus::Sent, None, None, None)?;
+    let received_messages = src_client.list_messages(MessageStatus::Received, None, None, None)?;
+    println!("sent_messages: {:?}, received_messages: {:?}", sent_messages, received_messages);
+
 
     let dst_acc = abs_dst
         .account_builder()
         .install_on_sub_account(false)
         .namespace(Namespace::new(TEST_NAMESPACE)?)
         .build()?;
-    // let dst_acc = abs_dst.account_builder().sub_account(&abs_dst.account_from(AccountId::local(1))?).namespace(Namespace::new("mailtest")?).build()?;
 
-    let _dst_client = dst_acc.application::<ClientInterface<_>>()?;
+    let dst_client = if dst_acc.module_infos()?.module_infos.iter().any(|m| m.id == IBCMAIL_CLIENT_ID) {
+        let app = dst_acc.application::<ClientInterface<_>>()?;
+        app
+    } else {
+        let app = dst_acc.install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {},&[])?;
+        app.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
+        app
+    };
+    // let dst_acc = abs_dst.account_builder().sub_account(&abs_dst.account_from(AccountId::local(1))?).namespace(Namespace::new("mailtest")?).build()?;
 
     let send = src_client.send_message(
         NewMessage::new(dst_acc.id()?.into(), "test-subject", "test-body"),
@@ -123,6 +117,19 @@ fn test() -> anyhow::Result<()> {
     )?;
 
     interchain.wait_ibc(SRC.chain_id, send)?;
+
+    // Rollup has weird formatting of IBC messages
+    if SRC.chain_id == MYOS.chain_id {
+        // wait for 10 seconds
+        std::thread::sleep(std::time::Duration::from_secs(10));
+    }
+
+
+    let mut sent_messages = src_client.list_messages(MessageStatus::Sent, None, None, None)?.messages;
+    sent_messages.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
+    let sent_message = sent_messages.last().unwrap();
+
+    let received_messages = dst_client.list_messages(MessageStatus::Received, None, None, None)?.messages;
 
     Ok(())
 }
@@ -182,5 +189,5 @@ fn main() {
     dotenv::dotenv().ok();
     env_logger::init();
     let _args = Arguments::parse();
-    test().unwrap();
+    dbg!(test()).unwrap();
 }

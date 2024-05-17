@@ -1,6 +1,6 @@
 [package]
-name = "ibcmail-server"
-version = "0.1.0"
+name = "ibcmail-scripts"
+version = "0.0.1"
 authors = [
   "CyberHoward <cyberhoward@protonmail.com>",
   "Adair <adair@abstract.money>",
@@ -14,34 +14,8 @@ license = "GPL-3.0-or-later"
 keywords = ["cosmos", "cosmwasm", "abstractsdk"]
 resolver = "2"
 
-exclude = ["contract.wasm", "hash.txt"]
 
 [lib]
-crate-type = ["cdylib", "rlib"]
-
-[[example]]
-name = "schema"
-required-features = ["schema"]
-
-[[example]]
-name = "local_daemon"
-required-features = ["daemon"]
-
-[[example]]
-name = "publish"
-required-features = ["daemon"]
-
-[features]
-default = ["export"]
-export = []
-schema = ["abstract-adapter/schema"]
-interface = [
-  "export",
-  "dep:abstract-interface",
-  "dep:cw-orch",
-  "ibcmail/interface",
-]
-daemon = ["interface", "cw-orch/daemon"]
 
 [dependencies]
 cosmwasm-std = { workspace = true }
@@ -51,23 +25,21 @@ cw-storage-plus = { workspace = true }
 thiserror = { workspace = true }
 schemars = { workspace = true }
 cw-asset = { workspace = true }
-abstract-adapter = { workspace = true }
-abstract-sdk = { workspace = true }
-abstract-std = { workspace = true }
-abstract-interface = { workspace = true, optional = true }
 ibcmail = { workspace = true }
+abstract-interface = { workspace = true }
 
-# Dependencies for interface
-cw-orch = { workspace = true, optional = true }
-log = "0.4.21"
-
-[dev-dependencies]
 client = { workspace = true, features = ["interface"] }
+server = { workspace = true, features = ["interface"] }
 abstract-client = { workspace = true }
-abstract-adapter = { workspace = true, features = ["test-utils"] }
+abstract-app = { workspace = true, features = ["test-utils"] }
 speculoos = { workspace = true }
 semver = { workspace = true }
 dotenv = { workspace = true }
 env_logger = { workspace = true }
 cw-orch = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
+abstract-cw-orch-polytone = { workspace = true }
+abstract-interchain-tests = { workspace = true }
+abstract-scripts = { workspace = true }
+reqwest = { version = "0.11.9" }
+log = "0.4.14"

@@ -1,6 +1,6 @@
 [package]
 name = "ibcmail-client"
-version = "0.0.1"
+version = "0.1.1"
 authors = [
   "CyberHoward <cyberhoward@protonmail.com>",
   "Adair <adair@abstract.money>",
@@ -74,4 +74,5 @@ cw-orch = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 abstract-cw-orch-polytone = { workspace = true }
 abstract-interchain-tests = { workspace = true }
-#abstract-scripts = { workspace = true }
+abstract-scripts = { workspace = true }
+reqwest = { version = "0.11.9" }

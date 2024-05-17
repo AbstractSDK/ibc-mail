@@ -9,7 +9,6 @@ use ibcmail::{
     },
     MessageId, MessageStatus,
 };
-
 use crate::{
     contract::{App, ClientResult},
     msg::{ClientQueryMsg, ConfigResponse},
