@@ -4,12 +4,12 @@ use abstract_app::std::ibc_client::{ExecuteMsgFns, QueryMsgFns};
 use abstract_app::std::ibc_host::ExecuteMsgFns as IbcHostFns;
 use abstract_cw_orch_polytone::Polytone;
 use abstract_interface::Abstract;
-use abstract_scripts::abstract_ibc::{abstract_ibc_connection_with, has_abstract_ibc};
-use abstract_scripts::{NEUTRON_1, ROLLKIT_TESTNET};
+use abstract_scripts::abstract_ibc::has_abstract_ibc;
+
 use clap::Parser;
 use cw_orch::anyhow;
-use cw_orch::anyhow::anyhow;
-use cw_orch::daemon::networks::{ARCHWAY_1, JUNO_1, OSMO_5, parse_network, PHOENIX_1};
+
+use cw_orch::daemon::networks::parse_network;
 use cw_orch::prelude::*;
 use cw_orch::tokio::runtime::{Handle, Runtime};
 use ibcmail_scripts::MYOS;
@@ -97,7 +97,12 @@ fn connect(
     Ok(())
 }
 
-fn iabstract_ibc_connection_with(src_abstract: &Abstract<Daemon>, dst_abstract: &Abstract<Daemon>, src_polytone: &Polytone<Daemon>, interchain: &DaemonInterchainEnv) -> anyhow::Result<()> {
+fn iabstract_ibc_connection_with(
+    src_abstract: &Abstract<Daemon>,
+    dst_abstract: &Abstract<Daemon>,
+    src_polytone: &Polytone<Daemon>,
+    interchain: &DaemonInterchainEnv,
+) -> anyhow::Result<()> {
     let chain1_id = src_abstract.ibc.client.get_chain().chain_id();
     let chain1_name = ChainName::from_chain_id(&chain1_id);
 
@@ -109,7 +114,12 @@ fn iabstract_ibc_connection_with(src_abstract: &Abstract<Daemon>, dst_abstract: 
     /// check for existing infra
     let infras = src_abstract.ibc.client.list_ibc_infrastructures()?;
     println!("infra: {:?}", infras);
-    if infras.counterparts.into_iter().map(|x| x.0).any(|x| x == chain2_name) {
+    if infras
+        .counterparts
+        .into_iter()
+        .map(|x| x.0)
+        .any(|x| x == chain2_name)
+    {
         println!("infra exists");
     } else {
         // First, we register the host with the client.
@@ -134,7 +144,8 @@ fn iabstract_ibc_connection_with(src_abstract: &Abstract<Daemon>, dst_abstract: 
         proxy_address.remote_polytone_proxy.unwrap(),
     )?;
 
-    account_factory::ExecuteMsgFns::update_config(&dst_abstract.account_factory,
+    account_factory::ExecuteMsgFns::update_config(
+        &dst_abstract.account_factory,
         None,
         Some(dst_abstract.ibc.host.address()?.to_string()),
         None,

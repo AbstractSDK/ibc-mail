@@ -14,6 +14,7 @@ use crate::{
     msg::{ClientQueryMsg, ConfigResponse},
     state::CONFIG,
 };
+pub const DEFAULT_LIMIT: u32 = 50;
 
 pub fn query_handler(
     deps: Deps,

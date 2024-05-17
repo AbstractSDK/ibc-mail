@@ -1,30 +1,23 @@
-use std::{
-    net::TcpStream,
-};
 use abstract_app::objects::gov_type::GovernanceDetails;
+use std::net::TcpStream;
 
-use abstract_interface::{Abstract, AbstractIbc};
-use abstract_scripts::{
-    assert_wallet_balance,
-};
+use abstract_interface::Abstract;
+use abstract_scripts::assert_wallet_balance;
 use clap::Parser;
-use cw_orch::prelude::{
-    networks::{ChainInfo},
-    *,
-};
+use cw_orch::prelude::*;
 use reqwest::Url;
 
 use abstract_cw_orch_polytone::Polytone;
 use cw_orch::anyhow;
 use cw_orch::daemon::networks::CONSTANTINE_3;
-use cw_orch::environment::{ChainKind, NetworkInfo, NetworkInfoOwned};
+use cw_orch::environment::{ChainKind, NetworkInfoOwned};
 use cw_orch::tokio::runtime::Runtime;
 
 pub const ABSTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Script to deploy Abstract & polytone to a new network provided by commmand line arguments
 /// Run "cargo run --example download_wasms" in the `abstract-interfaces` package before deploying!
-fn manual_deploy(network: ChainInfoOwned) -> anyhow::Result<()> {
+fn manual_deploy(_network: ChainInfoOwned) -> anyhow::Result<()> {
     let network: ChainInfoOwned = CONSTANTINE_3.into();
     let rt = Runtime::new()?;
 

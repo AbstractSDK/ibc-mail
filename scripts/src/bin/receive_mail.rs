@@ -7,29 +7,25 @@
 //! ```bash
 //! $ just publish uni-6 osmo-test-5
 //! ```
-use abstract_app::objects::account::AccountTrace;
+
 use abstract_app::objects::AccountId;
-use abstract_app::objects::chain_name::ChainName;
-use abstract_app::objects::module::{ModuleInfo, ModuleStatus, ModuleVersion};
-use abstract_app::objects::module_reference::ModuleReference;
-use abstract_app::objects::namespace::Namespace;
+
 use abstract_app::std::app::BaseMigrateMsg;
 use abstract_app::std::ibc_client::QueryMsgFns as IbcQueryFns;
-use abstract_app::std::version_control::{ExecuteMsgFns, ModuleFilter, QueryMsgFns};
-use abstract_app::std::{app, IBC_HOST};
+
+use abstract_app::std::app;
 use abstract_client::{AbstractClient, Account, Application};
-use abstract_interface::{Abstract, VersionControl};
+
 use clap::Parser;
-use cw_orch::daemon::networks::{ARCHWAY_1, CONSTANTINE_3, NEUTRON_1, parse_network};
+use cw_orch::daemon::networks::parse_network;
 use cw_orch::prelude::*;
 use cw_orch::{anyhow, tokio::runtime::Runtime};
-use cw_orch::environment::{ChainKind, NetworkInfo};
-use client::{APP_VERSION, ClientInterface};
 
-use ibcmail::client::msg::{ClientExecuteMsgFns, ClientInstantiateMsg, ClientQueryMsgFns};
-use ibcmail::{NewMessage, IBCMAIL_NAMESPACE, IBCMAIL_CLIENT_ID, IBCMAIL_SERVER_ID, MessageStatus};
+use client::{ClientInterface, APP_VERSION};
+
+use ibcmail::client::msg::{ClientInstantiateMsg, ClientQueryMsgFns};
+use ibcmail::{MessageStatus, IBCMAIL_CLIENT_ID, IBCMAIL_SERVER_ID};
 use ibcmail_scripts::MYOS;
-
 
 const TEST_NAMESPACE: &str = "mailtest010";
 
@@ -49,11 +45,13 @@ fn received_messages(args: Arguments) -> anyhow::Result<()> {
 
     let dst_abs = AbstractClient::new(dst.clone())?;
 
-    let dst_acc= dst_abs.account_from(AccountId::local(args.account_seq))?;
+    let dst_acc = dst_abs.account_from(AccountId::local(args.account_seq))?;
 
     let dst_client = get_client(&dst_acc)?;
 
-    let mut received_messages = dst_client.list_messages(MessageStatus::Received, None, None, None)?.messages;
+    let mut received_messages = dst_client
+        .list_messages(MessageStatus::Received, None, None, None)?
+        .messages;
     received_messages.sort_by_key(|m| m.timestamp);
     let last_message = received_messages.last().unwrap();
     println!("last_message: {:?}", last_message);
@@ -61,19 +59,33 @@ fn received_messages(args: Arguments) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn get_client(acc: &Account<Daemon>) -> anyhow::Result<Application<Daemon, ClientInterface<Daemon>>> {
-    let client = if let Some(client_module) = acc.module_infos()?.module_infos.iter().find(|m| m.id == IBCMAIL_CLIENT_ID) {
+fn get_client(
+    acc: &Account<Daemon>,
+) -> anyhow::Result<Application<Daemon, ClientInterface<Daemon>>> {
+    let client = if let Some(client_module) = acc
+        .module_infos()?
+        .module_infos
+        .iter()
+        .find(|m| m.id == IBCMAIL_CLIENT_ID)
+    {
         let app = acc.application::<ClientInterface<_>>()?;
         // Upgrade if necessary
         if semver::Version::parse(APP_VERSION)? > client_module.version.version.parse()? {
-            app.account().as_ref().manager.upgrade_module(IBCMAIL_CLIENT_ID, &app::MigrateMsg {
-                base: BaseMigrateMsg {},
-                module: Empty {}
-            })?;
+            app.account().as_ref().manager.upgrade_module(
+                IBCMAIL_CLIENT_ID,
+                &app::MigrateMsg {
+                    base: BaseMigrateMsg {},
+                    module: Empty {},
+                },
+            )?;
         }
         app
     } else {
-        let app = acc.install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {}, &[])?;
+        let app = acc.install_app_with_dependencies::<ClientInterface<_>>(
+            &ClientInstantiateMsg {},
+            Empty {},
+            &[],
+        )?;
         app.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
         app
     };
@@ -88,7 +100,7 @@ struct Arguments {
     chain_id: String,
     /// Recipient
     #[arg(long)]
-    account_seq: u32
+    account_seq: u32,
 }
 
 fn main() {

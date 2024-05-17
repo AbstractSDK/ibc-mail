@@ -30,6 +30,7 @@ use cw_orch::{
     prelude::*,
     tokio::runtime::Runtime,
 };
+use cw_orch::environment::{ChainKind, NetworkInfo};
 use ibcmail::{client::msg::ClientExecuteMsgFns, NewMessage, IBCMAIL_NAMESPACE};
 
 use ibcmail_client::ClientInterface;
@@ -52,7 +53,6 @@ pub const MYOS: ChainInfo = ChainInfo {
     lcd_url: None,
     fcd_url: None,
 };
-
 
 const SRC: ChainInfo = MYOS;
 const DST: ChainInfo = ARCHWAY_1;

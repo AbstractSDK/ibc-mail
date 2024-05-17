@@ -1,10 +1,13 @@
 use abstract_app::objects::dependency::StaticDependency;
-#[cfg(feature = "interface")]
-use abstract_app::{objects::module::ModuleInfo, std::manager::ModuleInstallConfig};
+
+
 use ibcmail::IBCMAIL_SERVER_ID;
 
 pub const MAIL_SERVER_DEP: StaticDependency =
     StaticDependency::new(IBCMAIL_SERVER_ID, &[">=0.0.1"]);
+
+#[cfg(feature = "interface")]
+use abstract_app::{objects::module::ModuleInfo, std::manager::ModuleInstallConfig};
 
 #[cfg(feature = "interface")]
 impl<Chain: cw_orch::environment::CwEnv> abstract_interface::DependencyCreation

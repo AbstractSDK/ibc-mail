@@ -8,20 +8,15 @@
 //! $ just publish uni-6 osmo-test-5
 //! ```
 use abstract_app::objects::namespace::Namespace;
-use abstract_app::std::version_control::ExecuteMsgFns;
+
 use abstract_client::{AbstractClient, Publisher};
 use clap::Parser;
-use cw_orch::prelude::*;
-use cw_orch::{
-    anyhow,
-    environment::TxHandler,
-    prelude::{networks::parse_network, DaemonBuilder},
-    tokio::runtime::Runtime,
-};
-use cw_orch::daemon::networks::CONSTANTINE_3;
-use ibcmail::IBCMAIL_CLIENT_ID;
 use client::ClientInterface;
+use cw_orch::daemon::networks::CONSTANTINE_3;
+use cw_orch::prelude::*;
+use cw_orch::{anyhow, environment::TxHandler, prelude::DaemonBuilder, tokio::runtime::Runtime};
 use ibcmail::server::msg::ServerInstantiateMsg;
+use ibcmail::IBCMAIL_CLIENT_ID;
 use ibcmail_scripts::MYOS;
 use server::ServerInterface;
 
@@ -54,7 +49,6 @@ fn publish(networks: Vec<ChainInfo>) -> anyhow::Result<()> {
         publisher.publish_adapter::<ServerInstantiateMsg, ServerInterface<Daemon>>(
             ServerInstantiateMsg {},
         )?;
-
     }
     Ok(())
 }
@@ -70,7 +64,7 @@ struct Arguments {
 fn main() {
     dotenv::dotenv().ok();
     env_logger::init();
-    let args = Arguments::parse();
+    let _args = Arguments::parse();
     // let networks = args
     //     .network_ids
     //     .iter()

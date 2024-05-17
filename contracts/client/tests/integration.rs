@@ -394,7 +394,7 @@ mod send_msg {
             arch_to_neutron_msg,
             Some(AccountTrace::Remote(vec![
                 "juno".parse()?,
-               "neutron".parse()?,
+                "neutron".parse()?,
             ])),
         )?;
 

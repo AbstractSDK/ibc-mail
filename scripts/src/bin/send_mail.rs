@@ -8,28 +8,27 @@
 //! $ just publish uni-6 osmo-test-5
 //! ```
 use abstract_app::objects::account::AccountTrace;
-use abstract_app::objects::AccountId;
 use abstract_app::objects::chain_name::ChainName;
 use abstract_app::objects::module::{ModuleInfo, ModuleStatus, ModuleVersion};
 use abstract_app::objects::module_reference::ModuleReference;
 use abstract_app::objects::namespace::Namespace;
+use abstract_app::objects::AccountId;
 use abstract_app::std::app::BaseMigrateMsg;
 use abstract_app::std::ibc_client::QueryMsgFns as IbcQueryFns;
 use abstract_app::std::version_control::{ExecuteMsgFns, ModuleFilter, QueryMsgFns};
 use abstract_app::std::{app, IBC_HOST};
 use abstract_client::{AbstractClient, Account, Application};
-use abstract_interface::{Abstract, VersionControl};
+use abstract_interface::VersionControl;
 use clap::Parser;
-use cw_orch::daemon::networks::{ARCHWAY_1, CONSTANTINE_3, NEUTRON_1};
+use cw_orch::daemon::networks::CONSTANTINE_3;
 use cw_orch::prelude::*;
 use cw_orch::{anyhow, tokio::runtime::Runtime};
-use cw_orch::environment::{ChainKind, NetworkInfo};
-use client::{APP_VERSION, ClientInterface};
+
+use client::{ClientInterface, APP_VERSION};
 
 use ibcmail::client::msg::{ClientExecuteMsgFns, ClientInstantiateMsg, ClientQueryMsgFns};
-use ibcmail::{NewMessage, IBCMAIL_NAMESPACE, IBCMAIL_CLIENT_ID, IBCMAIL_SERVER_ID, MessageStatus};
+use ibcmail::{MessageStatus, NewMessage, IBCMAIL_CLIENT_ID, IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID};
 use ibcmail_scripts::MYOS;
-
 
 const SRC: ChainInfo = MYOS;
 const DST: ChainInfo = CONSTANTINE_3;
@@ -103,30 +102,48 @@ fn test(args: Arguments) -> anyhow::Result<()> {
         std::thread::sleep(std::time::Duration::from_secs(10));
     }
 
-    let mut sent_messages = src_client.list_messages(MessageStatus::Sent, None, None, None)?.messages;
+    let mut sent_messages = src_client
+        .list_messages(MessageStatus::Sent, None, None, None)?
+        .messages;
     sent_messages.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
     let sent_message = sent_messages.last().unwrap();
     println!("sent_message_id: {:?}", sent_message.id);
 
-    let received_message = dst_client.messages(vec![sent_message.id.clone()], MessageStatus::Received)?.messages;
+    let received_message = dst_client
+        .messages(vec![sent_message.id.clone()], MessageStatus::Received)?
+        .messages;
     println!("received_message: {:?}", received_message);
 
     Ok(())
 }
 
-fn get_client(acc: &Account<Daemon>) -> anyhow::Result<Application<Daemon, ClientInterface<Daemon>>> {
-    let client = if let Some(client_module) = acc.module_infos()?.module_infos.iter().find(|m| m.id == IBCMAIL_CLIENT_ID) {
+fn get_client(
+    acc: &Account<Daemon>,
+) -> anyhow::Result<Application<Daemon, ClientInterface<Daemon>>> {
+    let client = if let Some(client_module) = acc
+        .module_infos()?
+        .module_infos
+        .iter()
+        .find(|m| m.id == IBCMAIL_CLIENT_ID)
+    {
         let app = acc.application::<ClientInterface<_>>()?;
         // Upgrade if necessary
         if semver::Version::parse(APP_VERSION)? > client_module.version.version.parse()? {
-            app.account().as_ref().manager.upgrade_module(IBCMAIL_CLIENT_ID, &app::MigrateMsg {
-                base: BaseMigrateMsg {},
-                module: Empty {}
-            })?;
+            app.account().as_ref().manager.upgrade_module(
+                IBCMAIL_CLIENT_ID,
+                &app::MigrateMsg {
+                    base: BaseMigrateMsg {},
+                    module: Empty {},
+                },
+            )?;
         }
         app
     } else {
-        let app = acc.install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {}, &[])?;
+        let app = acc.install_app_with_dependencies::<ClientInterface<_>>(
+            &ClientInstantiateMsg {},
+            Empty {},
+            &[],
+        )?;
         app.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
         app
     };
