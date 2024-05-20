@@ -39,11 +39,11 @@ pub enum ClientQueryMsg {
         limit: Option<u32>,
         start_after: Option<MessageId>,
     },
-    // #[returns(MessagesResponse)]
-    // Messages {
-    //     status: MessageStatus,
-    //     ids: Vec<MessageId>,
-    // },
+    #[returns(MessagesResponse)]
+    Messages {
+        status: MessageStatus,
+        ids: Vec<MessageId>,
+    },
     #[returns(ConfigResponse)]
     Config {},
 }
