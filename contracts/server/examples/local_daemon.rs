@@ -10,13 +10,10 @@
 
 use abstract_client::{AbstractClient, Publisher};
 use abstract_std::objects::namespace::Namespace;
-
 use cw_orch::{anyhow, prelude::*, tokio::runtime::Runtime};
-use semver::Version;
-
-use ibcmail::server::msg::ServerInstantiateMsg;
-use ibcmail::IBCMAIL_SERVER_ID;
+use ibcmail::{server::msg::ServerInstantiateMsg, IBCMAIL_SERVER_ID};
 use ibcmail_server::{ServerInterface, APP_VERSION};
+use semver::Version;
 
 const LOCAL_MNEMONIC: &str = "clip hire initial neck maid actor venue client foam budget lock catalog sweet steak waste crater broccoli pipe steak sister coyote moment obvious choose";
 

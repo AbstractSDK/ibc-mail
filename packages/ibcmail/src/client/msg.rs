@@ -1,6 +1,6 @@
-use crate::client::ClientApp;
-use crate::{Message, MessageId, MessageStatus, NewMessage, Route, Sender};
 use cosmwasm_schema::QueryResponses;
+
+use crate::{client::ClientApp, Message, MessageId, MessageStatus, NewMessage, Route, Sender};
 
 // This is used for type safety and re-exporting the contract endpoint structs.
 abstract_app::app_msg_types!(ClientApp, ClientExecuteMsg, ClientQueryMsg);

@@ -1,9 +1,7 @@
-use abstract_adapter::sdk::AbstractSdkError;
-use abstract_adapter::std::AbstractError;
-use abstract_adapter::AdapterError as AbstractAdapterError;
-use abstract_std::objects::account::AccountTrace;
-use abstract_std::objects::module::ModuleInfo;
-use abstract_std::objects::namespace::Namespace;
+use abstract_adapter::{
+    sdk::AbstractSdkError, std::AbstractError, AdapterError as AbstractAdapterError,
+};
+use abstract_std::objects::{account::AccountTrace, module::ModuleInfo, namespace::Namespace};
 use cosmwasm_std::StdError;
 use cw_asset::AssetError;
 use cw_controllers::AdminError;

@@ -1,16 +1,17 @@
-use crate::{Message, Route, IBCMAIL_SERVER_ID};
-use abstract_adapter::sdk::{
-    features::{AccountIdentification, Dependencies, ModuleIdentification},
-    AbstractSdkResult, AdapterInterface,
+use abstract_adapter::{
+    sdk::{
+        features::{AccountIdentification, Dependencies, ModuleIdentification},
+        AbstractSdkResult, AdapterInterface,
+    },
+    std::objects::module::ModuleId,
 };
-use abstract_adapter::std::objects::module::ModuleId;
 use cosmwasm_schema::serde::de::DeserializeOwned;
-use cosmwasm_std::Uint128;
-use cosmwasm_std::{CosmosMsg, Deps};
+use cosmwasm_std::{CosmosMsg, Deps, Uint128};
 
-use crate::server::msg::ServerQueryMsg;
-
-use crate::server::msg::ServerExecuteMsg;
+use crate::{
+    server::msg::{ServerExecuteMsg, ServerQueryMsg},
+    Message, Route, IBCMAIL_SERVER_ID,
+};
 
 // API for Abstract SDK users
 /// Interact with the hub adapter in your module.

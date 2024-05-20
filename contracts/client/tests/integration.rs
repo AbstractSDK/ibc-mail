@@ -1,18 +1,15 @@
-use abstract_app::objects::namespace::Namespace;
-use abstract_app::objects::AccountId;
-
-use abstract_client::Application;
-use abstract_client::{AbstractClient, Environment};
+use abstract_app::objects::{namespace::Namespace, AccountId};
+use abstract_client::{AbstractClient, Application, Environment};
 use abstract_cw_orch_polytone::Polytone;
-
+use abstract_interchain_tests::setup::ibc_connect_polytone_and_abstract;
 // Use prelude to get all the necessary imports
 use cw_orch::{anyhow, prelude::*};
-
-use abstract_interchain_tests::setup::ibc_connect_polytone_and_abstract;
-use ibcmail::server::msg::ServerInstantiateMsg;
-use ibcmail::{Message, Recipient, Sender, IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID};
-use ibcmail_client::contract::interface::ClientInterface;
+use ibcmail::{
+    server::msg::ServerInstantiateMsg, Message, Recipient, Sender, IBCMAIL_NAMESPACE,
+    IBCMAIL_SERVER_ID,
+};
 use ibcmail_client::{
+    contract::interface::ClientInterface,
     msg::{ClientInstantiateMsg, ConfigResponse},
     *,
 };
@@ -184,14 +181,15 @@ mod receive_msg {
 }
 
 mod send_msg {
-    use abstract_app::objects::account::AccountTrace;
-    use abstract_app::objects::chain_name::ChainName;
-    use abstract_app::std::version_control::ExecuteMsgFns;
     use std::str::FromStr;
 
+    use abstract_app::{
+        objects::{account::AccountTrace, chain_name::ChainName},
+        std::version_control::ExecuteMsgFns,
+    };
+    use ibcmail::{server::error::ServerError, MessageStatus, NewMessage, IBCMAIL_CLIENT_ID};
+
     use super::*;
-    use ibcmail::server::error::ServerError;
-    use ibcmail::{MessageStatus, NewMessage, IBCMAIL_CLIENT_ID};
 
     #[test]
     fn can_send_local_message() -> anyhow::Result<()> {

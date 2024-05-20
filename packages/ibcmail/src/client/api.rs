@@ -1,20 +1,17 @@
-use abstract_adapter::sdk::{
-    features::{Dependencies, ModuleIdentification},
-    AbstractSdkResult,
+use abstract_adapter::{
+    sdk::{
+        features::{Dependencies, ModuleIdentification},
+        AbstractSdkResult,
+    },
+    std::objects::module::ModuleId,
 };
-use abstract_adapter::std::objects::module::ModuleId;
-use abstract_sdk::features::AbstractRegistryAccess;
-use abstract_sdk::AccountVerification;
-use abstract_std::app::ExecuteMsg;
-use abstract_std::manager;
-use abstract_std::manager::ModuleAddressesResponse;
-use abstract_std::objects::AccountId;
-
+use abstract_sdk::{features::AbstractRegistryAccess, AccountVerification};
+use abstract_std::{
+    app::ExecuteMsg, manager, manager::ModuleAddressesResponse, objects::AccountId,
+};
 use cosmwasm_std::{wasm_execute, Addr, CosmosMsg, Deps, Empty};
 
-use crate::{Header, Message, NewMessage, Route, IBCMAIL_CLIENT_ID};
-
-use crate::client::msg::ClientExecuteMsg;
+use crate::{client::msg::ClientExecuteMsg, Header, Message, NewMessage, Route, IBCMAIL_CLIENT_ID};
 
 // API for Abstract SDK users
 /// Interact with the hub adapter in your module.

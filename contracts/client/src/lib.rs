@@ -9,10 +9,7 @@ pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub use contract::interface::ClientInterface;
 #[cfg(feature = "interface")]
 pub use ibcmail::client::msg::{ClientExecuteMsgFns, ClientQueryMsgFns};
-
-pub use ibcmail::client::error;
-pub use ibcmail::client::msg;
-pub use ibcmail::client::state;
+pub use ibcmail::client::{error, msg, state};
 
 // #[cfg(feature = "interface")]
 // use { cw_orch::environment::CwEnv, server::ServerInterface, cw_orch::prelude::Deploy, ibcmail::{IBCMAIL_CLIENT_ID, IBCMAIL_SERVER_ID} };

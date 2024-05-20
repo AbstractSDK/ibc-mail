@@ -1,13 +1,12 @@
 use abstract_sdk::AbstractResponse;
 use abstract_std::ibc::ModuleIbcMsg;
-
-use crate::contract::ServerResult;
-use crate::handlers::execute::route_msg;
 use cosmwasm_std::{from_json, DepsMut, Env};
-use ibcmail::server::error::ServerError;
-use ibcmail::server::msg::ServerIbcMessage;
-use ibcmail::server::ServerAdapter;
-use ibcmail::IBCMAIL_SERVER_ID;
+use ibcmail::{
+    server::{error::ServerError, msg::ServerIbcMessage, ServerAdapter},
+    IBCMAIL_SERVER_ID,
+};
+
+use crate::{contract::ServerResult, handlers::execute::route_msg};
 
 pub fn module_ibc_handler(
     deps: DepsMut,

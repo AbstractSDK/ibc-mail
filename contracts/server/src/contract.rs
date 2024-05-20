@@ -1,10 +1,11 @@
-use crate::{handlers, APP_VERSION};
-
 use cosmwasm_std::Response;
-use ibcmail::server::error::ServerError;
-use ibcmail::server::msg::ServerInstantiateMsg;
 pub use ibcmail::server::ServerAdapter as Adapter;
-use ibcmail::IBCMAIL_SERVER_ID;
+use ibcmail::{
+    server::{error::ServerError, msg::ServerInstantiateMsg},
+    IBCMAIL_SERVER_ID,
+};
+
+use crate::{handlers, APP_VERSION};
 
 /// The type of the result returned by your client's entry points.
 pub type ServerResult<T = Response> = Result<T, ServerError>;

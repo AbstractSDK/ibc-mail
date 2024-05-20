@@ -1,25 +1,26 @@
 use abstract_adapter::traits::AbstractResponse;
-use abstract_sdk::ModuleRegistryInterface;
-
-use abstract_sdk::features::ModuleIdentification;
-
-use abstract_std::{ibc_client, IBC_CLIENT};
-
-use abstract_std::objects::account::AccountTrace;
-use abstract_std::objects::chain_name::ChainName;
-use abstract_std::objects::module::ModuleInfo;
-use abstract_std::version_control::NamespaceResponse;
+use abstract_sdk::{features::ModuleIdentification, ModuleRegistryInterface};
+use abstract_std::{
+    ibc_client,
+    objects::{account::AccountTrace, chain_name::ChainName, module::ModuleInfo},
+    version_control::NamespaceResponse,
+    IBC_CLIENT,
+};
 use cosmwasm_std::{to_json_binary, wasm_execute, CosmosMsg, Deps, DepsMut, Env, MessageInfo};
+use ibcmail::{
+    client::api::ClientInterface,
+    server::{
+        msg::{ServerExecuteMsg, ServerIbcMessage},
+        ServerAdapter,
+    },
+    Header, Message, Recipient, Route,
+};
 
-use ibcmail::{Header, Message, Recipient, Route};
-
-use crate::contract::{Adapter, ServerResult};
-use crate::error::ServerError;
-use ibcmail::server::msg::{ServerExecuteMsg, ServerIbcMessage};
-use ibcmail::server::ServerAdapter;
-
-use crate::state::CONFIG;
-use ibcmail::client::api::ClientInterface;
+use crate::{
+    contract::{Adapter, ServerResult},
+    error::ServerError,
+    state::CONFIG,
+};
 
 pub fn execute_handler(
     deps: DepsMut,

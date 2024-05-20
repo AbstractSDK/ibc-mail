@@ -1,17 +1,24 @@
-use abstract_app::objects::chain_name::ChainName;
-use abstract_app::sdk::ModuleRegistryInterface;
-use abstract_app::traits::{AbstractResponse, AccountIdentification};
+use abstract_app::{
+    objects::chain_name::ChainName,
+    sdk::ModuleRegistryInterface,
+    traits::{AbstractResponse, AccountIdentification},
+};
 use cosmwasm_std::{ensure_eq, Deps, DepsMut, Env, MessageInfo, Order};
+use ibcmail::{
+    client::{
+        state::{RECEIVED, SENT},
+        ClientApp,
+    },
+    server::api::ServerInterface,
+    Message, NewMessage, Recipient, Route, Sender, IBCMAIL_SERVER_ID,
+};
 
-use ibcmail::client::state::{RECEIVED, SENT};
-use ibcmail::client::ClientApp;
-use ibcmail::server::api::ServerInterface;
-use ibcmail::{Message, NewMessage, Recipient, Route, Sender, IBCMAIL_SERVER_ID};
-
-use crate::contract::{App, ClientResult};
-use crate::error::ClientError;
-use crate::msg::ClientExecuteMsg;
-use crate::state::CONFIG;
+use crate::{
+    contract::{App, ClientResult},
+    error::ClientError,
+    msg::ClientExecuteMsg,
+    state::CONFIG,
+};
 
 pub fn execute_handler(
     deps: DepsMut,

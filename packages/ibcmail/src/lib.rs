@@ -2,14 +2,10 @@ pub mod client;
 pub mod server;
 
 use abstract_sdk::std::objects::AccountId;
-
-use abstract_std::objects::account::AccountTrace;
-use abstract_std::objects::chain_name::ChainName;
-use abstract_std::objects::namespace::Namespace;
+use abstract_std::objects::{account::AccountTrace, chain_name::ChainName, namespace::Namespace};
 // TODO: this crate is 75kb. should we really include it for this basic functionality?
 // https://crates.io/crates/const_format
 use const_format::concatcp;
-
 use cosmwasm_std::Timestamp;
 
 pub const IBCMAIL_NAMESPACE: &str = "ibcmail";

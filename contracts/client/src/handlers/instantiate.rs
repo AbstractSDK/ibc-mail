@@ -1,9 +1,11 @@
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 use ibcmail::client::state::TEST;
 
-use crate::contract::{App, ClientResult};
-use crate::msg::ClientInstantiateMsg;
-use crate::state::{Config, CONFIG};
+use crate::{
+    contract::{App, ClientResult},
+    msg::ClientInstantiateMsg,
+    state::{Config, CONFIG},
+};
 
 pub fn instantiate_handler(
     deps: DepsMut,

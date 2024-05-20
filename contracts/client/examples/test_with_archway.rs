@@ -7,23 +7,30 @@
 //! ```bash
 //! $ just publish uni-6 osmo-test-5
 //! ```
-use abstract_app::objects::account::AccountTrace;
-use abstract_app::objects::chain_name::ChainName;
-use abstract_app::objects::module::{ModuleInfo, ModuleStatus, ModuleVersion};
-use abstract_app::objects::module_reference::ModuleReference;
-use abstract_app::objects::namespace::Namespace;
-use abstract_app::std::ibc_client::QueryMsgFns as IbcQueryFns;
-use abstract_app::std::version_control::{ExecuteMsgFns, ModuleFilter, QueryMsgFns};
-use abstract_app::std::IBC_HOST;
+use abstract_app::{
+    objects::{
+        account::AccountTrace,
+        chain_name::ChainName,
+        module::{ModuleInfo, ModuleStatus, ModuleVersion},
+        module_reference::ModuleReference,
+        namespace::Namespace,
+    },
+    std::{
+        ibc_client::QueryMsgFns as IbcQueryFns,
+        version_control::{ExecuteMsgFns, ModuleFilter, QueryMsgFns},
+        IBC_HOST,
+    },
+};
 use abstract_client::AbstractClient;
 use abstract_interface::{Abstract, VersionControl};
 use clap::Parser;
-use cw_orch::daemon::networks::{ARCHWAY_1, NEUTRON_1};
-use cw_orch::prelude::*;
-use cw_orch::{anyhow, tokio::runtime::Runtime};
-
-use ibcmail::client::msg::ClientExecuteMsgFns;
-use ibcmail::{NewMessage, IBCMAIL_NAMESPACE};
+use cw_orch::{
+    anyhow,
+    daemon::networks::{ARCHWAY_1, NEUTRON_1},
+    prelude::*,
+    tokio::runtime::Runtime,
+};
+use ibcmail::{client::msg::ClientExecuteMsgFns, NewMessage, IBCMAIL_NAMESPACE};
 use ibcmail_client::ClientInterface;
 
 const SRC: ChainInfo = ARCHWAY_1;

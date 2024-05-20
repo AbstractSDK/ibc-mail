@@ -1,6 +1,9 @@
-use crate::server::error::ServerError;
-use crate::server::msg::{ServerExecuteMsg, ServerInstantiateMsg, ServerQueryMsg};
 use abstract_adapter::AdapterContract;
+
+use crate::server::{
+    error::ServerError,
+    msg::{ServerExecuteMsg, ServerInstantiateMsg, ServerQueryMsg},
+};
 
 pub mod api;
 pub mod error;

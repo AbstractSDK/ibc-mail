@@ -1,6 +1,6 @@
-use crate::server::ServerAdapter;
-use crate::{Header, Message, Route};
 use cosmwasm_schema::QueryResponses;
+
+use crate::{server::ServerAdapter, Header, Message, Route};
 
 // This is used for type safety and re-exporting the contract endpoint structs.
 abstract_adapter::adapter_msg_types!(ServerAdapter, ServerExecuteMsg, ServerQueryMsg);

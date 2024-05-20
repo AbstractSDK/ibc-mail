@@ -1,10 +1,8 @@
 use cosmwasm_std::Response;
-
 pub use ibcmail::client::ClientApp as App;
 use ibcmail::IBCMAIL_CLIENT_ID;
 
-use crate::dependencies::MAIL_SERVER_DEP;
-use crate::{error::ClientError, handlers, APP_VERSION};
+use crate::{dependencies::MAIL_SERVER_DEP, error::ClientError, handlers, APP_VERSION};
 
 /// The type of the result returned by your client's entry points.
 pub type ClientResult<T = Response> = Result<T, ClientError>;

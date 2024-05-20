@@ -1,15 +1,12 @@
-use abstract_client::AbstractClient;
-use abstract_client::Application;
+use abstract_client::{AbstractClient, Application};
 use abstract_std::objects::namespace::Namespace;
-
-use ibcmail::server::msg::{ConfigResponse, ServerInstantiateMsg};
-
+use cosmwasm_std::coins;
 // Use prelude to get all the necessary imports
 use cw_orch::{anyhow, prelude::*};
-
-use cosmwasm_std::coins;
-use ibcmail::server::msg::ServerQueryMsgFns;
-use ibcmail::IBCMAIL_SERVER_ID;
+use ibcmail::{
+    server::msg::{ConfigResponse, ServerInstantiateMsg, ServerQueryMsgFns},
+    IBCMAIL_SERVER_ID,
+};
 use ibcmail_server::ServerInterface;
 
 /// Set up the test environment with an Account that has the App installed

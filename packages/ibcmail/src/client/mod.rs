@@ -1,6 +1,9 @@
-use crate::client::error::ClientError;
-use crate::client::msg::{AppMigrateMsg, ClientExecuteMsg, ClientInstantiateMsg, ClientQueryMsg};
 use abstract_app::AppContract;
+
+use crate::client::{
+    error::ClientError,
+    msg::{AppMigrateMsg, ClientExecuteMsg, ClientInstantiateMsg, ClientQueryMsg},
+};
 
 pub mod api;
 pub mod error;

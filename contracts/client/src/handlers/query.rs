@@ -1,12 +1,19 @@
-use crate::contract::{App, ClientResult};
-use crate::msg::{ClientQueryMsg, ConfigResponse};
-use crate::state::CONFIG;
 use cosmwasm_std::{to_json_binary, Binary, Deps, Env, Order, StdResult};
 use cw_storage_plus::Bound;
-use ibcmail::client::error::ClientError;
-use ibcmail::client::msg::{MessageFilter, MessagesResponse};
-use ibcmail::client::state::{RECEIVED, SENT, TEST};
-use ibcmail::{MessageId, MessageStatus};
+use ibcmail::{
+    client::{
+        error::ClientError,
+        msg::{MessageFilter, MessagesResponse},
+        state::{RECEIVED, SENT, TEST},
+    },
+    MessageId, MessageStatus,
+};
+
+use crate::{
+    contract::{App, ClientResult},
+    msg::{ClientQueryMsg, ConfigResponse},
+    state::CONFIG,
+};
 
 pub fn query_handler(
     deps: Deps,

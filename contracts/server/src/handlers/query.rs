@@ -1,7 +1,10 @@
-use crate::contract::{Adapter, ServerResult};
-use crate::state::CONFIG;
 use cosmwasm_std::{to_json_binary, Binary, Deps, Env, StdResult};
 use ibcmail::server::msg::{ConfigResponse, ServerQueryMsg};
+
+use crate::{
+    contract::{Adapter, ServerResult},
+    state::CONFIG,
+};
 
 pub fn query_handler(
     deps: Deps,

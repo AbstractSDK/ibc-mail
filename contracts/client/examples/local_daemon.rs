@@ -11,8 +11,7 @@
 use abstract_app::objects::namespace::Namespace;
 use abstract_client::{AbstractClient, Publisher};
 use cw_orch::{anyhow, prelude::*, tokio::runtime::Runtime};
-use ibcmail::client::msg::ClientInstantiateMsg;
-use ibcmail::IBCMAIL_CLIENT_ID;
+use ibcmail::{client::msg::ClientInstantiateMsg, IBCMAIL_CLIENT_ID};
 use ibcmail_client::{ClientInterface, APP_VERSION};
 use semver::Version;
 
