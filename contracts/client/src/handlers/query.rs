@@ -1,4 +1,5 @@
-use cosmwasm_std::{to_json_binary, Binary, Deps, Env, Order};
+use abstract_app::sdk::cw_helpers::load_many;
+use cosmwasm_std::{to_json_binary, Binary, Deps, Env, Order, StdResult};
 use cw_storage_plus::Bound;
 use ibcmail::{
     client::{
@@ -21,6 +22,9 @@ pub fn query_handler(
     msg: ClientQueryMsg,
 ) -> ClientResult<Binary> {
     match msg {
+        ClientQueryMsg::Messages { status, ids } => {
+            to_json_binary(&query_messages(deps, status, ids)?)
+        }
         ClientQueryMsg::ListMessages {
             status,
             filter,
@@ -33,11 +37,25 @@ pub fn query_handler(
             start_after,
             limit,
         )?),
-        // ClientQueryMsg::Messages {
-        //     ids,
-        // } => to_json_binary(&query_messages_list(deps, ids)?),
     }
     .map_err(Into::into)
+}
+
+fn query_messages(
+    deps: Deps,
+    status: MessageStatus,
+    ids: Vec<MessageId>,
+) -> ClientResult<MessagesResponse> {
+    let map = match status {
+        MessageStatus::Received => RECEIVED,
+        MessageStatus::Sent => SENT,
+        _ => return Err(ClientError::NotImplemented("message type".to_string())),
+    };
+
+    let messages = load_many(map, deps.storage, ids)?;
+    let messages = messages.into_iter().map(|(_, m)| m).collect();
+
+    Ok(MessagesResponse { messages })
 }
 
 fn query_messages_list(
@@ -60,9 +78,6 @@ fn query_messages_list(
         limit,
         |_id, message| Ok::<_, ClientError>(message),
     )?;
-
-    // TODO REMOVE, This could run out of gas
-    let _len = map.keys(deps.storage, None, None, Order::Ascending).count();
 
     Ok(MessagesResponse { messages })
 }

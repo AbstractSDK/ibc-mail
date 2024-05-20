@@ -121,7 +121,6 @@ mod receive_msg {
             .1
             .clone();
 
-        // TODO: for some reason, the accounts are conflicting with one another. I've fixed this test by removing the "two" accounts... it's probably the same bug
         println!("app_account_id: {:?}", app.account().id());
         let res = app.call_as(&server_addr).receive_message(msg);
 
@@ -312,6 +311,11 @@ mod send_msg {
 
         let juno_messages = juno_client.list_messages(MessageStatus::Received, None, None, None)?;
         assert_that!(juno_messages.messages).has_length(1);
+
+        // Sanity check messages method
+        let juno_message_id = juno_messages.messages.first().cloned().unwrap().id;
+        let juno_message = juno_client.messages(vec![juno_message_id], MessageStatus::Received)?;
+        assert_that!(juno_message.messages).has_length(1);
 
         Ok(())
     }

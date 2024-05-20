@@ -39,6 +39,11 @@ pub enum ClientQueryMsg {
         limit: Option<u32>,
         start_after: Option<MessageHash>,
     },
+    #[returns(MessagesResponse)]
+    Messages {
+        status: MessageStatus,
+        ids: Vec<MessageId>,
+    },
 }
 
 #[cosmwasm_schema::cw_serde]
