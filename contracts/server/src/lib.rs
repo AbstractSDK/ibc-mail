@@ -1,5 +1,4 @@
 pub mod contract;
-mod dependencies;
 mod handlers;
 
 #[cfg(feature = "interface")]
