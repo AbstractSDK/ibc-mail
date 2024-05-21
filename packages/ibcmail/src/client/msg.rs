@@ -1,4 +1,5 @@
 use cosmwasm_schema::QueryResponses;
+use cosmwasm_std::Timestamp;
 
 use crate::{client::ClientApp, Message, MessageId, MessageStatus, NewMessage, Route, Sender};
 
@@ -51,6 +52,8 @@ pub enum ClientQueryMsg {
 #[cosmwasm_schema::cw_serde]
 pub struct MessageFilter {
     pub from: Option<Sender>,
+    pub contains: Option<String>,
+    pub sent_after: Option<Timestamp>,
 }
 
 #[cosmwasm_schema::cw_serde]
@@ -62,4 +65,5 @@ pub struct ConfigResponse {}
 #[cosmwasm_schema::cw_serde]
 pub struct MessagesResponse {
     pub messages: Vec<Message>,
+    pub next_key: Option<MessageId>,
 }
