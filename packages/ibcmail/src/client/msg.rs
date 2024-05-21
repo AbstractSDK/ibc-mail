@@ -62,4 +62,5 @@ pub struct ConfigResponse {}
 #[cosmwasm_schema::cw_serde]
 pub struct MessagesResponse {
     pub messages: Vec<Message>,
+    pub next_key: Option<MessageId>,
 }
