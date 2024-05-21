@@ -1,9 +1,7 @@
 use cosmwasm_std::Response;
+use ibcmail::server::msg::ServerInstantiateMsg;
 pub use ibcmail::server::ServerAdapter as Adapter;
-use ibcmail::{
-    server::{error::ServerError, msg::ServerInstantiateMsg},
-    IBCMAIL_SERVER_ID,
-};
+use ibcmail::{server::error::ServerError, IBCMAIL_SERVER_ID};
 
 use crate::{handlers, APP_VERSION};
 

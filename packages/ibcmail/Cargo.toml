@@ -7,7 +7,7 @@ edition = "2021"
 
 [features]
 default = []
-interface = ["dep:abstract-interface", "dep:cw-orch"]
+interface = ["dep:abstract-interface"]
 
 [dependencies]
 abstract-sdk = { workspace = true }
@@ -17,7 +17,7 @@ cw-storage-plus = { workspace = true }
 abstract-app = { workspace = true }
 abstract-std = { workspace = true }
 abstract-adapter = { workspace = true }
-cw-orch = { workspace = true, optional = true }
+cw-orch = { workspace = true }
 abstract-interface = { workspace = true, optional = true }
 thiserror = { workspace = true }
 cw-asset = { workspace = true }
