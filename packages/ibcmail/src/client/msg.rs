@@ -12,8 +12,8 @@ pub struct ClientInstantiateMsg {}
 /// App execute messages
 #[non_exhaustive]
 #[cosmwasm_schema::cw_serde]
-#[cfg_attr(feature = "interface", derive(cw_orch::ExecuteFns))]
-#[cfg_attr(feature = "interface", impl_into(ExecuteMsg))]
+#[derive(cw_orch::ExecuteFns)]
+#[impl_into(ExecuteMsg)]
 pub enum ClientExecuteMsg {
     /// Receive a message from the server
     ReceiveMessage(Message),
@@ -28,8 +28,8 @@ pub enum ClientExecuteMsg {
 
 /// App query messages
 #[cosmwasm_schema::cw_serde]
-#[cfg_attr(feature = "interface", derive(cw_orch::QueryFns))]
-#[cfg_attr(feature = "interface", impl_into(QueryMsg))]
+#[derive(cw_orch::QueryFns)]
+#[impl_into(QueryMsg)]
 #[derive(QueryResponses)]
 pub enum ClientQueryMsg {
     #[returns(MessagesResponse)]
