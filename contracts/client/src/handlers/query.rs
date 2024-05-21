@@ -8,7 +8,7 @@ use ibcmail::{
         msg::{MessageFilter, MessagesResponse},
         state::{RECEIVED, SENT},
     },
-    MessageId, MessageStatus,
+    Message, MessageId, MessageStatus,
 };
 
 use crate::{
@@ -101,12 +101,8 @@ fn query_messages_list(
             let (_, message) = i?;
             next_key = Some(message.id.clone());
 
-            if let Some(filter) = &filter {
-                if let Some(sender) = &filter.from {
-                    if message.sender != *sender {
-                        continue;
-                    }
-                }
+            if !matches_filter(&filter, &message)? {
+                continue;
             }
 
             messages.push(message);
@@ -131,4 +127,27 @@ fn query_messages_list(
 fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let _config = CONFIG.load(deps.storage)?;
     Ok(ConfigResponse {})
+}
+
+// Keeping a result here in case we need to parse things or use Addr in the future
+/// Verifies that the given message matches the filter, if any
+fn matches_filter(filter: &Option<MessageFilter>, message: &Message) -> StdResult<bool> {
+    if let Some(filter) = &filter {
+        if let Some(sender) = &filter.from {
+            if message.sender != *sender {
+                return Ok(false);
+            }
+        }
+        if let Some(contains) = &filter.contains {
+            if !message.body.contains(contains) && !message.subject.contains(contains) {
+                return Ok(false);
+            }
+        }
+        if let Some(sent_after) = &filter.sent_after {
+            if message.timestamp.nanos() < sent_after.nanos() {
+                return Ok(false);
+            }
+        }
+    }
+    Ok(true)
 }
