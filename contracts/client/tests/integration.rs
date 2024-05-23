@@ -5,8 +5,7 @@ use abstract_interchain_tests::setup::ibc_connect_polytone_and_abstract;
 // Use prelude to get all the necessary imports
 use cw_orch::{anyhow, prelude::*};
 use ibcmail::{
-    server::msg::ServerInstantiateMsg, IbcMailMessage, Recipient, Sender, IBCMAIL_NAMESPACE,
-    IBCMAIL_SERVER_ID,
+    server::msg::ServerInstantiateMsg, IbcMailMessage, Message, Recipient, Sender, IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID
 };
 use ibcmail_client::{
     contract::interface::ClientInterface,
@@ -96,9 +95,11 @@ fn create_test_message(from: AccountId, to: AccountId) -> IbcMailMessage {
     IbcMailMessage {
         id: "test-id".to_string(),
         sender: Sender::account(from.clone(), None),
-        recipient: Recipient::account(to.clone(), None),
-        subject: "test-subject".to_string(),
-        body: "test-body".to_string(),
+        message: Message {
+            recipient: Recipient::account(to.clone(), None),
+            subject: "test-subject".to_string(),
+            body: "test-body".to_string(),
+        },
         timestamp: Default::default(),
         version: "0.0.1".to_string(),
     }

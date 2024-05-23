@@ -1,16 +1,16 @@
 use abstract_adapter::{
     sdk::{
-        features::{Dependencies, ModuleIdentification},
+        features::{ModuleIdentification},
         AbstractSdkResult,
     },
     std::objects::module::ModuleId,
 };
 use abstract_app::traits::AccountIdentification;
-use abstract_sdk::{features::AbstractRegistryAccess, AccountVerification, AppInterface};
+use abstract_sdk::{AppInterface};
 use abstract_std::{
-    app::ExecuteMsg, manager, manager::ModuleAddressesResponse, objects::AccountId,
+    objects::AccountId,
 };
-use cosmwasm_std::{wasm_execute, Addr, CosmosMsg, Deps, Empty};
+use cosmwasm_std::{CosmosMsg, Deps};
 
 use crate::{client::msg::ClientExecuteMsg, Header, IbcMailMessage, Message, Route, IBCMAIL_CLIENT_ID};
 

@@ -58,9 +58,11 @@ fn send_msg(
             app.account_id(deps.as_ref()).unwrap(),
             Some(ChainName::new(&env)),
         ),
-        recipient: msg.recipient,
-        subject: msg.subject,
-        body: msg.body,
+        message: Message {
+            recipient: msg.recipient,
+            subject: msg.subject,
+            body: msg.body,
+        },
         timestamp: env.block.time,
         version: app.version().to_string(),
     };
@@ -89,7 +91,7 @@ fn receive_msg(deps: DepsMut, info: MessageInfo, msg: IbcMailMessage, app: App) 
         ClientError::NotMailServer {}
     );
 
-    ensure_correct_recipient(deps.as_ref(), &msg.recipient, &app)?;
+    ensure_correct_recipient(deps.as_ref(), &msg.message.recipient, &app)?;
 
     RECEIVED.save(deps.storage, msg.id.clone(), &msg)?;
     // TODO: remove, could run out of gas!!

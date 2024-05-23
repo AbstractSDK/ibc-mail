@@ -52,7 +52,7 @@ fn process_message(
     let route = if let Some(route) = route {
         Ok::<_, ServerError>(route)
     } else {
-        match msg.recipient.clone() {
+        match msg.message.recipient.clone() {
             // TODO: add smarter routing
             Recipient::Account { id: _, chain } => Ok(chain.map_or(AccountTrace::Local, |chain| {
                 if chain == current_chain {
@@ -150,10 +150,10 @@ fn route_to_local_account(
     header: Header,
     app: &ServerAdapter,
 ) -> ServerResult<CosmosMsg> {
-    println!("routing to local account: {:?}", msg.recipient);
+    println!("routing to local account: {:?}", msg.message.recipient);
     // This is a local message
 
-    let recipient = msg.recipient.clone();
+    let recipient = msg.message.recipient.clone();
 
     let account_id = match recipient {
         Recipient::Account { id: account_id, .. } => Ok(account_id),
