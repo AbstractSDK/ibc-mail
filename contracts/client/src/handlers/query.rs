@@ -6,7 +6,7 @@ use ibcmail::{
         msg::{MessageFilter, MessagesResponse},
         state::{RECEIVED, SENT, TEST},
     },
-    MessageId, MessageStatus,
+    MessageHash, MessageStatus,
 };
 
 use crate::{
@@ -46,7 +46,7 @@ fn query_messages_list(
     deps: Deps,
     status: MessageStatus,
     _filter: Option<MessageFilter>,
-    start: Option<MessageId>,
+    start: Option<MessageHash>,
     limit: Option<u32>,
 ) -> ClientResult<MessagesResponse> {
     let map = match status {

@@ -5,7 +5,7 @@ use abstract_interchain_tests::setup::ibc_connect_polytone_and_abstract;
 // Use prelude to get all the necessary imports
 use cw_orch::{anyhow, prelude::*};
 use ibcmail::{
-    server::msg::ServerInstantiateMsg, Message, Recipient, Sender, IBCMAIL_NAMESPACE,
+    server::msg::ServerInstantiateMsg, IbcMailMessage, Recipient, Sender, IBCMAIL_NAMESPACE,
     IBCMAIL_SERVER_ID,
 };
 use ibcmail_client::{
@@ -92,8 +92,8 @@ impl<Env: CwEnv> TestEnv<Env> {
     }
 }
 
-fn create_test_message(from: AccountId, to: AccountId) -> Message {
-    Message {
+fn create_test_message(from: AccountId, to: AccountId) -> IbcMailMessage {
+    IbcMailMessage {
         id: "test-id".to_string(),
         sender: Sender::account(from.clone(), None),
         recipient: Recipient::account(to.clone(), None),
@@ -187,7 +187,7 @@ mod send_msg {
         objects::{account::AccountTrace, chain_name::ChainName},
         std::version_control::ExecuteMsgFns,
     };
-    use ibcmail::{server::error::ServerError, MessageStatus, NewMessage, IBCMAIL_CLIENT_ID};
+    use ibcmail::{server::error::ServerError, MessageStatus, Message, IBCMAIL_CLIENT_ID};
 
     use super::*;
 
@@ -199,7 +199,7 @@ mod send_msg {
         let client1 = env.client1;
         let client2 = env.client2;
 
-        let msg = NewMessage::new(
+        let msg = Message::new(
             Recipient::account(client2.account().id()?, None),
             "test-subject",
             "test-body",
@@ -226,7 +226,7 @@ mod send_msg {
             .version_control()
             .claim_namespace(client2.account().id()?, namespace.to_string())?;
 
-        let msg = NewMessage::new(
+        let msg = Message::new(
             Recipient::namespace(namespace.try_into()?, None),
             "test-subject",
             "test-body",
@@ -247,7 +247,7 @@ mod send_msg {
 
         let bad_namespace: Namespace = "nope".try_into()?;
 
-        let msg = NewMessage::new(
+        let msg = Message::new(
             Recipient::namespace(bad_namespace.clone(), None),
             "test-subject",
             "test-body",
@@ -290,7 +290,7 @@ mod send_msg {
         let juno_client = juno_env.client1;
 
         // the trait `From<&str>` is not implemented for `abstract_app::objects::chain_name::ChainName`
-        let arch_to_juno_msg = NewMessage::new(
+        let arch_to_juno_msg = Message::new(
             Recipient::account(
                 juno_client.account().id()?,
                 Some(ChainName::from_string("juno".into())?),
@@ -377,7 +377,7 @@ mod send_msg {
         let neutron_client = neutron_env.client1;
 
         // the trait `From<&str>` is not implemented for `abstract_app::objects::chain_name::ChainName`
-        let arch_to_neutron_msg = NewMessage::new(
+        let arch_to_neutron_msg = Message::new(
             Recipient::account(
                 neutron_client.account().id()?,
                 Some(ChainName::from_string("neutron".into())?),

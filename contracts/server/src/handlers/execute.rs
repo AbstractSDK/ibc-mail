@@ -13,7 +13,7 @@ use ibcmail::{
         msg::{ServerExecuteMsg, ServerIbcMessage},
         ServerAdapter,
     },
-    Header, Message, Recipient, Route,
+    Header, IbcMailMessage, Recipient, Route,
 };
 
 use crate::{
@@ -41,7 +41,7 @@ fn process_message(
     deps: DepsMut,
     env: Env,
     _info: MessageInfo,
-    msg: Message,
+    msg: IbcMailMessage,
     route: Option<Route>,
     app: Adapter,
 ) -> ServerResult {
@@ -91,7 +91,7 @@ fn process_message(
 
 pub(crate) fn route_msg(
     deps: DepsMut,
-    msg: Message,
+    msg: IbcMailMessage,
     header: Header,
     app: &ServerAdapter,
 ) -> ServerResult<CosmosMsg> {
@@ -146,7 +146,7 @@ pub(crate) fn route_msg(
 
 fn route_to_local_account(
     deps: Deps,
-    msg: Message,
+    msg: IbcMailMessage,
     header: Header,
     app: &ServerAdapter,
 ) -> ServerResult<CosmosMsg> {

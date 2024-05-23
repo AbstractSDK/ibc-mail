@@ -10,7 +10,7 @@ use ibcmail::{
         ClientApp,
     },
     server::api::ServerInterface,
-    Message, NewMessage, Recipient, Route, Sender, IBCMAIL_SERVER_ID,
+    IbcMailMessage, Message, Recipient, Route, Sender, IBCMAIL_SERVER_ID,
 };
 
 use crate::{
@@ -42,7 +42,7 @@ fn send_msg(
     deps: DepsMut,
     env: Env,
     _info: MessageInfo,
-    msg: NewMessage,
+    msg: Message,
     route: Option<Route>,
     app: ClientApp,
 ) -> ClientResult {
@@ -51,7 +51,7 @@ fn send_msg(
     let to_hash = format!("{:?}{:?}{:?}", env.block.time, msg.subject, msg.recipient);
     let hash = <sha2::Sha256 as sha2::Digest>::digest(to_hash);
 
-    let to_send = Message {
+    let to_send = IbcMailMessage {
         // TODO: base64 encode this
         id: format!("{:x}", hash),
         sender: Sender::account(
@@ -74,7 +74,7 @@ fn send_msg(
 }
 
 /// Receive a message from the server
-fn receive_msg(deps: DepsMut, info: MessageInfo, msg: Message, app: App) -> ClientResult {
+fn receive_msg(deps: DepsMut, info: MessageInfo, msg: IbcMailMessage, app: App) -> ClientResult {
     // TODO: remove print
     println!("Received message: {:?}", msg);
     // check that the message sender is the server... this requires the server to be the proper version

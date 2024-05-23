@@ -12,17 +12,17 @@ pub const IBCMAIL_NAMESPACE: &str = "ibcmail";
 pub const IBCMAIL_CLIENT_ID: &str = concatcp!(IBCMAIL_NAMESPACE, ":", "client");
 pub const IBCMAIL_SERVER_ID: &str = concatcp!(IBCMAIL_NAMESPACE, ":", "server");
 
-pub type MessageId = String;
+pub type MessageHash = String;
 
 /// Struct representing new message to send to another client
 #[cosmwasm_schema::cw_serde]
-pub struct NewMessage {
+pub struct Message {
     pub recipient: Recipient,
     pub subject: String,
     pub body: String,
 }
 
-impl NewMessage {
+impl Message {
     pub fn new(recipient: Recipient, subject: impl Into<String>, body: impl Into<String>) -> Self {
         Self {
             recipient,
@@ -33,15 +33,12 @@ impl NewMessage {
 }
 
 #[cosmwasm_schema::cw_serde]
-pub struct Message {
-    pub id: MessageId,
+pub struct IbcMailMessage {
+    pub id: MessageHash,
     pub sender: Sender,
-    pub recipient: Recipient,
-    pub subject: String,
-    pub body: String,
-    pub timestamp: Timestamp,
-    // TODO : use semver
     pub version: String,
+    pub timestamp: Timestamp,
+    pub message: Message,
 }
 
 #[cosmwasm_schema::cw_serde]
