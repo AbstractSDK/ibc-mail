@@ -8,7 +8,6 @@ use abstract_std::objects::{account::AccountTrace, chain_name::ChainName, namesp
 use const_format::concatcp;
 use cosmwasm_std::Timestamp;
 
-
 pub const IBCMAIL_NAMESPACE: &str = "ibcmail";
 pub const IBCMAIL_CLIENT_ID: &str = concatcp!(IBCMAIL_NAMESPACE, ":", "client");
 pub const IBCMAIL_SERVER_ID: &str = concatcp!(IBCMAIL_NAMESPACE, ":", "server");

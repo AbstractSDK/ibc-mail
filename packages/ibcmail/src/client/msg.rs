@@ -24,8 +24,6 @@ pub enum ClientExecuteMsg {
         message: Message,
         route: Option<Route>,
     },
-    /// Update the client configuration
-    UpdateConfig {},
 }
 
 /// App query messages
@@ -41,13 +39,6 @@ pub enum ClientQueryMsg {
         limit: Option<u32>,
         start_after: Option<MessageHash>,
     },
-    // #[returns(MessagesResponse)]
-    // Messages {
-    //     status: MessageStatus,
-    //     ids: Vec<MessageId>,
-    // },
-    #[returns(ConfigResponse)]
-    Config {},
 }
 
 #[cosmwasm_schema::cw_serde]

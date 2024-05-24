@@ -1,18 +1,17 @@
-use cosmwasm_std::{to_json_binary, Binary, Deps, Env, Order, StdResult};
+use cosmwasm_std::{to_json_binary, Binary, Deps, Env, Order};
 use cw_storage_plus::Bound;
 use ibcmail::{
     client::{
         error::ClientError,
         msg::{MessageFilter, MessagesResponse},
-        state::{RECEIVED, SENT, TEST},
+        state::{RECEIVED, SENT},
     },
     MessageHash, MessageStatus,
 };
 
 use crate::{
     contract::{App, ClientResult},
-    msg::{ClientQueryMsg, ConfigResponse},
-    state::CONFIG,
+    msg::{ClientQueryMsg},
 };
 
 pub fn query_handler(
@@ -22,7 +21,6 @@ pub fn query_handler(
     msg: ClientQueryMsg,
 ) -> ClientResult<Binary> {
     match msg {
-        ClientQueryMsg::Config {} => to_json_binary(&query_config(deps)?),
         ClientQueryMsg::ListMessages {
             status,
             filter,
@@ -64,19 +62,7 @@ fn query_messages_list(
     )?;
 
     // TODO REMOVE, This could run out of gas
-    let len = map.keys(deps.storage, None, None, Order::Ascending).count();
-
-    println!(
-        "Messages: {:?}, test: {:?}, len: {:?}",
-        messages,
-        TEST.load(deps.storage)?,
-        len
-    );
+    let _len = map.keys(deps.storage, None, None, Order::Ascending).count();
 
     Ok(MessagesResponse { messages })
-}
-
-fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
-    let _config = CONFIG.load(deps.storage)?;
-    Ok(ConfigResponse {})
 }

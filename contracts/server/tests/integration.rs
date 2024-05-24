@@ -3,10 +3,7 @@ use abstract_std::objects::namespace::Namespace;
 use cosmwasm_std::coins;
 // Use prelude to get all the necessary imports
 use cw_orch::{anyhow, prelude::*};
-use ibcmail::{
-    server::msg::{ServerInstantiateMsg},
-    IBCMAIL_SERVER_ID,
-};
+use ibcmail::{server::msg::ServerInstantiateMsg, IBCMAIL_SERVER_ID};
 use ibcmail_server::ServerInterface;
 
 /// Set up the test environment with an Account that has the App installed

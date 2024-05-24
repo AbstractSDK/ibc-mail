@@ -17,7 +17,6 @@ use crate::{
     contract::{App, ClientResult},
     error::ClientError,
     msg::ClientExecuteMsg,
-    state::CONFIG,
 };
 
 pub fn execute_handler(
@@ -33,7 +32,6 @@ pub fn execute_handler(
             send_msg(deps, env, info, message, route, app)
         }
         ClientExecuteMsg::ReceiveMessage(message) => receive_msg(deps, info, message, app),
-        ClientExecuteMsg::UpdateConfig {} => update_config(deps, info, app),
         _ => Err(ClientError::NotImplemented("execute".to_string())),
     }
 }
@@ -132,13 +130,4 @@ fn ensure_correct_recipient(
         _ => Err(ClientError::NotImplemented("recipients".to_string()))?,
     }
     Ok(())
-}
-
-/// Update the configuration of the client
-fn update_config(deps: DepsMut, msg_info: MessageInfo, app: App) -> ClientResult {
-    // Only the admin should be able to call this
-    app.admin.assert_admin(deps.as_ref(), &msg_info.sender)?;
-    let mut _config = CONFIG.load(deps.storage)?;
-
-    Ok(app.response("update_config"))
 }

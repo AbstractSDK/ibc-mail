@@ -13,9 +13,7 @@ pub const MAIL_CLIENT: StaticDependency = StaticDependency::new(IBCMAIL_CLIENT_I
 pub type ServerResult<T = Response> = Result<T, ServerError>;
 
 const ADAPTER: Adapter = Adapter::new(IBCMAIL_SERVER_ID, APP_VERSION, None)
-    .with_instantiate(handlers::instantiate_handler)
     .with_execute(handlers::execute_handler)
-    .with_query(handlers::query_handler)
     .with_module_ibc(handlers::module_ibc_handler)
     .with_dependencies(&[MAIL_CLIENT]);
 

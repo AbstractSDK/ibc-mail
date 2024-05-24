@@ -11,15 +11,12 @@ pub struct ServerInstantiateMsg {}
 
 /// App execute messages
 #[cosmwasm_schema::cw_serde]
-#[derive(cw_orch::ExecuteFns)]
-#[impl_into(ExecuteMsg)]
 pub enum ServerExecuteMsg {
     /// Route a message
     ProcessMessage {
         msg: IbcMailMessage,
         route: Option<Route>,
     },
-    UpdateConfig {},
 }
 
 /// App execute messages

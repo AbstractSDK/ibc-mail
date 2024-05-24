@@ -8,11 +8,7 @@ use ibcmail::{
     server::msg::ServerInstantiateMsg, IbcMailMessage, Message, Recipient, Sender,
     IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID,
 };
-use ibcmail_client::{
-    contract::interface::ClientInterface,
-    msg::{ClientInstantiateMsg},
-    *,
-};
+use ibcmail_client::{contract::interface::ClientInterface, msg::ClientInstantiateMsg, *};
 use server::ServerInterface;
 use speculoos::prelude::*;
 

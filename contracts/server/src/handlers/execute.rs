@@ -19,7 +19,6 @@ use ibcmail::{
 use crate::{
     contract::{Adapter, ServerResult},
     error::ServerError,
-    state::CONFIG,
 };
 
 pub fn execute_handler(
@@ -33,7 +32,6 @@ pub fn execute_handler(
         ServerExecuteMsg::ProcessMessage { msg, route } => {
             process_message(deps, env, info, msg, route, app)
         }
-        ServerExecuteMsg::UpdateConfig {} => update_config(deps, info, app),
     }
 }
 
@@ -181,12 +179,4 @@ fn route_to_local_account(
     let mail_client = app.mail_client(deps);
 
     Ok(mail_client.receive_msg(msg, header)?)
-}
-
-/// Update the configuration of the client
-fn update_config(deps: DepsMut, _msg_info: MessageInfo, app: Adapter) -> ServerResult {
-    // Only the admin should be able to call this
-    let mut _config = CONFIG.load(deps.storage)?;
-
-    Ok(app.response("update_config"))
 }

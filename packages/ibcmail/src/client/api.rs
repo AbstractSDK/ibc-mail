@@ -1,7 +1,4 @@
-use abstract_adapter::{
-    sdk::{features::ModuleIdentification, AbstractSdkResult},
-    std::objects::module::ModuleId,
-};
+use abstract_adapter::{sdk::AbstractSdkResult, std::objects::module::ModuleId};
 
 use abstract_sdk::AppInterface;
 
