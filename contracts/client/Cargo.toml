@@ -37,9 +37,7 @@ export = []
 schema = ["abstract-app/schema"]
 interface = [
   "export",
-  "dep:abstract-interface",
   "dep:cw-orch",
-  "ibcmail/interface",
 ]
 daemon = ["interface", "cw-orch/daemon"]
 
@@ -51,27 +49,21 @@ cw-storage-plus = { workspace = true }
 thiserror = { workspace = true }
 schemars = { workspace = true }
 cw-asset = { workspace = true }
-abstract-app = { workspace = true }
+abstract-app = "0.22"
 ibcmail = { workspace = true }
-abstract-interface = { workspace = true, optional = true }
 cw-paginate = { workspace = true }
 
 # Dependencies for interface
 cw-orch = { workspace = true, optional = true }
 sha2 = { version = "0.10.8", default-features = false }
-#client = { workspace = true, optional = true }
 
 [dev-dependencies]
 client = { workspace = true, features = ["interface"] }
 server = { workspace = true, features = ["interface"] }
 abstract-client = { workspace = true }
-abstract-app = { workspace = true, features = ["test-utils"] }
-speculoos = { workspace = true }
+abstract-app = { version = "0.22", features = ["test-utils"] }
 semver = { workspace = true }
 dotenv = { workspace = true }
 env_logger = { workspace = true }
 cw-orch = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
-abstract-cw-orch-polytone = { workspace = true }
-abstract-interchain-tests = { workspace = true }
-#abstract-scripts = { workspace = true }

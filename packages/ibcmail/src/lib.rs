@@ -1,8 +1,10 @@
 pub mod client;
 pub mod server;
 
-use abstract_sdk::std::objects::AccountId;
-use abstract_std::objects::{account::AccountTrace, chain_name::ChainName, namespace::Namespace};
+use abstract_app::std::objects::AccountId;
+use abstract_app::std::objects::{
+    account::AccountTrace, chain_name::ChainName, namespace::Namespace,
+};
 // TODO: this crate is 75kb. should we really include it for this basic functionality?
 // https://crates.io/crates/const_format
 use const_format::concatcp;

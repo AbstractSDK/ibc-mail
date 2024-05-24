@@ -8,8 +8,8 @@
 //!
 //! `cargo run --example local_daemon`
 
+use abstract_adapter::std::objects::namespace::Namespace;
 use abstract_client::{AbstractClient, Publisher};
-use abstract_std::objects::namespace::Namespace;
 use cw_orch::{anyhow, prelude::*, tokio::runtime::Runtime};
 use ibcmail::{server::msg::ServerInstantiateMsg, IBCMAIL_SERVER_ID};
 use ibcmail_server::{ServerInterface, APP_VERSION};

@@ -1,6 +1,6 @@
 use abstract_adapter::{sdk::AbstractSdkResult, std::objects::module::ModuleId};
 
-use abstract_sdk::AppInterface;
+use abstract_app::sdk::AppInterface;
 
 use cosmwasm_std::{CosmosMsg, Deps};
 

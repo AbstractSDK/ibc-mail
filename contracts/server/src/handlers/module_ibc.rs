@@ -1,5 +1,5 @@
-use abstract_sdk::AbstractResponse;
-use abstract_std::ibc::ModuleIbcMsg;
+use abstract_adapter::sdk::AbstractResponse;
+use abstract_adapter::std::ibc::ModuleIbcMsg;
 use cosmwasm_std::{from_json, DepsMut, Env};
 use ibcmail::{
     server::{error::ServerError, msg::ServerIbcMessage, ServerAdapter},

@@ -3,12 +3,12 @@ use abstract_client::{AbstractClient, Application, Environment};
 use abstract_cw_orch_polytone::Polytone;
 use abstract_interchain_tests::setup::ibc_connect_polytone_and_abstract;
 // Use prelude to get all the necessary imports
+use client::{contract::interface::ClientInterface, msg::ClientInstantiateMsg, *};
 use cw_orch::{anyhow, prelude::*};
 use ibcmail::{
     server::msg::ServerInstantiateMsg, IbcMailMessage, Message, Recipient, Sender,
     IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID,
 };
-use ibcmail_client::{contract::interface::ClientInterface, msg::ClientInstantiateMsg, *};
 use server::ServerInterface;
 use speculoos::prelude::*;
 
@@ -17,7 +17,6 @@ struct TestEnv<Env: CwEnv> {
     abs: AbstractClient<Env>,
     client1: Application<Env, ClientInterface<Env>>,
     client2: Application<Env, ClientInterface<Env>>,
-    // server: Application<Env, ServerInterface<Env>>
 }
 
 impl<Env: CwEnv> TestEnv<Env> {
@@ -93,12 +92,10 @@ fn create_test_message(from: AccountId, to: AccountId) -> IbcMailMessage {
 }
 
 mod receive_msg {
-
     use ibcmail::{MessageStatus, IBCMAIL_SERVER_ID};
     use speculoos::assert_that;
 
     use super::*;
-
     /// Sending a message from the same account to the same account
     /// TODO: this test is failing because of an issue with state management...
     // #[test]

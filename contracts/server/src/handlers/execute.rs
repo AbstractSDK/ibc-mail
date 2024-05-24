@@ -1,11 +1,13 @@
-use abstract_adapter::traits::AbstractResponse;
-use abstract_sdk::{features::ModuleIdentification, AccountVerification, ModuleRegistryInterface};
-use abstract_std::{
+use abstract_adapter::sdk::{
+    features::ModuleIdentification, AccountVerification, ModuleRegistryInterface,
+};
+use abstract_adapter::std::{
     ibc_client,
     objects::{account::AccountTrace, chain_name::ChainName, module::ModuleInfo},
     version_control::NamespaceResponse,
     IBC_CLIENT,
 };
+use abstract_adapter::traits::AbstractResponse;
 use cosmwasm_std::{to_json_binary, wasm_execute, CosmosMsg, Deps, DepsMut, Env, MessageInfo};
 use ibcmail::{
     client::api::ClientInterface,

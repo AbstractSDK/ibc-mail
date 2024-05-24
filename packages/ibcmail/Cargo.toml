@@ -7,18 +7,14 @@ edition = "2021"
 
 [features]
 default = []
-interface = ["dep:abstract-interface"]
 
 [dependencies]
-abstract-sdk = { workspace = true }
 cosmwasm-std = { workspace = true }
 cosmwasm-schema = { workspace = true }
 cw-storage-plus = { workspace = true }
-abstract-app = { workspace = true }
-abstract-std = { workspace = true }
-abstract-adapter = { workspace = true }
+abstract-app = { version = "0.22"}
+abstract-adapter = { version = "0.22"}
 cw-orch = { workspace = true }
-abstract-interface = { workspace = true, optional = true }
 thiserror = { workspace = true }
 cw-asset = { workspace = true }
 cw-controllers = { workspace = true }
