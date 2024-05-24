@@ -11,7 +11,7 @@ use ibcmail::{
 
 use crate::{
     contract::{App, ClientResult},
-    msg::{ClientQueryMsg},
+    msg::ClientQueryMsg,
 };
 
 pub fn query_handler(

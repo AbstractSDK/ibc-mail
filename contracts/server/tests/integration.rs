@@ -8,7 +8,7 @@ use ibcmail_server::ServerInterface;
 
 /// Set up the test environment with an Account that has the App installed
 #[allow(clippy::type_complexity)]
-fn setup(
+fn _setup(
     _count: i32,
 ) -> anyhow::Result<(
     AbstractClient<MockBech32>,
