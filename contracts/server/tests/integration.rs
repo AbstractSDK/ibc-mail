@@ -4,7 +4,7 @@ use cosmwasm_std::coins;
 // Use prelude to get all the necessary imports
 use cw_orch::{anyhow, prelude::*};
 use ibcmail::{
-    server::msg::{ConfigResponse, ServerInstantiateMsg, ServerQueryMsgFns},
+    server::msg::{ServerInstantiateMsg},
     IBCMAIL_SERVER_ID,
 };
 use ibcmail_server::ServerInterface;
@@ -38,13 +38,4 @@ fn setup(
         .install_adapter::<ServerInterface<_>>(&[])?;
 
     Ok((client, app))
-}
-
-#[test]
-fn successful_install() -> anyhow::Result<()> {
-    let (_, app) = setup(0)?;
-
-    let config = app.config()?;
-    assert_eq!(config, ConfigResponse {});
-    Ok(())
 }

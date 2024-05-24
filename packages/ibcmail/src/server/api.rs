@@ -47,7 +47,11 @@ impl<'a, T: ServerInterface> MailServer<'a, T> {
         adapters.execute(self.module_id(), msg)
     }
 
-    pub fn process_msg(&self, msg: IbcMailMessage, route: Option<Route>) -> AbstractSdkResult<CosmosMsg> {
+    pub fn process_msg(
+        &self,
+        msg: IbcMailMessage,
+        route: Option<Route>,
+    ) -> AbstractSdkResult<CosmosMsg> {
         self.request(ServerExecuteMsg::ProcessMessage { msg, route })
     }
 }

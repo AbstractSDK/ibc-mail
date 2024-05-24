@@ -2,6 +2,9 @@
 members = ["contracts/*", "packages/ibcmail"]
 resolver = "2"
 
+[workspace.package]
+version = "0.2.0"
+
 [profile.release]
 rpath = false
 lto = true
@@ -24,7 +27,7 @@ cw-asset = { version = "3.0.0" }
 abstract-app = { version = "0.22.1" }
 abstract-adapter = { version = "0.22.1" }
 abstract-std = { version = "0.22.1" }
-abstract-interface = { version = "0.22.1" }
+abstract-interface = { version = "0.22.2" }
 abstract-sdk = { version = "0.22.1" }
 lazy_static = "1.4.0"
 cw-semver = { version = "1.0", features = ["serde"] }

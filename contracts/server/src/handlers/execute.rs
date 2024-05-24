@@ -1,5 +1,5 @@
 use abstract_adapter::traits::AbstractResponse;
-use abstract_sdk::{features::ModuleIdentification, ModuleRegistryInterface};
+use abstract_sdk::{features::ModuleIdentification, AccountVerification, ModuleRegistryInterface};
 use abstract_std::{
     ibc_client,
     objects::{account::AccountTrace, chain_name::ChainName, module::ModuleInfo},
@@ -43,7 +43,7 @@ fn process_message(
     _info: MessageInfo,
     msg: IbcMailMessage,
     route: Option<Route>,
-    app: Adapter,
+    mut app: Adapter,
 ) -> ServerResult {
     println!("processing message: {:?} with route {:?}", msg, route);
 
@@ -84,7 +84,7 @@ fn process_message(
         route,
     };
 
-    let msg = route_msg(deps, msg, metadata, &app)?;
+    let msg = route_msg(deps, msg, metadata, &mut app)?;
 
     Ok(app.response("route").add_message(msg))
 }
@@ -93,7 +93,7 @@ pub(crate) fn route_msg(
     deps: DepsMut,
     msg: IbcMailMessage,
     header: Header,
-    app: &ServerAdapter,
+    app: &mut ServerAdapter,
 ) -> ServerResult<CosmosMsg> {
     println!("routing message: {:?}, metadata: {:?}", msg, header);
 
@@ -148,7 +148,7 @@ fn route_to_local_account(
     deps: Deps,
     msg: IbcMailMessage,
     header: Header,
-    app: &ServerAdapter,
+    app: &mut ServerAdapter,
 ) -> ServerResult<CosmosMsg> {
     println!("routing to local account: {:?}", msg.message.recipient);
     // This is a local message
@@ -175,7 +175,10 @@ fn route_to_local_account(
         )),
     }?;
 
-    let mail_client = app.mail_client(deps, &account_id);
+    let acc_base = app.account_registry(deps)?.account_base(&account_id)?;
+    (*app).target_account = Some(acc_base);
+
+    let mail_client = app.mail_client(deps);
 
     Ok(mail_client.receive_msg(msg, header)?)
 }

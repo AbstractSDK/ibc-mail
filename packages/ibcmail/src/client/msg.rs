@@ -1,6 +1,8 @@
 use cosmwasm_schema::QueryResponses;
 
-use crate::{client::ClientApp, IbcMailMessage, MessageHash, MessageStatus, Message, Route, Sender};
+use crate::{
+    client::ClientApp, IbcMailMessage, Message, MessageHash, MessageStatus, Route, Sender,
+};
 
 // This is used for type safety and re-exporting the contract endpoint structs.
 abstract_app::app_msg_types!(ClientApp, ClientExecuteMsg, ClientQueryMsg);

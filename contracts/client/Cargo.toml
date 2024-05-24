@@ -1,6 +1,6 @@
 [package]
 name = "ibcmail-client"
-version = "0.0.1"
+version.workspace = true
 authors = [
   "CyberHoward <cyberhoward@protonmail.com>",
   "Adair <adair@abstract.money>",
