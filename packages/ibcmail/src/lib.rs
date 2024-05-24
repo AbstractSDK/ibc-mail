@@ -5,8 +5,6 @@ use abstract_app::std::objects::AccountId;
 use abstract_app::std::objects::{
     account::AccountTrace, chain_name::ChainName, namespace::Namespace,
 };
-// TODO: this crate is 75kb. should we really include it for this basic functionality?
-// https://crates.io/crates/const_format
 use const_format::concatcp;
 use cosmwasm_std::Timestamp;
 

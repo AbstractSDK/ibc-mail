@@ -55,23 +55,3 @@ impl<'a, T: ClientInterface> MailClient<'a, T> {
         self.request(ClientExecuteMsg::ReceiveMessage(message))
     }
 }
-
-// /// Queries
-// impl<'a, T: ClientInterface> MailClient<'a, T> {
-//     /// Do a query in the MONEY_MARKET
-//     pub fn query<R: DeserializeOwned>(
-//         &self,
-//         query_msg: ServerQueryMsg,
-//     ) -> AbstractSdkResult<R> {
-//         let address = self.module_address()?;
-//
-//         self.deps.querier.query_wasm_smart(address, &QueryMsg::<ClientQueryMsg>::from(query_msg))
-//     }
-//
-//     // Queries
-//     pub fn config(
-//         &self,
-//     ) -> AbstractSdkResult<Uint128> {
-//         self.query(ServerQueryMsg::Config {})
-//     }
-// }
