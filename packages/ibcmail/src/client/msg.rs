@@ -42,7 +42,7 @@ pub enum ClientQueryMsg {
     #[returns(MessagesResponse)]
     Messages {
         status: MessageStatus,
-        ids: Vec<MessageId>,
+        ids: Vec<MessageHash>,
     },
 }
 

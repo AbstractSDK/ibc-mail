@@ -1,5 +1,5 @@
 use abstract_app::sdk::cw_helpers::load_many;
-use cosmwasm_std::{to_json_binary, Binary, Deps, Env, Order, StdResult};
+use cosmwasm_std::{to_json_binary, Binary, Deps, Env};
 use cw_storage_plus::Bound;
 use ibcmail::{
     client::{
@@ -44,7 +44,7 @@ pub fn query_handler(
 fn query_messages(
     deps: Deps,
     status: MessageStatus,
-    ids: Vec<MessageId>,
+    ids: Vec<MessageHash>,
 ) -> ClientResult<MessagesResponse> {
     let map = match status {
         MessageStatus::Received => RECEIVED,
