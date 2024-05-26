@@ -44,6 +44,11 @@ pub enum ClientQueryMsg {
         status: MessageStatus,
         ids: Vec<MessageHash>,
     },
+    #[returns(MessagesResponse)]
+    Messages {
+        status: MessageStatus,
+        ids: Vec<MessageHash>,
+    },
 }
 
 #[cosmwasm_schema::cw_serde]
