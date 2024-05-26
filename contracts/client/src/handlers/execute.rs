@@ -3,6 +3,7 @@ use abstract_app::{
     sdk::ModuleRegistryInterface,
     traits::{AbstractResponse, AccountIdentification},
 };
+use base64::prelude::*;
 use cosmwasm_std::{ensure_eq, Deps, DepsMut, Env, MessageInfo, Order};
 use ibcmail::{
     client::{
@@ -48,10 +49,9 @@ fn send_msg(
 
     let to_hash = format!("{:?}{:?}{:?}", env.block.time, msg.subject, msg.recipient);
     let hash = <sha2::Sha256 as sha2::Digest>::digest(to_hash);
-
+    let base_64_hash = BASE64_STANDARD.encode(hash);
     let to_send = IbcMailMessage {
-        // TODO: base64 encode this
-        id: format!("{:x}", hash),
+        id: base_64_hash,
         sender: Sender::account(
             app.account_id(deps.as_ref()).unwrap(),
             Some(ChainName::new(&env)),

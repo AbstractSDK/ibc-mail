@@ -52,6 +52,7 @@ cw-asset = { workspace = true }
 abstract-app = "0.22"
 ibcmail = { workspace = true }
 cw-paginate = { workspace = true }
+base64 = { version = "0.22.1", default-features = false }
 
 # Dependencies for interface
 cw-orch = { workspace = true, optional = true }
