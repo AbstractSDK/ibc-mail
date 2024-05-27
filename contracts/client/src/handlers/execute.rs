@@ -20,6 +20,7 @@ use crate::{
     msg::ClientExecuteMsg,
 };
 
+// # ANCHOR: execute_handler
 pub fn execute_handler(
     deps: DepsMut,
     env: Env,
@@ -27,15 +28,14 @@ pub fn execute_handler(
     app: App,
     msg: ClientExecuteMsg,
 ) -> ClientResult {
-    println!("Env: {:?}", env);
     match msg {
         ClientExecuteMsg::SendMessage { message, route } => {
             send_msg(deps, env, info, message, route, app)
         }
         ClientExecuteMsg::ReceiveMessage(message) => receive_msg(deps, info, message, app),
-        _ => Err(ClientError::NotImplemented("execute".to_string())),
     }
 }
+// # ANCHOR_END: execute_handler
 
 fn send_msg(
     deps: DepsMut,
@@ -46,7 +46,6 @@ fn send_msg(
     app: ClientApp,
 ) -> ClientResult {
     // validate basic fields of message, construct message to send to server
-
     let to_hash = format!("{:?}{:?}{:?}", env.block.time, msg.subject, msg.recipient);
     let hash = <sha2::Sha256 as sha2::Digest>::digest(to_hash);
     let base_64_hash = BASE64_STANDARD.encode(hash);
@@ -67,16 +66,16 @@ fn send_msg(
 
     SENT.save(deps.storage, to_send.id.clone(), &to_send)?;
 
+    // ANCHOR: server_api_send
     let server = app.mail_server(deps.as_ref());
     let route_msg = server.process_msg(to_send, route)?;
+    // ANCHOR_END: server_api_send
 
     Ok(app.response("send").add_message(route_msg))
 }
 
 /// Receive a message from the server
 fn receive_msg(deps: DepsMut, info: MessageInfo, msg: IbcMailMessage, app: App) -> ClientResult {
-    // TODO: remove print
-    println!("Received message: {:?}", msg);
     // check that the message sender is the server... this requires the server to be the proper version
     // TODO, should we have a function that is able to check against a module ID directly in the SDK ?
     let sender_module = app
@@ -92,11 +91,6 @@ fn receive_msg(deps: DepsMut, info: MessageInfo, msg: IbcMailMessage, app: App) 
     ensure_correct_recipient(deps.as_ref(), &msg.message.recipient, &app)?;
 
     RECEIVED.save(deps.storage, msg.id.clone(), &msg)?;
-    // TODO: remove, could run out of gas!!
-    let len = RECEIVED
-        .keys(deps.storage, None, None, Order::Ascending)
-        .count();
-    println!("Received length: {:?}", len);
 
     Ok(app
         .response("received")
@@ -108,13 +102,11 @@ fn ensure_correct_recipient(
     recipient: &Recipient,
     app: &ClientApp,
 ) -> ClientResult<()> {
-    println!("Checking recipient: {:?}", recipient);
     match recipient {
         Recipient::Account {
             id: ref account_id, ..
         } => {
             let our_id = app.account_id(deps)?;
-            println!("recipient_id: {:?}, our_id: {:?}", account_id, our_id);
 
             // check that the recipient is the current account
             ensure_eq!(account_id, &our_id, ClientError::NotRecipient {});

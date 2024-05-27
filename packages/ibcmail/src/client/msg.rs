@@ -12,7 +12,6 @@ abstract_app::app_msg_types!(ClientApp, ClientExecuteMsg, ClientQueryMsg);
 pub struct ClientInstantiateMsg {}
 
 /// App execute messages
-#[non_exhaustive]
 #[cosmwasm_schema::cw_serde]
 #[derive(cw_orch::ExecuteFns)]
 #[impl_into(ExecuteMsg)]
