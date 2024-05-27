@@ -4,7 +4,7 @@ use abstract_app::{
     traits::{AbstractResponse, AccountIdentification},
 };
 use base64::prelude::*;
-use cosmwasm_std::{ensure_eq, Deps, DepsMut, Env, MessageInfo, Order};
+use cosmwasm_std::{ensure_eq, Deps, DepsMut, Env, MessageInfo};
 use ibcmail::{
     client::{
         state::{RECEIVED, SENT},
