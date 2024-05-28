@@ -1,6 +1,7 @@
 use abstract_adapter::sdk::{
     features::ModuleIdentification, AccountVerification, ModuleRegistryInterface,
 };
+use abstract_adapter::std::version_control::AccountBase;
 use abstract_adapter::std::{
     ibc_client,
     objects::{account::AccountTrace, chain_name::ChainName, module::ModuleInfo},
@@ -9,6 +10,7 @@ use abstract_adapter::std::{
 };
 use abstract_adapter::traits::AbstractResponse;
 use cosmwasm_std::{to_json_binary, wasm_execute, CosmosMsg, Deps, DepsMut, Env, MessageInfo};
+use ibcmail::client::api::MailClient;
 use ibcmail::{
     client::api::ClientInterface,
     server::{
@@ -23,6 +25,7 @@ use crate::{
     error::ServerError,
 };
 
+// ANCHOR: execute_handler
 pub fn execute_handler(
     deps: DepsMut,
     env: Env,
@@ -36,6 +39,7 @@ pub fn execute_handler(
         }
     }
 }
+// ANCHOR_END: execute_handler
 
 fn process_message(
     deps: DepsMut,
@@ -116,30 +120,25 @@ pub(crate) fn route_msg(
                     hop: header.current_hop,
                 })?
                 .to_string();
-            println!("routing to destination_chain: {:?}", dest_chain);
 
-            let ibc_msg = ibc_client::ExecuteMsg::ModuleIbcAction {
-                // TODO: why is host chain not chain name
+            // ANCHOR: ibc_client
+            // Call IBC client
+            let ibc_client_msg = ibc_client::ExecuteMsg::ModuleIbcAction {
                 host_chain: dest_chain,
                 target_module: current_module_info,
                 msg: to_json_binary(&ServerIbcMessage::RouteMessage { msg, header })?,
                 callback_info: None,
             };
 
-            println!("ibc_msg: {:?}", ibc_msg);
-            // TODO: suggested syntax
-            // let ibc_msg = app.ibc_client().module_ibc_action(chain, target_module, msg, callback)
-            // TODO: We could additionally have something like to avoid having to create the module info object
-            // let ibc_msg = app.ibc_client().self_module_ibc_action(chain, msg, callback)
-
-            let ibc_client_addr = app
+            let ibc_client_addr: cw_orch::prelude::Addr = app
                 .module_registry(deps.as_ref())?
                 .query_module(ModuleInfo::from_id_latest(IBC_CLIENT)?)?
                 .reference
                 .unwrap_native()?;
-            let exec_msg = wasm_execute(ibc_client_addr, &ibc_msg, vec![])?.into();
 
-            Ok::<CosmosMsg, ServerError>(exec_msg)
+            let msg: CosmosMsg = wasm_execute(ibc_client_addr, &ibc_client_msg, vec![])?.into();
+            // ANCHOR_END: ibc_client
+            Ok::<CosmosMsg, ServerError>(msg)
         }
     }
 }
@@ -175,10 +174,14 @@ fn route_to_local_account(
         )),
     }?;
 
-    let acc_base = app.account_registry(deps)?.account_base(&account_id)?;
-    (*app).target_account = Some(acc_base);
+    // ANCHOR: set_acc_and_send
+    // Set target account for actions, is used by APIs to retrieve mail client address.
+    let recipient_acc: AccountBase = app.account_registry(deps)?.account_base(&account_id)?;
+    (*app).target_account = Some(recipient_acc);
 
-    let mail_client = app.mail_client(deps);
+    let mail_client: MailClient<_> = app.mail_client(deps);
+    let msg: CosmosMsg = mail_client.receive_msg(msg, header)?;
+    // ANCHOR_END: set_acc_and_send
 
-    Ok(mail_client.receive_msg(msg, header)?)
+    Ok(msg)
 }

@@ -17,12 +17,14 @@ pub const EMAIL_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub type MessageHash = String;
 
 /// Struct representing new message to send to another client
+// # ANCHOR: message
 #[cosmwasm_schema::cw_serde]
 pub struct Message {
     pub recipient: Recipient,
     pub subject: String,
     pub body: String,
 }
+// # ANCHOR_END: message
 
 impl Message {
     pub fn new(recipient: Recipient, subject: impl Into<String>, body: impl Into<String>) -> Self {

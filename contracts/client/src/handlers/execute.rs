@@ -4,13 +4,13 @@ use abstract_app::{
     traits::{AbstractResponse, AccountIdentification},
 };
 use base64::prelude::*;
-use cosmwasm_std::{ensure_eq, Deps, DepsMut, Env, MessageInfo};
+use cosmwasm_std::{ensure_eq, CosmosMsg, Deps, DepsMut, Env, MessageInfo};
 use ibcmail::{
     client::{
         state::{RECEIVED, SENT},
         ClientApp,
     },
-    server::api::ServerInterface,
+    server::api::{MailServer, ServerInterface},
     IbcMailMessage, Message, Recipient, Route, Sender, IBCMAIL_SERVER_ID,
 };
 
@@ -37,6 +37,7 @@ pub fn execute_handler(
 }
 // # ANCHOR_END: execute_handler
 
+// # ANCHOR: send_msg
 fn send_msg(
     deps: DepsMut,
     env: Env,
@@ -66,18 +67,16 @@ fn send_msg(
 
     SENT.save(deps.storage, to_send.id.clone(), &to_send)?;
 
-    // ANCHOR: server_api_send
-    let server = app.mail_server(deps.as_ref());
-    let route_msg = server.process_msg(to_send, route)?;
-    // ANCHOR_END: server_api_send
+    let server: MailServer<_> = app.mail_server(deps.as_ref());
+    let route_msg: CosmosMsg = server.process_msg(to_send, route)?;
 
     Ok(app.response("send").add_message(route_msg))
 }
+// # ANCHOR_END: send_msg
 
 /// Receive a message from the server
+// # ANCHOR: receive_msg
 fn receive_msg(deps: DepsMut, info: MessageInfo, msg: IbcMailMessage, app: App) -> ClientResult {
-    // check that the message sender is the server... this requires the server to be the proper version
-    // TODO, should we have a function that is able to check against a module ID directly in the SDK ?
     let sender_module = app
         .module_registry(deps.as_ref())?
         .module_info(info.sender)
@@ -96,6 +95,7 @@ fn receive_msg(deps: DepsMut, info: MessageInfo, msg: IbcMailMessage, app: App) 
         .response("received")
         .add_attribute("message_id", &msg.id))
 }
+// # ANCHOR_END: receive_msg
 
 fn ensure_correct_recipient(
     deps: Deps,

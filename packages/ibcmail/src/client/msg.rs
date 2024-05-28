@@ -12,6 +12,7 @@ abstract_app::app_msg_types!(ClientApp, ClientExecuteMsg, ClientQueryMsg);
 pub struct ClientInstantiateMsg {}
 
 /// App execute messages
+// # ANCHOR: execute_msg
 #[cosmwasm_schema::cw_serde]
 #[derive(cw_orch::ExecuteFns)]
 #[impl_into(ExecuteMsg)]
@@ -24,6 +25,7 @@ pub enum ClientExecuteMsg {
         route: Option<Route>,
     },
 }
+// # ANCHOR_END: execute_msg
 
 /// App query messages
 #[cosmwasm_schema::cw_serde]
