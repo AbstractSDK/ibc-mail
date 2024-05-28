@@ -1,6 +1,8 @@
 use cosmwasm_schema::QueryResponses;
 
-use crate::{client::ClientApp, Message, MessageId, MessageStatus, NewMessage, Route, Sender};
+use crate::{
+    client::ClientApp, IbcMailMessage, Message, MessageHash, MessageStatus, Route, Sender,
+};
 
 // This is used for type safety and re-exporting the contract endpoint structs.
 abstract_app::app_msg_types!(ClientApp, ClientExecuteMsg, ClientQueryMsg);
@@ -10,26 +12,25 @@ abstract_app::app_msg_types!(ClientApp, ClientExecuteMsg, ClientQueryMsg);
 pub struct ClientInstantiateMsg {}
 
 /// App execute messages
-#[non_exhaustive]
+// # ANCHOR: execute_msg
 #[cosmwasm_schema::cw_serde]
-#[cfg_attr(feature = "interface", derive(cw_orch::ExecuteFns))]
-#[cfg_attr(feature = "interface", impl_into(ExecuteMsg))]
+#[derive(cw_orch::ExecuteFns)]
+#[impl_into(ExecuteMsg)]
 pub enum ClientExecuteMsg {
+    /// Receive a message from the server
+    ReceiveMessage(IbcMailMessage),
     /// Send a message
     SendMessage {
-        message: NewMessage,
+        message: Message,
         route: Option<Route>,
     },
-    /// Receive a message from the server
-    ReceiveMessage(Message),
-    /// Update the client configuration
-    UpdateConfig {},
 }
+// # ANCHOR_END: execute_msg
 
 /// App query messages
 #[cosmwasm_schema::cw_serde]
-#[cfg_attr(feature = "interface", derive(cw_orch::QueryFns))]
-#[cfg_attr(feature = "interface", impl_into(QueryMsg))]
+#[derive(cw_orch::QueryFns)]
+#[impl_into(QueryMsg)]
 #[derive(QueryResponses)]
 pub enum ClientQueryMsg {
     #[returns(MessagesResponse)]
@@ -37,15 +38,13 @@ pub enum ClientQueryMsg {
         status: MessageStatus,
         filter: Option<MessageFilter>,
         limit: Option<u32>,
-        start_after: Option<MessageId>,
+        start_after: Option<MessageHash>,
     },
     #[returns(MessagesResponse)]
     Messages {
         status: MessageStatus,
-        ids: Vec<MessageId>,
+        ids: Vec<MessageHash>,
     },
-    #[returns(ConfigResponse)]
-    Config {},
 }
 
 #[cosmwasm_schema::cw_serde]
@@ -61,5 +60,5 @@ pub struct ConfigResponse {}
 
 #[cosmwasm_schema::cw_serde]
 pub struct MessagesResponse {
-    pub messages: Vec<Message>,
+    pub messages: Vec<IbcMailMessage>,
 }

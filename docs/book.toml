@@ -1,0 +1,30 @@
+[book]
+authors = ["cyberhoward"]
+language = "en"
+multilingual = false
+src = "src"
+title = "IBC Mail Service"
+
+
+[build]
+create-missing = false
+
+[preprocessor]
+
+[preprocessor.admonish]
+command = "mdbook-admonish"
+assets_version = "3.0.2" # do not edit: managed by `mdbook-admonish install`
+
+[preprocessor.mermaid]
+command = "mdbook-mermaid"
+
+[output]
+
+[output.html]
+additional-js = ["mermaid.min.js", "mermaid-init.js"]
+curly-quotes = true
+git-repository-url = "https://github.com/AbstractSDK/ibc-mail"
+git-repository-icon = "fa-github"
+edit-url-template = "https://github.com/AbstractSDK/ibc-mail/edit/main/docs/{path}"
+fold.enable = true
+no-section-label = true

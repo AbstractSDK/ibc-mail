@@ -10,7 +10,7 @@ use cosmwasm_std::{CosmosMsg, Deps, Uint128};
 
 use crate::{
     server::msg::{ServerExecuteMsg, ServerQueryMsg},
-    Message, Route, IBCMAIL_SERVER_ID,
+    IbcMailMessage, Route, IBCMAIL_SERVER_ID,
 };
 
 // API for Abstract SDK users
@@ -36,25 +36,22 @@ pub struct MailServer<'a, T: ServerInterface> {
 }
 
 impl<'a, T: ServerInterface> MailServer<'a, T> {
-    /// Set the module id for the MONEY_MARKET
-    pub fn with_module_id(self, module_id: ModuleId<'a>) -> Self {
-        Self { module_id, ..self }
-    }
-
-    /// returns the HUB module id
+    /// returns the server module id
     fn module_id(&self) -> ModuleId {
         self.module_id
     }
 
-    /// Executes a [MoneyMarketRawAction] in th MONEY_MARKET
     fn request(&self, msg: ServerExecuteMsg) -> AbstractSdkResult<CosmosMsg> {
         let adapters = self.base.adapters(self.deps);
 
         adapters.execute(self.module_id(), msg)
     }
 
-    /// Route message
-    pub fn process_msg(&self, msg: Message, route: Option<Route>) -> AbstractSdkResult<CosmosMsg> {
+    pub fn process_msg(
+        &self,
+        msg: IbcMailMessage,
+        route: Option<Route>,
+    ) -> AbstractSdkResult<CosmosMsg> {
         self.request(ServerExecuteMsg::ProcessMessage { msg, route })
     }
 }

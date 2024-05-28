@@ -30,7 +30,7 @@ use cw_orch::{
     prelude::*,
     tokio::runtime::Runtime,
 };
-use ibcmail::{client::msg::ClientExecuteMsgFns, NewMessage, IBCMAIL_NAMESPACE};
+use ibcmail::{client::msg::ClientExecuteMsgFns, Message, IBCMAIL_NAMESPACE};
 use ibcmail_client::ClientInterface;
 
 const SRC: ChainInfo = ARCHWAY_1;
@@ -95,7 +95,7 @@ fn test() -> anyhow::Result<()> {
     let _dst_client = dst_acc.application::<ClientInterface<_>>()?;
 
     let send = src_client.send_message(
-        NewMessage::new(dst_acc.id()?.into(), "test-subject", "test-body"),
+        Message::new(dst_acc.id()?.into(), "test-subject", "test-body"),
         Some(AccountTrace::Remote(vec![ChainName::from_chain_id(
             DST.chain_id,
         )])),

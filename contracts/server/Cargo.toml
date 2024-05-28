@@ -1,6 +1,6 @@
 [package]
 name = "ibcmail-server"
-version = "0.1.1"
+version.workspace = true
 authors = [
   "CyberHoward <cyberhoward@protonmail.com>",
   "Adair <adair@abstract.money>",
@@ -37,13 +37,14 @@ export = []
 schema = ["abstract-adapter/schema"]
 interface = [
   "export",
-  "dep:abstract-interface",
   "dep:cw-orch",
-  "ibcmail/interface",
 ]
 daemon = ["interface", "cw-orch/daemon"]
 
 [dependencies]
+abstract-adapter = "0.22"
+ibcmail = { workspace = true }
+
 cosmwasm-std = { workspace = true }
 cosmwasm-schema = { workspace = true }
 cw-controllers = { workspace = true }
@@ -51,23 +52,15 @@ cw-storage-plus = { workspace = true }
 thiserror = { workspace = true }
 schemars = { workspace = true }
 cw-asset = { workspace = true }
-abstract-adapter = { workspace = true }
-abstract-sdk = { workspace = true }
-abstract-std = { workspace = true }
-abstract-interface = { workspace = true, optional = true }
-ibcmail = { workspace = true }
 
 # Dependencies for interface
 cw-orch = { workspace = true, optional = true }
-log = "0.4.21"
 
 [dev-dependencies]
+cw-orch = { workspace = true }
 client = { workspace = true, features = ["interface"] }
 abstract-client = { workspace = true }
-abstract-adapter = { workspace = true, features = ["test-utils"] }
-speculoos = { workspace = true }
 semver = { workspace = true }
 dotenv = { workspace = true }
 env_logger = { workspace = true }
-cw-orch = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
