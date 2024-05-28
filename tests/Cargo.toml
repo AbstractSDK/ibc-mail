@@ -9,7 +9,7 @@ edition = "2021"
 default = []
 
 [dependencies]
-abstract-app = { version = "0.22", features = ["test-utils"] }
+abstract-app = { workspace = true, features = ["test-utils"] }
 abstract-cw-orch-polytone = "2.0.0"
 abstract-interchain-tests = { git = "https://github.com/AbstractSDK/abstract", version = "0.22.1", branch = "removemm" }
 cw-orch = { package = "cw-orch-interchain", git = "ssh://git@github.com/AbstractSDK/cw-orch-interchain.git", tag = "v0.22.0" }

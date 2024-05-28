@@ -176,7 +176,7 @@ fn route_to_local_account(
     }?;
 
     let acc_base = app.account_registry(deps)?.account_base(&account_id)?;
-    (*app).target_account = Some(acc_base);
+    app.target_account = Some(acc_base);
 
     let mail_client = app.mail_client(deps);
 
