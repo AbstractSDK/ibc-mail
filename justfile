@@ -130,3 +130,11 @@ publish +CHAINS:
     just wasm
   fi
   just run-script publish {{CHAINS}}
+
+docs-build:
+  (cd docs && mdbook build)
+
+docs-install:
+  cargo install mdbook --vers "0.4.28" --locked
+  cargo install mdbook-mermaid --vers "0.12.6" --locked
+  cargo install mdbook-admonish --vers "1.15.0" --locked
