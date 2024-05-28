@@ -1,5 +1,6 @@
 use cosmwasm_std::Response;
 pub use ibcmail::server::ServerAdapter as Adapter;
+use ibcmail::EMAIL_VERSION;
 use ibcmail::{server::error::ServerError, IBCMAIL_SERVER_ID};
 use ibcmail::{server::msg::ServerInstantiateMsg, IBCMAIL_CLIENT_ID};
 
@@ -7,7 +8,8 @@ use crate::{handlers, APP_VERSION};
 
 use abstract_adapter::objects::dependency::StaticDependency;
 
-pub const MAIL_CLIENT: StaticDependency = StaticDependency::new(IBCMAIL_CLIENT_ID, &[]);
+pub const MAIL_CLIENT: StaticDependency =
+    StaticDependency::new(IBCMAIL_CLIENT_ID, &[EMAIL_VERSION]);
 
 /// The type of the result returned by your client's entry points.
 pub type ServerResult<T = Response> = Result<T, ServerError>;

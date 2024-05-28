@@ -35,14 +35,11 @@ required-features = ["daemon"]
 default = ["export"]
 export = []
 schema = ["abstract-adapter/schema"]
-interface = [
-  "export",
-  "dep:cw-orch",
-]
+interface = ["export", "dep:cw-orch"]
 daemon = ["interface", "cw-orch/daemon"]
 
 [dependencies]
-abstract-adapter = "0.22"
+abstract-adapter = { workspace = true }
 ibcmail = { workspace = true }
 
 cosmwasm-std = { workspace = true }

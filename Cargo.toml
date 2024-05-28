@@ -20,6 +20,8 @@ cw-orch = "0.22"
 ibcmail = { path = "packages/ibcmail", package = "ibcmail" }
 client = { path = "contracts/client", package = "ibcmail-client" }
 server = { path = "contracts/server", package = "ibcmail-server" }
+abstract-app = { version = "0.22.2" }
+abstract-adapter = { version = "0.22.2" }
 abstract-client = "0.22.1"
 speculoos = "0.11.0"
 semver = "1.0"
@@ -38,4 +40,3 @@ debug-assertions = false
 codegen-units = 1
 panic = 'abort'
 incremental = false
-
