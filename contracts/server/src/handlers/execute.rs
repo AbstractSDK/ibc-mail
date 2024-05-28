@@ -11,10 +11,7 @@ use abstract_adapter::traits::AbstractResponse;
 use cosmwasm_std::{to_json_binary, wasm_execute, CosmosMsg, Deps, DepsMut, Env, MessageInfo};
 use ibcmail::{
     client::api::ClientInterface,
-    server::{
-        msg::{ServerExecuteMsg, ServerIbcMessage},
-        ServerAdapter,
-    },
+    server::msg::{ServerExecuteMsg, ServerIbcMessage},
     Header, IbcMailMessage, Recipient, Route,
 };
 
@@ -27,12 +24,12 @@ pub fn execute_handler(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    app: Adapter,
+    adapter: Adapter,
     msg: ServerExecuteMsg,
 ) -> ServerResult {
     match msg {
         ServerExecuteMsg::ProcessMessage { msg, route } => {
-            process_message(deps, env, info, msg, route, app)
+            process_message(deps, env, info, msg, route, adapter)
         }
     }
 }
@@ -43,7 +40,7 @@ fn process_message(
     _info: MessageInfo,
     msg: IbcMailMessage,
     route: Option<Route>,
-    mut app: Adapter,
+    mut adapter: Adapter,
 ) -> ServerResult {
     println!("processing message: {:?} with route {:?}", msg, route);
 
@@ -84,30 +81,31 @@ fn process_message(
         route,
     };
 
-    let msg = route_msg(deps, msg, metadata, &mut app)?;
+    let msg = route_msg(deps, msg, metadata, &mut adapter)?;
 
-    Ok(app.response("route").add_message(msg))
+    Ok(adapter.response("route").add_message(msg))
 }
 
 pub(crate) fn route_msg(
     deps: DepsMut,
     msg: IbcMailMessage,
     header: Header,
-    app: &mut ServerAdapter,
+    adapter: &mut Adapter,
 ) -> ServerResult<CosmosMsg> {
     println!("routing message: {:?}, metadata: {:?}", msg, header);
 
     match header.route {
-        AccountTrace::Local => route_to_local_account(deps.as_ref(), msg, header, app),
+        AccountTrace::Local => route_to_local_account(deps.as_ref(), msg, header, adapter),
         AccountTrace::Remote(ref chains) => {
             println!("routing to chains: {:?}", chains);
             // check index of hop. If we are on the final hop, route to local account
             if header.current_hop == chains.len() as u32 {
-                return route_to_local_account(deps.as_ref(), msg.clone(), header, app);
+                return route_to_local_account(deps.as_ref(), msg.clone(), header, adapter);
             }
-            // TODO verify that the chain is a valid chain
+            // TODO: verify that the chain is a valid chain
 
-            let current_module_info = ModuleInfo::from_id(app.module_id(), app.version().into())?;
+            let current_module_info =
+                ModuleInfo::from_id(adapter.module_id(), adapter.version().into())?;
 
             let dest_chain = chains
                 .get(header.current_hop as usize)
@@ -132,14 +130,14 @@ pub(crate) fn route_msg(
             // TODO: We could additionally have something like to avoid having to create the module info object
             // let ibc_msg = app.ibc_client().self_module_ibc_action(chain, msg, callback)
 
-            let ibc_client_addr = app
+            let ibc_client_addr = adapter
                 .module_registry(deps.as_ref())?
                 .query_module(ModuleInfo::from_id_latest(IBC_CLIENT)?)?
                 .reference
                 .unwrap_native()?;
             let exec_msg = wasm_execute(ibc_client_addr, &ibc_msg, vec![])?.into();
 
-            Ok::<CosmosMsg, ServerError>(exec_msg)
+            Ok(exec_msg)
         }
     }
 }
@@ -148,7 +146,7 @@ fn route_to_local_account(
     deps: Deps,
     msg: IbcMailMessage,
     header: Header,
-    app: &mut ServerAdapter,
+    adapter: &mut Adapter,
 ) -> ServerResult<CosmosMsg> {
     println!("routing to local account: {:?}", msg.message.recipient);
     // This is a local message
@@ -160,7 +158,7 @@ fn route_to_local_account(
         Recipient::Namespace { namespace, .. } => {
             // TODO: this only allows for addressing recipients via namespace of their email account directly.
             // If they have the email application installed on a sub-account, this will not be able to identify the sub-account.
-            let namespace_status = app
+            let namespace_status = adapter
                 .module_registry(deps)?
                 .query_namespace(namespace.clone())?;
             match namespace_status {
@@ -175,10 +173,10 @@ fn route_to_local_account(
         )),
     }?;
 
-    let acc_base = app.account_registry(deps)?.account_base(&account_id)?;
-    app.target_account = Some(acc_base);
+    let acc_base = adapter.account_registry(deps)?.account_base(&account_id)?;
+    adapter.target_account = Some(acc_base);
 
-    let mail_client = app.mail_client(deps);
+    let mail_client = adapter.mail_client(deps);
 
     Ok(mail_client.receive_msg(msg, header)?)
 }

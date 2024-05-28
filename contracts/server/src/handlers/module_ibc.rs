@@ -11,7 +11,7 @@ use crate::{contract::ServerResult, handlers::execute::route_msg};
 pub fn module_ibc_handler(
     deps: DepsMut,
     _env: Env,
-    mut app: ServerAdapter,
+    mut adapter: ServerAdapter,
     ibc_msg: ModuleIbcMsg,
 ) -> ServerResult {
     println!("module_ibc_handler 1 : {:?}", ibc_msg);
@@ -31,11 +31,11 @@ pub fn module_ibc_handler(
         ServerIbcMessage::RouteMessage { msg, mut header } => {
             // We've hopped one more time
             header.current_hop += 1;
-            let msg = dbg!(route_msg(deps, msg, header, &mut app))?;
+            let msg = dbg!(route_msg(deps, msg, header, &mut adapter))?;
 
             println!("routed_msg: {:?}", msg);
 
-            Ok(app.response("module_ibc").add_message(msg))
+            Ok(adapter.response("module_ibc").add_message(msg))
         }
         _ => Err(ServerError::UnauthorizedIbcMessage {}),
     }
