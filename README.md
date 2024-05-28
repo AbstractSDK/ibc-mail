@@ -5,6 +5,8 @@ It supports:
 - Sending messages to other users on the same chain.
 - Sending messages to users on other chains one hop away
 
+> You can get an overview of the code and how it works by following [this code overview](https://abstractsdk.github.io/ibc-mail/).
+
 It's designed with two contracts, the Client and the Server. Every user has their own mail Client, which can send and receive messages. It routes these messages to the Server, which then forwards them to the recipient's Client. This is beneficial for a few reasons:
 - Multiplexing between different versions of clients. Users will likely want their own version of the client, which can be updated independently of the server. The server will be able to support sending messages to multiple clients.
 - When sending multi-hop messages, the mail Server will send the message to the recipient's chain's mail Server, which will then forward it to the recipient's Client. If there is a hop in between, it will just hop between servers. The big question is "which client should the message be sent to? for routing?"
