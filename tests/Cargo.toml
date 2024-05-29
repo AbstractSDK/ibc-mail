@@ -5,15 +5,18 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+name = "demo"
+
 [features]
 default = []
 
 [dependencies]
 abstract-app = { version = "0.22", features = ["test-utils"] }
 abstract-cw-orch-polytone = "2.0.0"
+abstract-interface = "0.22"
 abstract-interchain-tests = { git = "https://github.com/AbstractSDK/abstract", version = "0.22.1", branch = "removemm" }
 cw-orch = { package = "cw-orch-interchain", git = "ssh://git@github.com/AbstractSDK/cw-orch-interchain.git", tag = "v0.22.0" }
-
 ibcmail = { workspace = true }
 cosmwasm-std = { workspace = true }
 cosmwasm-schema = { workspace = true }
@@ -24,3 +27,6 @@ client = { workspace = true, features = ["interface"] }
 speculoos = { workspace = true }
 server = { workspace = true, features = ["interface"] }
 abstract-client = { workspace = true }
+clap.workspace = true
+env_logger = "0.11.3"
+dotenv = { workspace = true }

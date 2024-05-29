@@ -9,7 +9,7 @@ use abstract_adapter::std::{
     IBC_CLIENT,
 };
 use abstract_adapter::traits::AbstractResponse;
-use cosmwasm_std::{to_json_binary, wasm_execute, CosmosMsg, Deps, DepsMut, Env, MessageInfo};
+use cosmwasm_std::{to_json_binary, wasm_execute, Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo};
 use ibcmail::client::api::MailClient;
 use ibcmail::{
     client::api::ClientInterface,
@@ -130,7 +130,7 @@ pub(crate) fn route_msg(
                 callback_info: None,
             };
 
-            let ibc_client_addr: cw_orch::prelude::Addr = app
+            let ibc_client_addr: Addr = app
                 .module_registry(deps.as_ref())?
                 .query_module(ModuleInfo::from_id_latest(IBC_CLIENT)?)?
                 .reference

@@ -1,0 +1,2 @@
+c42e5cd5be2f9865d1cd67b9d2c651ce8a9d15cbb2bca42bc6f28873ee15cf6d  target/wasm32-unknown-unknown/release/ibcmail_client.wasm
+2540d503f00364ac656aecaf6e39cc49e0bdb17084d09d6dbcae2413a3de79a9  target/wasm32-unknown-unknown/release/ibcmail_server.wasm

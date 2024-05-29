@@ -1,12 +1,3 @@
-//! Publishes the module to the Abstract platform by uploading it and registering it on the client store.
-//!
-//! Info: The mnemonic used to register the module must be the same as the owner of the account that claimed the namespace.
-//!
-//! ## Example
-//!
-//! ```bash
-//! $ just publish uni-6 osmo-test-5
-//! ```
 use abstract_app::{
     objects::{
         account::AccountTrace,
@@ -22,21 +13,17 @@ use abstract_app::{
     },
 };
 use abstract_client::AbstractClient;
-use abstract_interface::{Abstract, VersionControl};
+use abstract_interface::{Abstract, DependencyCreation, VersionControl};
 use clap::Parser;
-use cw_orch::{
-    anyhow,
-    daemon::networks::{ARCHWAY_1, NEUTRON_1},
-    prelude::*,
-    tokio::runtime::Runtime,
-};
+use client::{msg::ClientInstantiateMsg, ClientInterface};
+use cw_orch::{anyhow, prelude::*, tokio::runtime::Runtime};
 use ibcmail::{client::msg::ClientExecuteMsgFns, Message, IBCMAIL_NAMESPACE};
-use ibcmail_client::ClientInterface;
+use networks::{HARPOON_4, PION_1};
 
-const SRC: ChainInfo = ARCHWAY_1;
-const DST: ChainInfo = NEUTRON_1;
+const SRC: ChainInfo = HARPOON_4;
+const DST: ChainInfo = PION_1;
 
-const TEST_NAMESPACE: &str = "mailtest";
+const TEST_NAMESPACE: &str = "ibcmail-demo";
 
 fn test() -> anyhow::Result<()> {
     let rt = Runtime::new()?;
@@ -56,13 +43,14 @@ fn test() -> anyhow::Result<()> {
         .ibc
         .client
         .list_remote_hosts()?;
+
     println!("hosts: {:?}", hosts);
 
-    update_ibc_host(abs_src.version_control())?;
-    update_ibc_host(abs_dst.version_control())?;
+    // update_ibc_host(abs_src.version_control())?;
+    // update_ibc_host(abs_dst.version_control())?;
 
-    approve_mail_modules(abs_src.version_control())?;
-    approve_mail_modules(abs_dst.version_control())?;
+    // approve_mail_modules(abs_src.version_control())?;
+    // approve_mail_modules(abs_dst.version_control())?;
 
     let module_list = abs_src.version_control().module_list(
         Some(ModuleFilter {
@@ -81,6 +69,8 @@ fn test() -> anyhow::Result<()> {
         .install_on_sub_account(false)
         .namespace(Namespace::new(TEST_NAMESPACE)?)
         .build()?;
+
+    src_acc.install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {}, &[])?;
     // let app = src_acc.install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {},&[])?;
     // app.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
     let src_client = src_acc.application::<ClientInterface<_>>()?;
@@ -157,9 +147,9 @@ pub fn approve_mail_modules<Env: CwEnv>(vc: &VersionControl<Env>) -> anyhow::Res
 #[command(author, version, about, long_about = None)]
 struct Arguments {}
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     dotenv::dotenv().ok();
     env_logger::init();
     let _args = Arguments::parse();
-    test().unwrap();
+    test()
 }
