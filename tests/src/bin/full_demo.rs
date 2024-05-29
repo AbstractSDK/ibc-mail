@@ -64,50 +64,46 @@ fn test() -> anyhow::Result<()> {
     )?;
     println!("module_list: {:?}", module_list);
 
+    // Creating a source account to send a message from
     let src_acc = abs_src
         .account_builder()
         .install_on_sub_account(false)
         .namespace(Namespace::new(TEST_NAMESPACE)?)
         .build()?;
 
-    // src_acc.install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {}, &[])?;
-    // let app = src_acc.install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {},&[])?;
-    let app = src_acc.application::<ClientInterface<_>>()?;
-    // app.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
-    let src_client = src_acc.application::<ClientInterface<_>>()?;
+    // Installing the client on the source account to be able to send an email
+    let src_client = src_acc.install_app_with_dependencies::<ClientInterface<_>>(
+        &ClientInstantiateMsg {},
+        Empty {},
+        &[],
+    )?;
+    // Authorize the client application to call the server
+    src_client.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
 
+    // Creating a source account to send a message from
     let dst_acc = abs_dst
         .account_builder()
         .install_on_sub_account(false)
         .namespace(Namespace::new(TEST_NAMESPACE)?)
         .build()?;
-    // let dst_acc = abs_dst.account_builder().sub_account(&abs_dst.account_from(AccountId::local(1))?).namespace(Namespace::new("mailtest")?).build()?;
-    // let app = dst_acc.install_app_with_dependencies::<ClientInterface<_>>(
-    //     &ClientInstantiateMsg {},
-    //     Empty {},
-    //     &[],
-    // )?;
 
-    let app = dst_acc.application::<ClientInterface<_>>()?;
-    // app.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
+    // Installing the client on the destination account to be able to receive an email
+    let dst_client = dst_acc.install_app_with_dependencies::<ClientInterface<_>>(
+        &ClientInstantiateMsg {},
+        Empty {},
+        &[],
+    )?;
+    // Authorize the client application to call the server
+    dst_client.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
 
-    let dst_client = dst_acc.application::<ClientInterface<_>>()?;
-
-    // let send = src_client.send_message(
-    //     Message::new(dst_acc.id()?.into(), "test-subject", "test-body"),
-    //     Some(AccountTrace::Remote(vec![ChainName::from_chain_id(
-    //         DST.chain_id,
-    //     )])),
-    // )?;
-
-    let send = dst_client.send_message(
-        Message::new(src_acc.id()?.into(), "test-subject", "test-body"),
+    let send = src_client.send_message(
+        Message::new(dst_acc.id()?.into(), "test-subject", "test-body"),
         Some(AccountTrace::Remote(vec![ChainName::from_chain_id(
-            SRC.chain_id,
+            DST.chain_id,
         )])),
     )?;
 
-    interchain.wait_ibc(DST.chain_id, send)?;
+    interchain.wait_ibc(SRC.chain_id, send)?;
 
     Ok(())
 }

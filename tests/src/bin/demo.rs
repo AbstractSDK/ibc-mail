@@ -20,8 +20,8 @@ use cw_orch::{anyhow, prelude::*, tokio::runtime::Runtime};
 use ibcmail::{client::msg::ClientExecuteMsgFns, Message, IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID};
 use networks::{HARPOON_4, PION_1};
 
-const SRC: ChainInfo = PION_1;
-const DST: ChainInfo = HARPOON_4;
+const SRC: ChainInfo = HARPOON_4;
+const DST: ChainInfo = PION_1;
 
 const TEST_NAMESPACE: &str = "ibcmail-demo";
 
