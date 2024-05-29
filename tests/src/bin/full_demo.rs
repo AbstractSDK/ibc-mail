@@ -20,8 +20,8 @@ use cw_orch::{anyhow, prelude::*, tokio::runtime::Runtime};
 use ibcmail::{client::msg::ClientExecuteMsgFns, Message, IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID};
 use networks::{HARPOON_4, PION_1};
 
-const SRC: ChainInfo = PION_1;
-const DST: ChainInfo = HARPOON_4;
+const SRC: ChainInfo = HARPOON_4;
+const DST: ChainInfo = PION_1;
 
 const TEST_NAMESPACE: &str = "ibcmail-demo";
 
@@ -44,6 +44,14 @@ fn test() -> anyhow::Result<()> {
         .client
         .list_remote_hosts()?;
 
+    println!("hosts: {:?}", hosts);
+
+    // update_ibc_host(abs_src.version_control())?;
+    // update_ibc_host(abs_dst.version_control())?;
+
+    // approve_mail_modules(abs_src.version_control())?;
+    // approve_mail_modules(abs_dst.version_control())?;
+
     let module_list = abs_src.version_control().module_list(
         Some(ModuleFilter {
             namespace: Some(IBCMAIL_NAMESPACE.to_string()),
@@ -62,6 +70,10 @@ fn test() -> anyhow::Result<()> {
         .namespace(Namespace::new(TEST_NAMESPACE)?)
         .build()?;
 
+    // src_acc.install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {}, &[])?;
+    // let app = src_acc.install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {},&[])?;
+    let app = src_acc.application::<ClientInterface<_>>()?;
+    // app.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
     let src_client = src_acc.application::<ClientInterface<_>>()?;
 
     let dst_acc = abs_dst
@@ -69,17 +81,33 @@ fn test() -> anyhow::Result<()> {
         .install_on_sub_account(false)
         .namespace(Namespace::new(TEST_NAMESPACE)?)
         .build()?;
+    // let dst_acc = abs_dst.account_builder().sub_account(&abs_dst.account_from(AccountId::local(1))?).namespace(Namespace::new("mailtest")?).build()?;
+    // let app = dst_acc.install_app_with_dependencies::<ClientInterface<_>>(
+    //     &ClientInstantiateMsg {},
+    //     Empty {},
+    //     &[],
+    // )?;
 
-    let _dst_client = dst_acc.application::<ClientInterface<_>>()?;
+    let app = dst_acc.application::<ClientInterface<_>>()?;
+    // app.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
 
-    let send = src_client.send_message(
-        Message::new(dst_acc.id()?.into(), "test-subject", "test-body"),
+    let dst_client = dst_acc.application::<ClientInterface<_>>()?;
+
+    // let send = src_client.send_message(
+    //     Message::new(dst_acc.id()?.into(), "test-subject", "test-body"),
+    //     Some(AccountTrace::Remote(vec![ChainName::from_chain_id(
+    //         DST.chain_id,
+    //     )])),
+    // )?;
+
+    let send = dst_client.send_message(
+        Message::new(src_acc.id()?.into(), "test-subject", "test-body"),
         Some(AccountTrace::Remote(vec![ChainName::from_chain_id(
-            DST.chain_id,
+            SRC.chain_id,
         )])),
     )?;
 
-    interchain.wait_ibc(SRC.chain_id, send)?;
+    interchain.wait_ibc(DST.chain_id, send)?;
 
     Ok(())
 }
