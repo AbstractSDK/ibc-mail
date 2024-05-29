@@ -15,8 +15,9 @@ default = []
 abstract-app = { version = "0.22", features = ["test-utils"] }
 abstract-cw-orch-polytone = "2.0.0"
 abstract-interface = "0.22"
-abstract-interchain-tests = { git = "https://github.com/AbstractSDK/abstract", version = "0.22.1", branch = "removemm" }
-cw-orch = { package = "cw-orch-interchain", git = "ssh://git@github.com/AbstractSDK/cw-orch-interchain.git", tag = "v0.22.0" }
+abstract-interchain-tests = { version="0.22.1"}
+cw-orch = { version="0.22.2" }
+cw-orch-interchain  = {version="0.1.0", features=["daemon"]}
 ibcmail = { workspace = true }
 cosmwasm-std = { workspace = true }
 cosmwasm-schema = { workspace = true }

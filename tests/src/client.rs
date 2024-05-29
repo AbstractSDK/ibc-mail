@@ -94,6 +94,7 @@ fn create_test_message(from: AccountId, to: AccountId) -> IbcMailMessage {
 mod receive_msg {
     use ibcmail::{MessageStatus, IBCMAIL_SERVER_ID};
     use speculoos::assert_that;
+    use cw_orch_interchain::prelude::*;
 
     use super::*;
     /// Sending a message from the same account to the same account
@@ -160,6 +161,7 @@ mod send_msg {
         std::version_control::ExecuteMsgFns,
     };
     use ibcmail::{server::error::ServerError, Message, MessageStatus, IBCMAIL_CLIENT_ID};
+    use cw_orch_interchain::prelude::*;
 
     use super::*;
 
@@ -275,7 +277,7 @@ mod send_msg {
 
         assert_that!(res).is_ok();
 
-        interchain.wait_ibc("archway-1", res?)?;
+        interchain.check_ibc("archway-1", res?)?;
 
         let myos_messages = arch_client.list_messages(MessageStatus::Received, None, None, None)?;
         assert_that!(myos_messages.messages).is_empty();
@@ -370,7 +372,7 @@ mod send_msg {
             ])),
         )?;
 
-        interchain.wait_ibc("archway-1", res.clone())?;
+        interchain.check_ibc("archway-1", res.clone())?;
 
         let arch_messages = arch_client.list_messages(MessageStatus::Received, None, None, None)?;
         assert_that!(arch_messages.messages).is_empty();

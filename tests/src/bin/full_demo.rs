@@ -20,6 +20,8 @@ use cw_orch::{anyhow, prelude::*, tokio::runtime::Runtime};
 use ibcmail::{client::msg::ClientExecuteMsgFns, Message, IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID};
 use networks::{HARPOON_4, PION_1};
 
+use cw_orch_interchain::prelude::*;
+
 const SRC: ChainInfo = HARPOON_4;
 const DST: ChainInfo = PION_1;
 
@@ -103,7 +105,7 @@ fn test() -> anyhow::Result<()> {
         )])),
     )?;
 
-    interchain.wait_ibc(SRC.chain_id, send)?;
+    interchain.check_ibc(SRC.chain_id, send)?;
 
     Ok(())
 }
