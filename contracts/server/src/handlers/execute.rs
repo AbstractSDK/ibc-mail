@@ -9,7 +9,9 @@ use abstract_adapter::std::{
     IBC_CLIENT,
 };
 use abstract_adapter::traits::AbstractResponse;
-use cosmwasm_std::{to_json_binary, wasm_execute, Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo};
+use cosmwasm_std::{
+    to_json_binary, wasm_execute, Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
+};
 use ibcmail::client::api::MailClient;
 use ibcmail::{
     client::api::ClientInterface,
