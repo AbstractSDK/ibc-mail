@@ -39,23 +39,6 @@ fn test() -> anyhow::Result<()> {
     let abs_src = AbstractClient::new(src.clone())?;
     let abs_dst = AbstractClient::new(dst.clone())?;
 
-    let hosts = Abstract::load_from(src.clone())?
-        .ibc
-        .client
-        .list_remote_hosts()?;
-
-    let module_list = abs_src.version_control().module_list(
-        Some(ModuleFilter {
-            namespace: Some(IBCMAIL_NAMESPACE.to_string()),
-            name: None,
-            version: None,
-            status: None,
-        }),
-        None,
-        None,
-    )?;
-    println!("module_list: {:?}", module_list);
-
     let src_acc = abs_src
         .account_builder()
         .install_on_sub_account(false)
@@ -70,10 +53,10 @@ fn test() -> anyhow::Result<()> {
         .namespace(Namespace::new(TEST_NAMESPACE)?)
         .build()?;
 
-    let _dst_client = dst_acc.application::<ClientInterface<_>>()?;
+    let mail_msg = Message::new(dst_acc.id()?.into(), "test-subject", "test-body");
 
     let send = src_client.send_message(
-        Message::new(dst_acc.id()?.into(), "test-subject", "test-body"),
+        mail_msg,
         Some(AccountTrace::Remote(vec![ChainName::from_chain_id(
             DST.chain_id,
         )])),
@@ -84,60 +67,8 @@ fn test() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn update_ibc_host<Env: CwEnv>(vc: &VersionControl<Env>) -> anyhow::Result<()> {
-    let ibc_host_module = vc
-        .modules(vec![ModuleInfo::from_id_latest(IBC_HOST)?])?
-        .modules
-        .first()
-        .unwrap()
-        .to_owned()
-        .module;
-    let version = ibc_host_module.info.version.clone();
-    if version == ModuleVersion::Version("0.22.1".into()) {
-        return Ok(());
-    }
-    let ibc_host_addr = ibc_host_module.reference.unwrap_native()?;
-    vc.propose_modules(vec![(
-        ModuleInfo::from_id(IBC_HOST, ModuleVersion::Version("0.22.1".into()))?,
-        ModuleReference::Native(ibc_host_addr),
-    )])?;
-    vc.approve_any_abstract_modules()?;
-    Ok(())
-}
-
-pub fn approve_mail_modules<Env: CwEnv>(vc: &VersionControl<Env>) -> anyhow::Result<()> {
-    let proposed_abstract_modules = vc.module_list(
-        Some(ModuleFilter {
-            namespace: Some(IBCMAIL_NAMESPACE.to_string()),
-            status: Some(ModuleStatus::Pending),
-            ..Default::default()
-        }),
-        None,
-        None,
-    )?;
-
-    if proposed_abstract_modules.modules.is_empty() {
-        return Ok(());
-    }
-
-    vc.approve_or_reject_modules(
-        proposed_abstract_modules
-            .modules
-            .into_iter()
-            .map(|m| m.module.info)
-            .collect(),
-        vec![],
-    )?;
-    Ok(())
-}
-
-#[derive(Parser, Default, Debug)]
-#[command(author, version, about, long_about = None)]
-struct Arguments {}
-
 fn main() -> anyhow::Result<()> {
     dotenv::dotenv().ok();
     env_logger::init();
-    let _args = Arguments::parse();
     test()
 }
