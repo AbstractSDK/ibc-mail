@@ -29,7 +29,7 @@ cw-asset = { workspace = true }
 client = { workspace = true, features = ["interface"] }
 speculoos = { workspace = true }
 server = { workspace = true, features = ["interface"] }
-abstract-client = { workspace = true }
+abstract-client = { workspace = true, features = ["interchain"] }
 clap.workspace = true
 env_logger = "0.11.3"
 dotenv = { workspace = true }
