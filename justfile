@@ -97,7 +97,7 @@ publish-schemas namespace name version:
 
   # Create target directory structure and copy schemas
   mkdir -p "$schema_out_dir"
-  cp -a "./schema/." "$schema_out_dir"
+  cp -a "./contracts/{{name}}/schema/." "$schema_out_dir"
 
   # Copy metadata.json to the target directory
   cp "./metadata.json" "$metadata_out_dir"

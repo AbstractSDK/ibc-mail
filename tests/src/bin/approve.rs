@@ -8,19 +8,17 @@
 //! $ just publish uni-6 osmo-test-5
 //! ```
 
-use abstract_app::objects::module::ModuleVersion;
 use abstract_app::objects::namespace::Namespace;
-use abstract_client::{AbstractClient, Publisher};
+use abstract_interface::Abstract;
 use clap::Parser;
-use cw_orch::daemon::TxSender;
 use cw_orch::{
     anyhow,
     environment::TxHandler,
-    prelude::{networks::parse_network, DaemonBuilder, *},
+    prelude::{*, DaemonBuilder, networks::parse_network},
     tokio::runtime::Runtime,
 };
+
 use ibcmail::IBCMAIL_CLIENT_ID;
-use ibcmail_client::ClientInterface;
 
 fn publish(networks: Vec<ChainInfo>) -> anyhow::Result<()> {
     // run for each requested network
@@ -32,17 +30,9 @@ fn publish(networks: Vec<ChainInfo>) -> anyhow::Result<()> {
         let app_namespace = Namespace::from_id(IBCMAIL_CLIENT_ID)?;
 
         // Create an [`AbstractClient`]
-        let abstract_client: AbstractClient<Daemon> = AbstractClient::new(chain.clone())?;
+        let abs = Abstract::new(chain.clone());
 
-        // Get the [`Publisher`] that owns the namespace, otherwise create a new one and claim the namespace
-        let publisher: Publisher<_> = abstract_client.publisher_builder(app_namespace).build()?;
-
-        if publisher.account().owner()? != chain.sender().address() {
-            panic!("The current sender can not publish to this namespace. Please use the wallet that owns the Account that owns the Namespace.")
-        }
-
-        // Publish the App to the Abstract Platform
-        publisher.publish_app::<ClientInterface<Daemon>>()?;
+        abs.version_control.approve_all_modules_for_namespace(app_namespace)?;
     }
     Ok(())
 }

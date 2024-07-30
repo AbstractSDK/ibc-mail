@@ -10,11 +10,10 @@ use networks::{HARPOON_4, PION_1};
 
 use client::ClientInterface;
 use ibcmail::{client::msg::ClientExecuteMsgFns, Message};
+use tests::TEST_NAMESPACE;
 
 const SRC: ChainInfo = PION_1;
 const DST: ChainInfo = HARPOON_4;
-
-const TEST_NAMESPACE: &str = "ibcmail-demo";
 
 fn test() -> anyhow::Result<()> {
     let interchain =

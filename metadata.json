@@ -1,0 +1,9 @@
+{
+  "name": "IBC Mail Server",
+  "description": "IBC mail adapter.",
+  "website": "",
+  "docs": "",
+  "type": "adapter",
+  "icon": "GiTrade",
+  "enabled": true
+}
