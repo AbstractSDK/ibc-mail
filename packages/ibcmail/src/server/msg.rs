@@ -30,7 +30,7 @@ pub enum ServerIbcMessage {
 /// App query messages
 #[cosmwasm_schema::cw_serde]
 #[derive(cw_orch::QueryFns)]
-#[impl_into(QueryMsg)]
+#[cw_orch(impl_into(QueryMsg))]
 #[derive(QueryResponses)]
 pub enum ServerQueryMsg {
     #[returns(ConfigResponse)]

@@ -42,7 +42,7 @@ interface = [
 daemon = ["interface", "cw-orch/daemon"]
 
 [dependencies]
-abstract-adapter = "0.22"
+abstract-adapter = { workspace = true }
 ibcmail = { workspace = true }
 
 cosmwasm-std = { workspace = true }
