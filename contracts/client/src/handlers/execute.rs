@@ -1,5 +1,5 @@
+use abstract_app::objects::TruncatedChainId;
 use abstract_app::{
-    objects::chain_name::ChainName,
     sdk::ModuleRegistryInterface,
     traits::{AbstractResponse, AccountIdentification},
 };
@@ -54,7 +54,7 @@ fn send_msg(
         id: base_64_hash,
         sender: Sender::account(
             app.account_id(deps.as_ref()).unwrap(),
-            Some(ChainName::new(&env)),
+            Some(TruncatedChainId::new(&env)),
         ),
         message: Message {
             recipient: msg.recipient,

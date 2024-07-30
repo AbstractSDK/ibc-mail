@@ -10,6 +10,7 @@
 use abstract_app::objects::namespace::Namespace;
 use abstract_client::{AbstractClient, Publisher};
 use clap::Parser;
+use cw_orch::daemon::TxSender;
 use cw_orch::{
     anyhow,
     environment::TxHandler,
@@ -24,10 +25,7 @@ fn publish(networks: Vec<ChainInfo>) -> anyhow::Result<()> {
     for network in networks {
         // Setup
         let rt = Runtime::new()?;
-        let chain = DaemonBuilder::default()
-            .handle(rt.handle())
-            .chain(network)
-            .build()?;
+        let chain = DaemonBuilder::new(network).handle(rt.handle()).build()?;
 
         let app_namespace = Namespace::from_id(IBCMAIL_CLIENT_ID)?;
 
@@ -37,7 +35,7 @@ fn publish(networks: Vec<ChainInfo>) -> anyhow::Result<()> {
         // Get the [`Publisher`] that owns the namespace, otherwise create a new one and claim the namespace
         let publisher: Publisher<_> = abstract_client.publisher_builder(app_namespace).build()?;
 
-        if publisher.account().owner()? != chain.sender() {
+        if publisher.account().owner()? != chain.sender().address() {
             panic!("The current sender can not publish to this namespace. Please use the wallet that owns the Account that owns the Namespace.")
         }
 

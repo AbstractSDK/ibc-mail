@@ -12,7 +12,7 @@ default = []
 cosmwasm-std = { workspace = true }
 cosmwasm-schema = { workspace = true }
 cw-storage-plus = { workspace = true }
-abstract-app = { workspace = true}
+abstract-app = { workspace = true }
 abstract-adapter = { workspace = true }
 cw-orch = { workspace = true }
 thiserror = { workspace = true }

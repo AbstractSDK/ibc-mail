@@ -1,10 +1,11 @@
+use abstract_adapter::objects::TruncatedChainId;
 use abstract_adapter::sdk::{
     features::ModuleIdentification, AccountVerification, ModuleRegistryInterface,
 };
 use abstract_adapter::std::version_control::AccountBase;
 use abstract_adapter::std::{
     ibc_client,
-    objects::{account::AccountTrace, chain_name::ChainName, module::ModuleInfo},
+    objects::{account::AccountTrace, module::ModuleInfo},
     version_control::NamespaceResponse,
     IBC_CLIENT,
 };
@@ -53,7 +54,7 @@ fn process_message(
 ) -> ServerResult {
     println!("processing message: {:?} with route {:?}", msg, route);
 
-    let current_chain = ChainName::new(&env);
+    let current_chain = TruncatedChainId::new(&env);
 
     let route = if let Some(route) = route {
         Ok::<_, ServerError>(route)
@@ -115,21 +116,21 @@ pub(crate) fn route_msg(
 
             let current_module_info = ModuleInfo::from_id(app.module_id(), app.version().into())?;
 
-            let dest_chain = chains
-                .get(header.current_hop as usize)
-                .ok_or(ServerError::InvalidRoute {
-                    route: header.route.clone(),
-                    hop: header.current_hop,
-                })?
-                .to_string();
+            let dest_chain =
+                chains
+                    .get(header.current_hop as usize)
+                    .ok_or(ServerError::InvalidRoute {
+                        route: header.route.clone(),
+                        hop: header.current_hop,
+                    })?;
 
             // ANCHOR: ibc_client
             // Call IBC client
             let ibc_client_msg = ibc_client::ExecuteMsg::ModuleIbcAction {
-                host_chain: dest_chain,
+                host_chain: dest_chain.clone(),
                 target_module: current_module_info,
                 msg: to_json_binary(&ServerIbcMessage::RouteMessage { msg, header })?,
-                callback_info: None,
+                callback: None,
             };
 
             let ibc_client_addr: Addr = app
@@ -179,7 +180,7 @@ fn route_to_local_account(
     // ANCHOR: set_acc_and_send
     // Set target account for actions, is used by APIs to retrieve mail client address.
     let recipient_acc: AccountBase = app.account_registry(deps)?.account_base(&account_id)?;
-    (*app).target_account = Some(recipient_acc);
+    app.target_account = Some(recipient_acc);
 
     let mail_client: MailClient<_> = app.mail_client(deps);
     let msg: CosmosMsg = mail_client.receive_msg(msg, header)?;

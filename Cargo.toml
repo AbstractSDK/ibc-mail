@@ -3,7 +3,7 @@ members = ["contracts/*", "packages/ibcmail", "tests"]
 resolver = "2"
 
 [workspace.package]
-version = "0.2.0"
+version = "0.3.0"
 
 [workspace.dependencies]
 cosmwasm-std = "1.5.3"
@@ -41,4 +41,3 @@ debug-assertions = false
 codegen-units = 1
 panic = 'abort'
 incremental = false
-

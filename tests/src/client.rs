@@ -1,7 +1,7 @@
 use abstract_app::objects::{namespace::Namespace, AccountId};
 use abstract_client::{AbstractClient, Application, Environment};
 use abstract_cw_orch_polytone::Polytone;
-use abstract_interchain_tests::setup::ibc_connect_polytone_and_abstract;
+use abstract_interchain_tests::setup::ibc_abstract_setup;
 // Use prelude to get all the necessary imports
 use client::{contract::interface::ClientInterface, msg::ClientInstantiateMsg, *};
 use cw_orch::{anyhow, prelude::*};
@@ -72,7 +72,7 @@ impl<Env: CwEnv> TestEnv<Env> {
     }
 
     fn enable_ibc(&self) -> anyhow::Result<()> {
-        Polytone::deploy_on(self.abs.environment().clone(), None)?;
+        Polytone::deploy_on(self.abs.environment().clone(), Empty {})?;
         Ok(())
     }
 }
@@ -155,10 +155,9 @@ mod receive_msg {
 mod send_msg {
     use std::str::FromStr;
 
-    use abstract_app::{
-        objects::{account::AccountTrace, chain_name::ChainName},
-        std::version_control::ExecuteMsgFns,
-    };
+    use abstract_app::objects::TruncatedChainId;
+    use abstract_app::{objects::account::AccountTrace, std::version_control::ExecuteMsgFns};
+    use cw_orch_interchain::{InterchainEnv, MockBech32InterchainEnv};
     use ibcmail::{server::error::ServerError, Message, MessageStatus, IBCMAIL_CLIENT_ID};
 
     use super::*;
@@ -249,23 +248,23 @@ mod send_msg {
 
         // /Users/adair/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cw-orch-mock-0.22.0/src/queriers/env.rs:12:70:
         // index out of bounds: the len is 1 but the index is 1 (when initializing with "juno")
-        let arch_env = TestEnv::setup(interchain.chain("archway-1")?)?;
-        let juno_env = TestEnv::setup(interchain.chain("juno-1")?)?;
+        let arch_env = TestEnv::setup(interchain.get_chain("archway-1")?)?;
+        let juno_env = TestEnv::setup(interchain.get_chain("juno-1")?)?;
 
         arch_env.enable_ibc()?;
         juno_env.enable_ibc()?;
 
         // TODO: put somewhere better
-        ibc_connect_polytone_and_abstract(&interchain, "archway-1", "juno-1")?;
+        ibc_abstract_setup(&interchain, "archway-1", "juno-1")?;
 
         let arch_client = arch_env.client1;
         let juno_client = juno_env.client1;
 
-        // the trait `From<&str>` is not implemented for `abstract_app::objects::chain_name::ChainName`
+        // the trait `From<&str>` is not implemented for `abstract_app::objects::chain_name::TruncatedChainId`
         let arch_to_juno_msg = Message::new(
             Recipient::account(
                 juno_client.account().id()?,
-                Some(ChainName::from_string("juno".into())?),
+                Some(TruncatedChainId::from_string("juno".into())?),
             ),
             "test-subject",
             "test-body",
@@ -275,7 +274,7 @@ mod send_msg {
 
         assert_that!(res).is_ok();
 
-        interchain.wait_ibc("archway-1", res?)?;
+        interchain.await_and_check_packets("archway-1", res?)?;
 
         let myos_messages = arch_client.list_messages(MessageStatus::Received, None, None, None)?;
         assert_that!(myos_messages.messages).is_empty();
@@ -337,26 +336,26 @@ mod send_msg {
 
         // /Users/adair/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cw-orch-mock-0.22.0/src/queriers/env.rs:12:70:
         // index out of bounds: the len is 1 but the index is 1 (when initializing with "juno")
-        let arch_env = TestEnv::setup(interchain.chain("archway-1")?)?;
-        let juno_env = TestEnv::setup(interchain.chain("juno-1")?)?;
-        let neutron_env = TestEnv::setup(interchain.chain("neutron-1")?)?;
+        let arch_env = TestEnv::setup(interchain.get_chain("archway-1")?)?;
+        let juno_env = TestEnv::setup(interchain.get_chain("juno-1")?)?;
+        let neutron_env = TestEnv::setup(interchain.get_chain("neutron-1")?)?;
 
         arch_env.enable_ibc()?;
         juno_env.enable_ibc()?;
         neutron_env.enable_ibc()?;
 
-        ibc_connect_polytone_and_abstract(&interchain, "archway-1", "juno-1")?;
-        ibc_connect_polytone_and_abstract(&interchain, "juno-1", "neutron-1")?;
+        ibc_abstract_setup(&interchain, "archway-1", "juno-1")?;
+        ibc_abstract_setup(&interchain, "juno-1", "neutron-1")?;
 
         let arch_client = arch_env.client1;
         let _juno_client = juno_env.client1;
         let neutron_client = neutron_env.client1;
 
-        // the trait `From<&str>` is not implemented for `abstract_app::objects::chain_name::ChainName`
+        // the trait `From<&str>` is not implemented for `abstract_app::objects::chain_name::TruncatedChainId`
         let arch_to_neutron_msg = Message::new(
             Recipient::account(
                 neutron_client.account().id()?,
-                Some(ChainName::from_string("neutron".into())?),
+                Some(TruncatedChainId::from_string("neutron".into())?),
             ),
             "test-subject",
             "test-body",
@@ -366,11 +365,11 @@ mod send_msg {
             arch_to_neutron_msg,
             Some(AccountTrace::Remote(vec![
                 "juno".parse()?,
-                ChainName::from_str("neutron")?,
+                TruncatedChainId::from_str("neutron")?,
             ])),
         )?;
 
-        interchain.wait_ibc("archway-1", res.clone())?;
+        interchain.await_and_check_packets("archway-1", res.clone())?;
 
         let arch_messages = arch_client.list_messages(MessageStatus::Received, None, None, None)?;
         assert_that!(arch_messages.messages).is_empty();

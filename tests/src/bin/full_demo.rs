@@ -1,7 +1,7 @@
+use abstract_app::objects::TruncatedChainId;
 use abstract_app::{
     objects::{
         account::AccountTrace,
-        chain_name::ChainName,
         module::{ModuleInfo, ModuleStatus, ModuleVersion},
         module_reference::ModuleReference,
         namespace::Namespace,
@@ -13,12 +13,15 @@ use abstract_app::{
     },
 };
 use abstract_client::AbstractClient;
-use abstract_interface::{Abstract, DependencyCreation, VersionControl};
+use abstract_interface::{Abstract, VersionControl};
 use clap::Parser;
-use client::{msg::ClientInstantiateMsg, ClientInterface};
-use cw_orch::{anyhow, prelude::*, tokio::runtime::Runtime};
-use ibcmail::{client::msg::ClientExecuteMsgFns, Message, IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID};
+use cw_orch::tokio::runtime::Runtime;
+use cw_orch::{anyhow, prelude::*};
+use cw_orch_interchain::{ChannelCreationValidator, DaemonInterchainEnv, InterchainEnv};
 use networks::{HARPOON_4, PION_1};
+
+use client::ClientInterface;
+use ibcmail::{client::msg::ClientExecuteMsgFns, Message, IBCMAIL_NAMESPACE};
 
 const SRC: ChainInfo = HARPOON_4;
 const DST: ChainInfo = PION_1;
@@ -27,14 +30,11 @@ const TEST_NAMESPACE: &str = "ibcmail-demo";
 
 fn test() -> anyhow::Result<()> {
     let rt = Runtime::new()?;
-    let interchain = DaemonInterchainEnv::new(
-        rt.handle(),
-        vec![(SRC, None), (DST, None)],
-        &ChannelCreationValidator,
-    )?;
+    let interchain =
+        DaemonInterchainEnv::new(vec![(SRC, None), (DST, None)], &ChannelCreationValidator)?;
 
-    let src = interchain.chain(SRC.chain_id)?;
-    let dst = interchain.chain(DST.chain_id)?;
+    let src = interchain.get_chain(SRC.chain_id)?;
+    let dst = interchain.get_chain(DST.chain_id)?;
 
     let abs_src = AbstractClient::new(src.clone())?;
     let abs_dst = AbstractClient::new(dst.clone())?;
@@ -102,12 +102,12 @@ fn test() -> anyhow::Result<()> {
 
     let send = dst_client.send_message(
         Message::new(src_acc.id()?.into(), "test-subject", "test-body"),
-        Some(AccountTrace::Remote(vec![ChainName::from_chain_id(
+        Some(AccountTrace::Remote(vec![TruncatedChainId::from_chain_id(
             SRC.chain_id,
         )])),
     )?;
 
-    interchain.wait_ibc(DST.chain_id, send)?;
+    interchain.await_and_check_packets(DST.chain_id, send)?;
 
     Ok(())
 }

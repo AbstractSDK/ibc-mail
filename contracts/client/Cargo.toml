@@ -35,10 +35,7 @@ required-features = ["daemon"]
 default = ["export"]
 export = []
 schema = ["abstract-app/schema"]
-interface = [
-  "export",
-  "dep:cw-orch",
-]
+interface = ["export", "dep:cw-orch"]
 daemon = ["interface", "cw-orch/daemon"]
 
 [dependencies]
@@ -52,7 +49,7 @@ cw-asset = { workspace = true }
 abstract-app = { workspace = true }
 ibcmail = { workspace = true }
 cw-paginate = { workspace = true }
-base64 = { version = "0.22.1", default-features = false, features = ["alloc"]}
+base64 = { version = "0.22.1", default-features = false, features = ["alloc"] }
 
 # Dependencies for interface
 cw-orch = { workspace = true, optional = true }
