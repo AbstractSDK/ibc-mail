@@ -109,4 +109,5 @@ impl Sender {
 pub enum MessageStatus {
     Sent,
     Received,
+    Failed,
 }

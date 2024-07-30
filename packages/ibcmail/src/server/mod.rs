@@ -8,6 +8,7 @@ use crate::server::{
 pub mod api;
 pub mod error;
 pub mod msg;
+pub mod state;
 
 /// The type of the client that is used to build your client and access the Abstract SDK features.
 pub type ServerAdapter =

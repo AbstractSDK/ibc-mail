@@ -9,10 +9,9 @@ use abstract_adapter::std::{
     version_control::NamespaceResponse,
     IBC_CLIENT,
 };
+use abstract_adapter::std::ibc::Callback;
 use abstract_adapter::traits::AbstractResponse;
-use cosmwasm_std::{
-    to_json_binary, wasm_execute, Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
-};
+use cosmwasm_std::{to_json_binary, wasm_execute, Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Empty};
 use ibcmail::client::api::MailClient;
 use ibcmail::{
     client::api::ClientInterface,
@@ -22,7 +21,8 @@ use ibcmail::{
     },
     Header, IbcMailMessage, Recipient, Route,
 };
-
+use ibcmail::server::msg::ServerCallbackMessage;
+use ibcmail::server::state::AWAITING;
 use crate::{
     contract::{Adapter, ServerResult},
     error::ServerError,
@@ -142,13 +142,16 @@ pub(crate) fn route_msg(
                         hop: header.current_hop,
                     })?;
 
+            // Awaiting callback
+            AWAITING.save(deps.storage, &msg.id, dest_chain)?;
+
             // ANCHOR: ibc_client
             // Call IBC client
             let ibc_client_msg = ibc_client::ExecuteMsg::ModuleIbcAction {
                 host_chain: dest_chain.clone(),
                 target_module: current_module_info,
                 msg: to_json_binary(&ServerIbcMessage::RouteMessage { msg, header })?,
-                callback: None,
+                callback: Some(Callback::new(&Empty {})?)
             };
 
             let ibc_client_addr: Addr = app

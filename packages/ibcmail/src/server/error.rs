@@ -7,6 +7,7 @@ use cosmwasm_std::StdError;
 use cw_asset::AssetError;
 use cw_controllers::AdminError;
 use thiserror::Error;
+use crate::MessageHash;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum ServerError {
@@ -42,4 +43,7 @@ pub enum ServerError {
 
     #[error("Unclaimed namespace: {0}")]
     UnclaimedNamespace(Namespace),
+
+    #[error("Awaited message not found: {0}")]
+    AwaitedMsgNotFound(MessageHash),
 }

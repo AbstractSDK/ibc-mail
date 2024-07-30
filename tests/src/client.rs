@@ -153,9 +153,11 @@ mod send_msg {
 
     use abstract_app::{objects::account::AccountTrace, std::version_control::ExecuteMsgFns};
     use abstract_app::objects::TruncatedChainId;
+    use abstract_cw_orch_polytone::{Polytone, PolytoneConnection};
+    use abstract_interface::Abstract;
     use cw_orch_interchain::{InterchainEnv, MockBech32InterchainEnv};
 
-    use ibcmail::{IBCMAIL_CLIENT_ID, Message, MessageStatus, server::error::ServerError};
+    use ibcmail::{IBCMAIL_CLIENT_ID, Message, MessageStatus, Route, server::error::ServerError};
 
     use super::*;
 
@@ -308,6 +310,64 @@ mod send_msg {
         let juno_message_id = juno_messages.messages.first().cloned().unwrap().id;
         let juno_message = juno_client.messages(vec![juno_message_id], MessageStatus::Received)?;
         assert_that!(juno_message.messages).has_length(1);
+
+        Ok(())
+    }
+
+    #[test]
+    fn send_remote_message_account_dne_callback() -> anyhow::Result<()> {
+        // Create a sender and mock env
+        let interchain = MockBech32InterchainEnv::new(vec![
+            ("juno-1", "juno"),
+            (
+                "archway-1",
+                "archway",
+            ),
+            (
+                "neutron-1",
+                "neutron",
+            ),
+        ]);
+
+        // /Users/adair/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cw-orch-mock-0.22.0/src/queriers/env.rs:12:70:
+        // index out of bounds: the len is 1 but the index is 1 (when initializing with "juno")
+        let arch_env = TestEnv::setup(interchain.get_chain("archway-1")?)?;
+        let juno_env = TestEnv::setup(interchain.get_chain("juno-1")?)?;
+        let neutron_env = TestEnv::setup(interchain.get_chain("neutron-1")?)?;
+
+        arch_env.abs.connect_to(&juno_env.abs, &interchain)?;
+        juno_env.abs.connect_to(&neutron_env.abs, &interchain)?;
+
+        let arch_client = arch_env.client1;
+        let juno_client = juno_env.client1;
+
+        // the trait `From<&str>` is not implemented for `abstract_app::objects::chain_name::TruncatedChainId`
+        let arch_to_juno_msg = Message::new(
+            Recipient::account(
+                AccountId::local(420),
+                Some(TruncatedChainId::from_string("neutron".into())?),
+            ),
+            "test-subject",
+            "test-body",
+        );
+
+        let res = arch_client.send_message(arch_to_juno_msg, Some(Route::Remote(vec![TruncatedChainId::from_string("juno".into())?, TruncatedChainId::from_string("neutron".into())?])));
+
+        assert_that!(res).is_ok();
+
+        let server = ServerInterface::new(IBCMAIL_SERVER_ID, arch_env.env.clone());
+        println!("server: {:?}", server.address()?);
+        let abstr = Abstract::new(arch_env.env.clone());
+        println!("ibc_host: {:?}", abstr.ibc.host.address()?);
+        let poly = PolytoneConnection::load_from(
+            arch_env.env.clone(),
+            juno_env.env.clone(),
+        );
+        println!("poly_note: {:?}", poly.note.address()?);
+
+        let packets = interchain.await_packets("archway-1", res?)?;
+
+        // println!("packets: {:?}", packets);
 
         Ok(())
     }

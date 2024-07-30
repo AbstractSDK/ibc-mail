@@ -1,12 +1,12 @@
 use abstract_adapter::sdk::AbstractResponse;
 use abstract_adapter::std::ibc::ModuleIbcInfo;
-use cosmwasm_std::{from_json, Binary, DepsMut, Env};
+use cosmwasm_std::{from_json, Binary, DepsMut, Env, StdResult};
 
 use ibcmail::{
     server::{error::ServerError, msg::ServerIbcMessage, ServerAdapter},
     IBCMAIL_SERVER_ID,
 };
-
+use ibcmail::server::state::AWAITING;
 use crate::{contract::ServerResult, handlers::execute::route_msg};
 
 // ANCHOR: module_ibc_handler
@@ -32,6 +32,17 @@ pub fn module_ibc_handler(
 
             Ok(app.response("module_ibc").add_message(msg))
         }
+        ServerIbcMessage::UpdateMessage { id, status } => {
+
+            println!("module_ibc_handler update_msg: {:?}, status: {:?}", id, status);
+            // TODO: custom error
+            let from_chain = AWAITING.load(deps.storage, &id)?;
+            AWAITING.remove(deps.storage, &id);
+
+            let msg = route_update_msg(deps, msg, header, &mut app)?;
+
+            Ok(app.response("module_ibc").add_message(msg))
+
         _ => Err(ServerError::UnauthorizedIbcMessage {}),
     }
 }

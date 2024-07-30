@@ -8,6 +8,7 @@ use crate::{handlers, APP_VERSION};
 use abstract_adapter::objects::dependency::StaticDependency;
 
 pub const MAIL_CLIENT: StaticDependency = StaticDependency::new(IBCMAIL_CLIENT_ID, &[]);
+pub const IBC_CLIENT: StaticDependency = StaticDependency::new("abstract:ibc-client", &[]);
 
 /// The type of the result returned by your client's entry points.
 pub type ServerResult<T = Response> = Result<T, ServerError>;
@@ -15,7 +16,8 @@ pub type ServerResult<T = Response> = Result<T, ServerError>;
 const ADAPTER: Adapter = Adapter::new(IBCMAIL_SERVER_ID, APP_VERSION, None)
     .with_execute(handlers::execute_handler)
     .with_module_ibc(handlers::module_ibc_handler)
-    .with_dependencies(&[MAIL_CLIENT]);
+    .with_ibc_callback(handlers::ibc_callback_handler)
+    .with_dependencies(&[MAIL_CLIENT, IBC_CLIENT]);
 
 // Export handlers
 #[cfg(feature = "export")]
