@@ -56,16 +56,33 @@ fn process_message(
 
     let current_chain = TruncatedChainId::new(&env);
 
-    let route = if let Some(route) = route {
-        Ok::<_, ServerError>(route)
+    let route: Route = if let Some(route) = route {
+        Ok::<_, ServerError>(match route {
+            Route::Local => Route::Local,
+            Route::Remote(mut chains) => {
+                println!("processing remote route: {:?}", chains);
+                // Enforce that the route always contains every hop in the chain
+                if chains.first() == Some(&current_chain) {
+                    if chains.len() == 1 {
+                        Route::Local
+                    } else {
+                        Route::Remote(chains)
+                    }
+                } else {
+                    chains.insert(0, current_chain);
+                    Route::Remote(chains)
+                }
+            }
+        })
     } else {
+        println!("processing message recipient: {:?}", msg.message.recipient);
         match msg.message.recipient.clone() {
             // TODO: add smarter routing
             Recipient::Account { id: _, chain } => Ok(chain.map_or(AccountTrace::Local, |chain| {
                 if chain == current_chain {
                     AccountTrace::Local
                 } else {
-                    AccountTrace::Remote(vec![chain.clone()])
+                    AccountTrace::Remote(vec![current_chain, chain.clone()])
                 }
             })),
             Recipient::Namespace {
@@ -75,7 +92,7 @@ fn process_message(
                 if chain == current_chain {
                     AccountTrace::Local
                 } else {
-                    AccountTrace::Remote(vec![chain.clone()])
+                    AccountTrace::Remote(vec![current_chain, chain.clone()])
                 }
             })),
             _ => {
@@ -109,7 +126,8 @@ pub(crate) fn route_msg(
         AccountTrace::Remote(ref chains) => {
             println!("routing to chains: {:?}", chains);
             // check index of hop. If we are on the final hop, route to local account
-            if header.current_hop == chains.len() as u32 {
+            if header.current_hop == (chains.len() - 1) as u32 {
+                println!("routing to local account: {:?}", chains);
                 return route_to_local_account(deps.as_ref(), msg.clone(), header, app);
             }
             // TODO verify that the chain is a valid chain
@@ -118,7 +136,7 @@ pub(crate) fn route_msg(
 
             let dest_chain =
                 chains
-                    .get(header.current_hop as usize)
+                    .get(header.current_hop as usize + 1)
                     .ok_or(ServerError::InvalidRoute {
                         route: header.route.clone(),
                         hop: header.current_hop,

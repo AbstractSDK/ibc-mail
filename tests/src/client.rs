@@ -269,8 +269,8 @@ mod send_msg {
 
         interchain.await_and_check_packets("archway-1", res?)?;
 
-        let myos_messages = arch_client.list_messages(MessageStatus::Received, None, None, None)?;
-        assert_that!(myos_messages.messages).is_empty();
+        let arch_messages = arch_client.list_messages(MessageStatus::Received, None, None, None)?;
+        assert_that!(arch_messages.messages).is_empty();
 
         let juno_client_1_module_addresses = juno_client
             .account()
