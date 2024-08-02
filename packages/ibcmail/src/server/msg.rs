@@ -12,7 +12,7 @@ pub struct ServerInstantiateMsg {}
 /// App execute messages
 #[cosmwasm_schema::cw_serde]
 pub enum ServerExecuteMsg {
-    /// Route a message
+    /// Process a message sent by the client
     ProcessMessage {
         msg: IbcMailMessage,
         route: Option<Route>,
@@ -25,7 +25,8 @@ pub enum ServerExecuteMsg {
 pub enum ServerIbcMessage {
     /// Route a message
     RouteMessage { msg: IbcMailMessage, header: Header },
-    UpdateMessage { id: MessageHash, status: MessageStatus },
+    /// Send a status update for a message
+    UpdateMessage { id: MessageHash, header: Header, status: MessageStatus },
 }
 
 /// App execute messages
@@ -33,7 +34,7 @@ pub enum ServerIbcMessage {
 #[cosmwasm_schema::cw_serde]
 pub enum ServerCallbackMessage {
     /// Update a message
-    UpdateMessage { id: MessageHash, header: Header },
+    UpdateMessage { id: MessageHash, header: Header, status: MessageStatus },
 }
 
 /// App query messages

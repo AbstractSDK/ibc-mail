@@ -3,6 +3,7 @@ use cosmwasm_std::StdError;
 use cw_asset::AssetError;
 use cw_controllers::AdminError;
 use thiserror::Error;
+use crate::MessageHash;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum ClientError {
@@ -29,6 +30,9 @@ pub enum ClientError {
 
     #[error("Recipient is not the current account")]
     NotRecipient {},
+
+    #[error("Message not found: {0}")]
+    MessageNotFound(MessageHash),
 
     #[error("{0} is not implemented")]
     NotImplemented(String),

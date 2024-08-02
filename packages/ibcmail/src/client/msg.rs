@@ -17,8 +17,13 @@ pub struct ClientInstantiateMsg {}
 #[derive(cw_orch::ExecuteFns)]
 #[cw_orch(impl_into(ExecuteMsg))]
 pub enum ClientExecuteMsg {
-    /// Receive a message from the server
+    /// Receive a message from the server.
     ReceiveMessage(IbcMailMessage),
+    /// Update the status of a message. only callable by the server
+    UpdateMessageStatus {
+        id: MessageHash,
+        status: MessageStatus,
+    },
     /// Send a message
     SendMessage {
         message: Message,

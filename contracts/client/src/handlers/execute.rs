@@ -4,16 +4,12 @@ use abstract_app::{
     traits::{AbstractResponse, AccountIdentification},
 };
 use base64::prelude::*;
-use cosmwasm_std::{ensure_eq, CosmosMsg, Deps, DepsMut, Env, MessageInfo};
-use ibcmail::{
-    client::{
-        state::{RECEIVED, SENT},
-        ClientApp,
-    },
-    server::api::{MailServer, ServerInterface},
-    IbcMailMessage, Message, Recipient, Route, Sender, IBCMAIL_SERVER_ID,
-};
-
+use cosmwasm_std::{ensure_eq, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Addr};
+use ibcmail::{client::{
+    state::{RECEIVED, SENT},
+    ClientApp,
+}, server::api::{MailServer, ServerInterface}, IbcMailMessage, Message, Recipient, Route, Sender, IBCMAIL_SERVER_ID, MessageHash, MessageStatus};
+use ibcmail::client::state::STATUS;
 use crate::{
     contract::{App, ClientResult},
     error::ClientError,
@@ -32,7 +28,8 @@ pub fn execute_handler(
         ClientExecuteMsg::SendMessage { message, route } => {
             send_msg(deps, env, info, message, route, app)
         }
-        ClientExecuteMsg::ReceiveMessage(message) => receive_msg(deps, info, message, app),
+        ClientExecuteMsg::ReceiveMessage(message) => receive_msg(deps, info, app, message),
+        ClientExecuteMsg::UpdateMessageStatus { id, status } => update_msg_status(deps, info, app, id, status),
     }
 }
 // # ANCHOR_END: execute_handler
@@ -76,16 +73,8 @@ fn send_msg(
 
 /// Receive a message from the server
 // # ANCHOR: receive_msg
-fn receive_msg(deps: DepsMut, info: MessageInfo, msg: IbcMailMessage, app: App) -> ClientResult {
-    let sender_module = app
-        .module_registry(deps.as_ref())?
-        .module_info(info.sender)
-        .map_err(|_| ClientError::NotMailServer {})?;
-    ensure_eq!(
-        sender_module.info.id(),
-        IBCMAIL_SERVER_ID,
-        ClientError::NotMailServer {}
-    );
+fn receive_msg(deps: DepsMut, info: MessageInfo, app: App, msg: IbcMailMessage) -> ClientResult {
+    ensure_server_sender(deps.as_ref(), &app, info.sender)?;
 
     ensure_correct_recipient(deps.as_ref(), &msg.message.recipient, &app)?;
 
@@ -96,6 +85,36 @@ fn receive_msg(deps: DepsMut, info: MessageInfo, msg: IbcMailMessage, app: App) 
         .add_attribute("message_id", &msg.id))
 }
 // # ANCHOR_END: receive_msg
+
+fn update_msg_status(
+    deps: DepsMut,
+    info: MessageInfo,
+    app: App,
+    id: MessageHash,
+    status: MessageStatus,
+) -> ClientResult {
+    ensure_server_sender(deps.as_ref(), &app, info.sender)?;
+
+    // ensure that the message exists
+    SENT.load(deps.storage, id.clone()).map_err(|_| ClientError::MessageNotFound(id.clone()))?;
+    STATUS.save(deps.storage, id.clone(), &status)?;
+
+    Ok(app.response("update_msg_status").add_attribute("message_id", &id).add_attribute("status", status.to_string()))
+}
+
+fn ensure_server_sender(deps: Deps, app: &ClientApp, sender: Addr) -> Result<(), ClientError> {
+    let sender_module = app
+        .module_registry(deps)?
+        .module_info(sender)
+        .map_err(|_| ClientError::NotMailServer {})?;
+
+    ensure_eq!(
+        sender_module.info.id(),
+        IBCMAIL_SERVER_ID,
+        ClientError::NotMailServer {}
+    );
+    Ok(())
+}
 
 fn ensure_correct_recipient(
     deps: Deps,

@@ -376,14 +376,14 @@ mod send_msg {
     fn can_send_remote_message_2_hop() -> anyhow::Result<()> {
         // Create a sender and mock env
         let interchain = MockBech32InterchainEnv::new(vec![
-            ("juno-1", "juno18k2uq7srsr8lwrae6zr0qahpn29rsp7tw83nyx"),
+            ("juno-1", "juno"),
             (
                 "archway-1",
-                "archway18k2uq7srsr8lwrae6zr0qahpn29rsp7td7wvfd",
+                "arch",
             ),
             (
                 "neutron-1",
-                "neutron18k2uq7srsr8lwrae6zr0qahpn29rsp7tu2m2ea",
+                "neutron",
             ),
         ]);
 
