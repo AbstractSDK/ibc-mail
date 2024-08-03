@@ -1,30 +1,39 @@
 use abstract_adapter::objects::TruncatedChainId;
 use abstract_adapter::sdk::{
-    AccountVerification, features::ModuleIdentification, ModuleRegistryInterface,
-};
-use abstract_adapter::std::{
-    ibc_client,
-    IBC_CLIENT,
-    objects::{account::AccountTrace, module::ModuleInfo}
-    ,
+    features::ModuleIdentification, AccountVerification, ModuleRegistryInterface,
 };
 use abstract_adapter::std::ibc::Callback;
 use abstract_adapter::std::version_control::AccountBase;
+use abstract_adapter::std::{
+    ibc_client,
+    objects::{account::AccountTrace, module::ModuleInfo},
+    IBC_CLIENT,
+};
 use abstract_adapter::traits::{AbstractResponse, AccountIdentification};
-use cosmwasm_std::{Addr, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo, StdResult, SubMsg, to_json_binary, wasm_execute};
+use cosmwasm_std::{
+    to_json_binary, wasm_execute, Addr, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo,
+    StdResult, SubMsg,
+};
 
-use ibcmail::{client::api::ClientInterface, Header, IbcMailMessage, Recipient, Route, Sender, server::{
-    msg::{ServerExecuteMsg, ServerIbcMessage},
-    ServerAdapter,
-}};
 use ibcmail::client::api::MailClient;
 use ibcmail::client::state::FEATURES;
 use ibcmail::features::DELIVERY_STATUS_FEATURE;
 use ibcmail::server::msg::ServerMessage;
 use ibcmail::server::state::{AWAITING, AWAITING_DELIVERY};
+use ibcmail::{
+    client::api::ClientInterface,
+    server::{
+        msg::{ServerExecuteMsg, ServerIbcMessage},
+        ServerAdapter,
+    },
+    Header, IbcMailMessage, Recipient, Route, Sender,
+};
 
-use crate::{contract::{Adapter, ServerResult}, error::ServerError};
 use crate::replies::DELIVER_MESSAGE_REPLY;
+use crate::{
+    contract::{Adapter, ServerResult},
+    error::ServerError,
+};
 
 // ANCHOR: execute_handler
 pub fn execute_handler(
@@ -52,7 +61,9 @@ fn process_message(
 ) -> ServerResult {
     println!("processing message: {:?} with route {:?}", msg, route);
 
-    let sender_acc_id = app.account_id(deps.as_ref()).map_err(|_| ServerError::NoSenderAccount)?;
+    let sender_acc_id = app
+        .account_id(deps.as_ref())
+        .map_err(|_| ServerError::NoSenderAccount)?;
 
     let current_chain = TruncatedChainId::new(&env);
     let sender = Sender::account(sender_acc_id, Some(current_chain.clone()));
@@ -104,7 +115,6 @@ fn process_message(
         }
     }?;
 
-
     let header = Header {
         current_hop: 0,
         route,
@@ -148,7 +158,15 @@ pub(crate) fn route_msg(
             // Save that we're awaiting callbacks from dest chain onwards.
             AWAITING.save(deps.storage, &msg.id(), dest_chain)?;
 
-            let msg = remote_server_msg(deps, &app, &ServerIbcMessage::RouteMessage { msg, header: header.clone() }, dest_chain)?;
+            let msg = remote_server_msg(
+                deps,
+                &app,
+                &ServerIbcMessage::RouteMessage {
+                    msg,
+                    header: header.clone(),
+                },
+                dest_chain,
+            )?;
             Ok::<Vec<SubMsg>, ServerError>(vec![SubMsg::new(msg)])
         }
     }
@@ -171,27 +189,46 @@ fn route_to_local_account(
             })?;
 
             let mail_client = get_recipient_mail_client(deps.as_ref(), app, &header.recipient)?;
-            Ok(vec![SubMsg::reply_always(mail_client.receive_msg(message, header)?, DELIVER_MESSAGE_REPLY)])
+            Ok(vec![SubMsg::reply_always(
+                mail_client.receive_msg(message, header)?,
+                DELIVER_MESSAGE_REPLY,
+            )])
         }
         ServerMessage::DeliveryStatus { id, status } => {
-            println!("updating local delivery message status: recipient: {:?} status: {:?}", header.recipient, status);
+            println!(
+                "updating local delivery message status: recipient: {:?} status: {:?}",
+                header.recipient, status
+            );
 
             let mail_client = get_recipient_mail_client(deps.as_ref(), app, &header.recipient)?;
-            let is_delivery_enabled = FEATURES.query(&deps.querier, mail_client.module_address()?, DELIVERY_STATUS_FEATURE.to_string()).is_ok_and(|f| f.is_some_and(|f| f));
+            let is_delivery_enabled = FEATURES
+                .query(
+                    &deps.querier,
+                    mail_client.module_address()?,
+                    DELIVERY_STATUS_FEATURE.to_string(),
+                )
+                .is_ok_and(|f| f.is_some_and(|f| f));
 
             if is_delivery_enabled {
-                Ok(vec![SubMsg::new(mail_client.update_msg_status(id, status)?)])
+                Ok(vec![SubMsg::new(
+                    mail_client.update_msg_status(id, status)?,
+                )])
             } else {
                 Ok(vec![])
             }
         }
-        _ => Err(ServerError::NotImplemented("Unknown message type".to_string()))
+        _ => Err(ServerError::NotImplemented(
+            "Unknown message type".to_string(),
+        )),
     }
 }
 
-
 /// Set the target account for the message and get the mail client for the recipient
-fn get_recipient_mail_client<'a>(deps: Deps<'a>, app: &'a mut ServerAdapter, recipient: &Recipient) -> ServerResult<MailClient<'a, ServerAdapter>> {
+fn get_recipient_mail_client<'a>(
+    deps: Deps<'a>,
+    app: &'a mut ServerAdapter,
+    recipient: &Recipient,
+) -> ServerResult<MailClient<'a, ServerAdapter>> {
     let account_id = recipient.resolve_account_id(app.module_registry(deps)?)?;
 
     // ANCHOR: set_acc_and_send
@@ -202,9 +239,13 @@ fn get_recipient_mail_client<'a>(deps: Deps<'a>, app: &'a mut ServerAdapter, rec
     // ANCHOR_END: set_acc_and_send
 }
 
-
 /// Build a message to send to a server on the destination chain
-fn remote_server_msg(deps: DepsMut, module: &ServerAdapter, msg: &ServerIbcMessage, dest_chain: &TruncatedChainId) -> ServerResult<CosmosMsg> {
+fn remote_server_msg(
+    deps: DepsMut,
+    module: &ServerAdapter,
+    msg: &ServerIbcMessage,
+    dest_chain: &TruncatedChainId,
+) -> ServerResult<CosmosMsg> {
     // ANCHOR: ibc_client
     // Call IBC client
     let current_module_info = ModuleInfo::from_id(module.module_id(), module.version().into())?;
@@ -213,7 +254,7 @@ fn remote_server_msg(deps: DepsMut, module: &ServerAdapter, msg: &ServerIbcMessa
         host_chain: dest_chain.clone(),
         target_module: current_module_info,
         msg: to_json_binary(msg)?,
-        callback: Some(Callback::new(&Empty {})?)
+        callback: Some(Callback::new(&Empty {})?),
     };
 
     let ibc_client_addr: Addr = module

@@ -22,10 +22,8 @@ impl<Chain: cw_orch::environment::CwEnv> abstract_app::abstract_interface::Depen
         );
 
         // The IBC client is depended upon by the server
-        let ibc_client = ModuleInstallConfig::new(
-            ModuleInfo::from_id_latest("abstract:ibc-client")?,
-            None,
-        );
+        let ibc_client =
+            ModuleInstallConfig::new(ModuleInfo::from_id_latest("abstract:ibc-client")?, None);
 
         Ok(vec![adapter_install_config, ibc_client])
     }

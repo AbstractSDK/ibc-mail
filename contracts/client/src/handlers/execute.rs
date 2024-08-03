@@ -1,19 +1,24 @@
+use crate::{
+    contract::{App, ClientResult},
+    error::ClientError,
+    msg::ClientExecuteMsg,
+};
 use abstract_app::objects::TruncatedChainId;
 use abstract_app::{
     sdk::ModuleRegistryInterface,
     traits::{AbstractResponse, AccountIdentification},
 };
 use base64::prelude::*;
-use cosmwasm_std::{ensure_eq, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Addr};
-use ibcmail::{client::{
-    state::{RECEIVED, SENT},
-    ClientApp,
-}, server::api::{MailServer, ServerInterface}, IbcMailMessage, Message, Recipient, Route, Sender, IBCMAIL_SERVER_ID, MessageHash, DeliveryStatus};
+use cosmwasm_std::{ensure_eq, Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo};
 use ibcmail::client::state::STATUS;
-use crate::{
-    contract::{App, ClientResult},
-    error::ClientError,
-    msg::ClientExecuteMsg,
+use ibcmail::{
+    client::{
+        state::{RECEIVED, SENT},
+        ClientApp,
+    },
+    server::api::{MailServer, ServerInterface},
+    DeliveryStatus, IbcMailMessage, Message, MessageHash, Recipient, Route, Sender,
+    IBCMAIL_SERVER_ID,
 };
 
 // # ANCHOR: execute_handler
@@ -29,7 +34,9 @@ pub fn execute_handler(
             send_msg(deps, env, info, message, route, app)
         }
         ClientExecuteMsg::ReceiveMessage(message) => receive_msg(deps, info, app, message),
-        ClientExecuteMsg::UpdateDeliveryStatus { id, status } => update_delivery_status(deps, info, app, id, status),
+        ClientExecuteMsg::UpdateDeliveryStatus { id, status } => {
+            update_delivery_status(deps, info, app, id, status)
+        }
     }
 }
 // # ANCHOR_END: execute_handler
@@ -95,10 +102,14 @@ fn update_delivery_status(
     ensure_server_sender(deps.as_ref(), &app, info.sender)?;
 
     // ensure that the message exists
-    SENT.load(deps.storage, id.clone()).map_err(|_| ClientError::MessageNotFound(id.clone()))?;
+    SENT.load(deps.storage, id.clone())
+        .map_err(|_| ClientError::MessageNotFound(id.clone()))?;
     STATUS.save(deps.storage, id.clone(), &status)?;
 
-    Ok(app.response("update_msg_status").add_attribute("message_id", &id).add_attribute("status", status.to_string()))
+    Ok(app
+        .response("update_msg_status")
+        .add_attribute("message_id", &id)
+        .add_attribute("status", status.to_string()))
 }
 
 fn ensure_server_sender(deps: Deps, app: &ClientApp, sender: Addr) -> Result<(), ClientError> {

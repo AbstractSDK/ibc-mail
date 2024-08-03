@@ -1,9 +1,8 @@
 pub mod client;
-pub mod server;
 pub mod features;
+pub mod server;
 
-use std::fmt;
-use std::fmt::{Display, Formatter};
+use crate::server::error::ServerError;
 use abstract_adapter::sdk::ModuleRegistryInterface;
 use abstract_adapter::std::version_control::NamespaceResponse;
 use abstract_app::objects::TruncatedChainId;
@@ -12,8 +11,9 @@ use abstract_app::std::objects::AccountId;
 use abstract_app::std::objects::{account::AccountTrace, namespace::Namespace};
 use const_format::concatcp;
 use cosmwasm_std::{Addr, StdError, StdResult, Timestamp};
+use std::fmt;
+use std::fmt::{Display, Formatter};
 use thiserror::Error;
-use crate::server::error::ServerError;
 
 pub const IBCMAIL_NAMESPACE: &str = "ibcmail";
 pub const IBCMAIL_CLIENT_ID: &str = concatcp!(IBCMAIL_NAMESPACE, ":", "client");
@@ -73,7 +73,7 @@ impl Header {
             current_hop: 0,
             route: reverse_route,
             recipient: self.sender.clone().try_into()?,
-            sender
+            sender,
         })
     }
 }
@@ -117,8 +117,11 @@ impl Recipient {
         Recipient::Namespace { namespace, chain }
     }
 
-    pub fn resolve_account_id<T: ModuleRegistryInterface>(&self, module_registry: ModuleRegistry<T>) -> Result<AccountId, ServerError> {
-       Ok(match self {
+    pub fn resolve_account_id<T: ModuleRegistryInterface>(
+        &self,
+        module_registry: ModuleRegistry<T>,
+    ) -> Result<AccountId, ServerError> {
+        Ok(match self {
             Recipient::Account { id: account_id, .. } => Ok(account_id.clone()),
             Recipient::Namespace { namespace, .. } => {
                 // TODO: this only allows for addressing recipients via namespace of their email account directly.
@@ -149,7 +152,7 @@ pub enum Sender {
         chain: TruncatedChainId,
         // String because it's a different chain
         address: String,
-    }
+    },
 }
 
 impl Sender {
@@ -179,7 +182,6 @@ pub enum MessageKind {
     Received,
 }
 
-
 impl Display for MessageKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
@@ -198,7 +200,6 @@ pub enum DeliveryFailure {
     #[error("Unknown failure: {0}")]
     Unknown(String),
 }
-
 
 #[non_exhaustive]
 #[cosmwasm_schema::cw_serde]

@@ -1,11 +1,14 @@
 use abstract_app::sdk::cw_helpers::load_many;
 use cosmwasm_std::{to_json_binary, Binary, Deps, Env};
 use cw_storage_plus::Bound;
-use ibcmail::{client::{
-    error::ClientError,
-    msg::{MessageFilter, MessagesResponse},
-    state::{RECEIVED, SENT},
-}, MessageHash, DeliveryStatus, MessageKind};
+use ibcmail::{
+    client::{
+        error::ClientError,
+        msg::{MessageFilter, MessagesResponse},
+        state::{RECEIVED, SENT},
+    },
+    DeliveryStatus, MessageHash, MessageKind,
+};
 
 use crate::{
     contract::{App, ClientResult},

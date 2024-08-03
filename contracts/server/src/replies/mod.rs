@@ -1,6 +1,6 @@
 mod deliver_msg;
 
-pub use deliver_msg::{deliver_message_reply};
+pub use deliver_msg::deliver_message_reply;
 
 pub const DELIVER_MESSAGE_REPLY: u64 = 1u64;
 

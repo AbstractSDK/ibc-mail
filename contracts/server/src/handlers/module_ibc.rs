@@ -1,10 +1,10 @@
 use abstract_adapter::sdk::AbstractResponse;
 use abstract_adapter::std::ibc::ModuleIbcInfo;
-use cosmwasm_std::{Binary, DepsMut, Env, from_json};
+use cosmwasm_std::{from_json, Binary, DepsMut, Env};
 
 use ibcmail::{
-    IBCMAIL_SERVER_ID,
     server::{error::ServerError, msg::ServerIbcMessage, ServerAdapter},
+    IBCMAIL_SERVER_ID,
 };
 
 use crate::{contract::ServerResult, handlers::execute::route_msg};
@@ -30,7 +30,10 @@ pub fn module_ibc_handler(
 
             let msgs = route_msg(deps, &mut app, msg, header)?;
 
-            Ok(app.response("module_ibc").add_attribute("method", "route").add_submessages(msgs))
+            Ok(app
+                .response("module_ibc")
+                .add_attribute("method", "route")
+                .add_submessages(msgs))
         }
         _ => Err(ServerError::UnauthorizedIbcMessage {}),
     }

@@ -8,8 +8,8 @@ use abstract_app::{
     },
     std::{
         ibc_client::QueryMsgFns as IbcQueryFns,
-        IBC_HOST,
         version_control::{ExecuteMsgFns, ModuleFilter, QueryMsgFns},
+        IBC_HOST,
     },
 };
 use abstract_client::AbstractClient;
@@ -21,7 +21,7 @@ use cw_orch_interchain::{ChannelCreationValidator, DaemonInterchainEnv, Intercha
 use networks::{HARPOON_4, PION_1};
 
 use client::ClientInterface;
-use ibcmail::{client::msg::ClientExecuteMsgFns, IBCMAIL_NAMESPACE, Message};
+use ibcmail::{client::msg::ClientExecuteMsgFns, Message, IBCMAIL_NAMESPACE};
 use tests::TEST_NAMESPACE;
 
 const SRC: ChainInfo = HARPOON_4;

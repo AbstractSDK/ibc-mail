@@ -4,7 +4,10 @@ use abstract_app::sdk::AppInterface;
 
 use cosmwasm_std::{Addr, CosmosMsg, Deps};
 
-use crate::{client::msg::ClientExecuteMsg, Header, IbcMailMessage, Message, Route, IBCMAIL_CLIENT_ID, MessageHash, DeliveryStatus};
+use crate::{
+    client::msg::ClientExecuteMsg, DeliveryStatus, Header, IbcMailMessage, Message, MessageHash,
+    Route, IBCMAIL_CLIENT_ID,
+};
 
 // API for Abstract SDK users
 pub trait ClientInterface: AppInterface {
@@ -34,7 +37,9 @@ impl<'a, T: ClientInterface> MailClient<'a, T> {
     }
 
     pub fn module_address(&self) -> AbstractSdkResult<Addr> {
-        self.base.modules(self.deps).module_address(self.module_id())
+        self.base
+            .modules(self.deps)
+            .module_address(self.module_id())
     }
 
     // Execute a request on the ibc mail client

@@ -1,13 +1,13 @@
-use abstract_app::objects::{AccountId, namespace::Namespace};
+use abstract_app::objects::{namespace::Namespace, AccountId};
 use abstract_client::{AbstractClient, Application, Environment};
 use cw_orch::{anyhow, prelude::*};
 use speculoos::prelude::*;
 
 // Use prelude to get all the necessary imports
-use client::{*, contract::interface::ClientInterface, msg::ClientInstantiateMsg};
+use client::{contract::interface::ClientInterface, msg::ClientInstantiateMsg, *};
 use ibcmail::{
-    IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID, IbcMailMessage, Message, Recipient,
-    Sender, server::msg::ServerInstantiateMsg,
+    server::msg::ServerInstantiateMsg, IbcMailMessage, Message, Recipient, Sender,
+    IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID,
 };
 use server::ServerInterface;
 
@@ -88,7 +88,7 @@ fn create_test_message(from: AccountId, to: AccountId) -> IbcMailMessage {
 mod receive_msg {
     use speculoos::assert_that;
 
-    use ibcmail::{IBCMAIL_SERVER_ID, MessageKind};
+    use ibcmail::{MessageKind, IBCMAIL_SERVER_ID};
 
     use super::*;
 
@@ -151,13 +151,13 @@ mod receive_msg {
 mod send_msg {
     use std::str::FromStr;
 
-    use abstract_app::{objects::account::AccountTrace, std::version_control::ExecuteMsgFns};
     use abstract_app::objects::TruncatedChainId;
+    use abstract_app::{objects::account::AccountTrace, std::version_control::ExecuteMsgFns};
     use abstract_cw_orch_polytone::{Polytone, PolytoneConnection};
     use abstract_interface::Abstract;
     use cw_orch_interchain::{InterchainEnv, MockBech32InterchainEnv};
 
-    use ibcmail::{IBCMAIL_CLIENT_ID, Message, Route, server::error::ServerError, MessageKind};
+    use ibcmail::{server::error::ServerError, Message, MessageKind, Route, IBCMAIL_CLIENT_ID};
 
     use super::*;
 
@@ -199,7 +199,9 @@ mod send_msg {
         let res = client1.send_message(msg, None);
         assert_that!(res).is_ok();
 
-        let received_messages = client2.list_messages(MessageKind::Received, None, None, None)?.messages;
+        let received_messages = client2
+            .list_messages(MessageKind::Received, None, None, None)?
+            .messages;
         assert_that!(received_messages).has_length(1);
 
         Ok(())
@@ -260,13 +262,8 @@ mod send_msg {
     #[test]
     fn can_send_remote_message() -> anyhow::Result<()> {
         // Create a sender and mock env
-        let interchain = MockBech32InterchainEnv::new(vec![
-            ("juno-1", "juno"),
-            (
-                "archway-1",
-                "archway",
-            ),
-        ]);
+        let interchain =
+            MockBech32InterchainEnv::new(vec![("juno-1", "juno"), ("archway-1", "archway")]);
 
         // /Users/adair/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cw-orch-mock-0.22.0/src/queriers/env.rs:12:70:
         // index out of bounds: the len is 1 but the index is 1 (when initializing with "juno")
@@ -340,13 +337,8 @@ mod send_msg {
     #[test]
     fn send_remote_message_1_hop_account_dne_updates_status_to_failed() -> anyhow::Result<()> {
         // Create a sender and mock env
-        let interchain = MockBech32InterchainEnv::new(vec![
-            ("juno-1", "juno"),
-            (
-                "archway-1",
-                "archway",
-            ),
-        ]);
+        let interchain =
+            MockBech32InterchainEnv::new(vec![("juno-1", "juno"), ("archway-1", "archway")]);
 
         // /Users/adair/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cw-orch-mock-0.22.0/src/queriers/env.rs:12:70:
         // index out of bounds: the len is 1 but the index is 1 (when initializing with "juno")
@@ -368,7 +360,12 @@ mod send_msg {
             "test-body",
         );
 
-        let res = arch_client.send_message(arch_to_juno_msg, Some(Route::Remote(vec![TruncatedChainId::from_string("juno".into())?])));
+        let res = arch_client.send_message(
+            arch_to_juno_msg,
+            Some(Route::Remote(vec![TruncatedChainId::from_string(
+                "juno".into(),
+            )?])),
+        );
 
         assert_that!(res).is_ok();
 
@@ -376,16 +373,23 @@ mod send_msg {
         println!("server: {:?}", server.address()?);
         let abstr = Abstract::new(arch_env.env.clone());
         println!("ibc_host: {:?}", abstr.ibc.host.address()?);
-        let poly = PolytoneConnection::load_from(
-            arch_env.env.clone(),
-            juno_env.env.clone(),
-        );
+        let poly = PolytoneConnection::load_from(arch_env.env.clone(), juno_env.env.clone());
         println!("poly_note: {:?}", poly.note.address()?);
 
         let packets = interchain.await_packets("archway-1", res?)?;
 
-        assert_that!(arch_client.list_messages(MessageKind::Received, None, None, None)?.messages).is_empty();
-        assert_that!(juno_client.list_messages(MessageKind::Received, None, None, None)?.messages).is_empty();
+        assert_that!(
+            arch_client
+                .list_messages(MessageKind::Received, None, None, None)?
+                .messages
+        )
+        .is_empty();
+        assert_that!(
+            juno_client
+                .list_messages(MessageKind::Received, None, None, None)?
+                .messages
+        )
+        .is_empty();
 
         // interchain.await_packets("archway-1", res?)?;
         // println!("packets: {:?}", packets);
@@ -398,14 +402,8 @@ mod send_msg {
         // Create a sender and mock env
         let interchain = MockBech32InterchainEnv::new(vec![
             ("juno-1", "juno"),
-            (
-                "archway-1",
-                "archway",
-            ),
-            (
-                "neutron-1",
-                "neutron",
-            ),
+            ("archway-1", "archway"),
+            ("neutron-1", "neutron"),
         ]);
 
         // /Users/adair/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cw-orch-mock-0.22.0/src/queriers/env.rs:12:70:
