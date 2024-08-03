@@ -1,5 +1,6 @@
 use abstract_app::objects::TruncatedChainId;
-use cw_storage_plus::Map;
-use crate::MessageHash;
+use cw_storage_plus::{Item, Map};
+use crate::{Header, Message, MessageHash};
 
 pub const AWAITING: Map<&MessageHash, TruncatedChainId> = Map::new("awaiting");
+pub const AWAITING_DELIVERY: Item<Vec<(MessageHash, Header)>> = Item::new("awaiting_delivery");

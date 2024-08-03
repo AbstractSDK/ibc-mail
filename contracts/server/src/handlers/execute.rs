@@ -10,17 +10,21 @@ use abstract_adapter::std::{
 };
 use abstract_adapter::std::ibc::Callback;
 use abstract_adapter::std::version_control::AccountBase;
-use abstract_adapter::traits::AbstractResponse;
-use cosmwasm_std::{Addr, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo, to_json_binary, wasm_execute};
+use abstract_adapter::traits::{AbstractResponse, AccountIdentification};
+use cosmwasm_std::{Addr, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo, StdResult, SubMsg, to_json_binary, wasm_execute};
 
-use ibcmail::{client::api::ClientInterface, Header, IbcMailMessage, MessageHash, MessageStatus, Recipient, Route, server::{
+use ibcmail::{client::api::ClientInterface, Header, IbcMailMessage, Recipient, Route, Sender, server::{
     msg::{ServerExecuteMsg, ServerIbcMessage},
     ServerAdapter,
 }};
 use ibcmail::client::api::MailClient;
-use ibcmail::server::state::AWAITING;
+use ibcmail::client::state::FEATURES;
+use ibcmail::features::DELIVERY_STATUS_FEATURE;
+use ibcmail::server::msg::ServerMessage;
+use ibcmail::server::state::{AWAITING, AWAITING_DELIVERY};
 
 use crate::{contract::{Adapter, ServerResult}, error::ServerError};
+use crate::replies::DELIVER_MESSAGE_REPLY;
 
 // ANCHOR: execute_handler
 pub fn execute_handler(
@@ -48,7 +52,10 @@ fn process_message(
 ) -> ServerResult {
     println!("processing message: {:?} with route {:?}", msg, route);
 
+    let sender_acc_id = app.account_id(deps.as_ref()).map_err(|_| ServerError::NoSenderAccount)?;
+
     let current_chain = TruncatedChainId::new(&env);
+    let sender = Sender::account(sender_acc_id, Some(current_chain.clone()));
 
     let route: Route = if let Some(route) = route {
         Ok::<_, ServerError>(match route {
@@ -97,36 +104,37 @@ fn process_message(
         }
     }?;
 
-    let metadata = Header {
+
+    let header = Header {
         current_hop: 0,
         route,
-        recipient: msg.message.recipient.clone()
+        recipient: msg.message.recipient.clone(),
+        sender,
     };
 
-    let msg = route_msg(deps, msg, metadata, &mut app)?;
+    let msgs = route_msg(deps, &mut app, ServerMessage::mail(msg), header)?;
 
-    Ok(app.response("route").add_message(msg))
+    Ok(app.response("route").add_submessages(msgs))
 }
 
 pub(crate) fn route_msg(
     deps: DepsMut,
-    msg: IbcMailMessage,
-    header: Header,
     app: &mut ServerAdapter,
-) -> ServerResult<CosmosMsg> {
+    msg: ServerMessage,
+    header: Header,
+) -> ServerResult<Vec<SubMsg>> {
     println!("routing message: {:?}, metadata: {:?}", msg, header);
 
     match header.route {
-        AccountTrace::Local => route_to_local_account(deps.as_ref(), app, msg, header),
+        AccountTrace::Local => route_to_local_account(deps, app, msg, header),
         AccountTrace::Remote(ref chains) => {
             println!("routing to chains: {:?}", chains);
             // check index of hop. If we are on the final hop, route to local account
             if header.current_hop == (chains.len() - 1) as u32 {
-                println!("routing to local account: {:?}", chains);
-                return route_to_local_account(deps.as_ref(), app, msg.clone(), header);
+                println!("routing to local account: {:?}", chains.last().unwrap());
+                return route_to_local_account(deps, app, msg.clone(), header);
             }
             // TODO verify that the chain is a valid chain
-
 
             let dest_chain =
                 chains
@@ -137,80 +145,50 @@ pub(crate) fn route_msg(
                     })?;
 
             // Awaiting callback
-            AWAITING.save(deps.storage, &msg.id, dest_chain)?;
+            // Save that we're awaiting callbacks from dest chain onwards.
+            AWAITING.save(deps.storage, &msg.id(), dest_chain)?;
 
             let msg = remote_server_msg(deps, &app, &ServerIbcMessage::RouteMessage { msg, header: header.clone() }, dest_chain)?;
-            Ok::<CosmosMsg, ServerError>(msg)
+            Ok::<Vec<SubMsg>, ServerError>(vec![SubMsg::new(msg)])
         }
     }
 }
 
 /// Route a mail message to an account on the local chain
 fn route_to_local_account(
-    deps: Deps,
-    app: &mut ServerAdapter,
-    msg: IbcMailMessage,
-    header: Header,
-) -> ServerResult<CosmosMsg> {
-    println!("routing to local account: {:?}", msg.message.recipient);
-    // This is a local message
-    let mail_client = get_recipient_mail_client(deps, app, &msg.message.recipient)?;
-    let receive_msg: CosmosMsg = mail_client.receive_msg(msg, header)?;
-
-    Ok(receive_msg)
-}
-
-/// Route a mail message to an account on the local chain
-fn update_local_message_status(
-    deps: Deps,
-    module: &mut ServerAdapter,
-    recipient: &Recipient,
-    id: MessageHash,
-    status: MessageStatus,
-) -> ServerResult<CosmosMsg> {
-    println!("updating local message status to local account: {:?}", recipient);
-    // This is a local message
-    let mail_client = get_recipient_mail_client(deps, module, recipient)?;
-    return Ok(mail_client.update_msg_status(id, status)?);
-}
-
-
-/// Send a status update for a given message.
-pub(crate) fn update_message_status(
     deps: DepsMut,
-    module: &mut ServerAdapter,
-    id: MessageHash,
+    app: &mut ServerAdapter,
+    msg: ServerMessage,
     header: Header,
-    status: MessageStatus,
-) -> ServerResult<CosmosMsg> {
-    println!("updating message: {:?}, header: {:?}, status: {:?}", id, header, status);
-    // let from_chain = AWAITING.load(deps.storage, &id).map_err(|_| ServerError::AwaitedMsgNotFound(id))?;
+) -> ServerResult<Vec<SubMsg>> {
+    println!("routing to local account: {:?}", header.recipient);
+    // This is a local message
+    match msg {
+        ServerMessage::Mail { message } => {
+            AWAITING_DELIVERY.update(deps.storage, |mut awaiting| -> StdResult<Vec<_>> {
+                awaiting.push((message.id.clone(), header.clone()));
+                Ok(awaiting)
+            })?;
 
-    match header.route {
-        AccountTrace::Local => update_local_message_status(deps.as_ref(), module, &header.recipient, id, status),
-        AccountTrace::Remote(ref chains) => {
-            // we need to take the route and do it in reverse
-            println!("updating to chains: {:?}", chains);
-
-            // check index of hop. If we are on the final hop, route to local account
-            if header.current_hop == 0 {
-                println!("updating to local account: {:?}", chains);
-                return update_local_message_status(deps.as_ref(), module, &header.recipient, id, status);
-            }
-
-            let dest_chain =
-                chains
-                    .get(header.current_hop as usize - 1)
-                    .ok_or(ServerError::InvalidRoute {
-                        route: header.route.clone(),
-                        hop: header.current_hop,
-                    })?;
-
-            let msg = remote_server_msg(deps, &module, &ServerIbcMessage::UpdateMessage { id, header: header.clone(), status }, dest_chain)?;
-            Ok(msg)
+            let mail_client = get_recipient_mail_client(deps.as_ref(), app, &header.recipient)?;
+            Ok(vec![SubMsg::reply_always(mail_client.receive_msg(message, header)?, DELIVER_MESSAGE_REPLY)])
         }
+        ServerMessage::DeliveryStatus { id, status } => {
+            println!("updating local delivery message status: {:?}", header.recipient);
+
+            let mail_client = get_recipient_mail_client(deps.as_ref(), app, &header.recipient)?;
+            let is_delivery_enabled = FEATURES.query(&deps.querier, mail_client.module_address()?, DELIVERY_STATUS_FEATURE.to_string()).is_ok_and(|f| f.is_some_and(|f| f));
+
+            if is_delivery_enabled {
+                Ok(vec![SubMsg::new(mail_client.update_msg_status(id, status)?)])
+            } else {
+                Ok(vec![])
+            }
+        }
+        _ => Err(ServerError::NotImplemented("Unknown message type".to_string()))
     }
 }
+
 
 /// Set the target account for the message and get the mail client for the recipient
 fn get_recipient_mail_client<'a>(deps: Deps<'a>, app: &'a mut ServerAdapter, recipient: &Recipient) -> ServerResult<MailClient<'a, ServerAdapter>> {

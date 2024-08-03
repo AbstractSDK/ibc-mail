@@ -1,7 +1,9 @@
+use abstract_adapter::objects::TruncatedChainId;
 use abstract_adapter::std::ibc::{Callback, IbcResult};
-use cosmwasm_std::{DepsMut, Env, from_json, Response};
+use cosmwasm_std::{CosmosMsg, DepsMut, Env, from_json, Response, SubMsg};
 
-use ibcmail::{MessageStatus, server::{msg::ServerIbcMessage, ServerAdapter}};
+use ibcmail::{Header, MessageStatus, Recipient, Route, Sender, server::{msg::ServerIbcMessage, ServerAdapter}};
+use ibcmail::server::msg::ServerMessage;
 use ibcmail::server::state::AWAITING;
 use crate::contract::ServerResult;
 use crate::handlers::execute;
@@ -19,7 +21,7 @@ pub fn ibc_callback_handler(
     // panic!("ibc_callback_handler: {:?}", callback);
     println!("ibc_callback_handler callback: {:?} result, env: {:?}", callback, _env);
 
-    let msgs = match ibc_result {
+    let msgs: Vec<SubMsg> = match ibc_result {
         // The destination server successfully processed the message
         IbcResult::Execute { result: Ok(_response), initiator_msg } => {
             println!("ibc_callback_handler execute success");
@@ -28,14 +30,10 @@ pub fn ibc_callback_handler(
             match origin_msg {
                 // We successfully routed a packet, and need to send an update to the sender
                 ServerIbcMessage::RouteMessage { msg, header } => {
-                    println!("ibc_callback_handler success route_msg id: {:?}, header: {:?}", msg.id, header);
-                    vec![execute::update_message_status(deps, &mut app, msg.id, header, MessageStatus::Received)?]
-                },
-                // We successfully updated a message status, we shouldn't need to do anything now
-                ServerIbcMessage::UpdateMessage { id, status, header } => {
-                    println!("ibc_callback_handler success update_msg: {:?}", id);
+                    println!("ibc_callback_handler success route_msg id: {:?}, header: {:?}", msg.id(), header);
                     vec![]
-                }
+                    // vec![execute::update_message_status(deps, &mut app, msg.id, header, MessageStatus::Received)?]
+                },
                 _ => {
                     println!("Unknown message");
                     vec![]
@@ -48,14 +46,38 @@ pub fn ibc_callback_handler(
             let origin_msg: ServerIbcMessage = from_json(initiator_msg)?;
             match origin_msg {
                 ServerIbcMessage::RouteMessage { msg, header } => {
-                    println!("ibc_callback_handler execute error route_msg id: {:?}, header: {:?}", msg.id, header);
-                    vec![execute::update_message_status(deps, &mut app, msg.id, header, MessageStatus::Failed)?]
+                    println!("ibc_callback_handler execute error route_msg id: {:?}, header: {:?}", msg.id(), header);
+                    match msg {
+                        ServerMessage::Mail { ref message } => {
+                            // archway juno neutron
+                            // juno -> neutron failed current hop 1
+                            // expected: juno archway
+                            // need to remove anything after the current hop
+                            let status_header = Header {
+                                current_hop: 0,
+                                route: match header.route {
+                                    Route::Remote(mut chains) => {
+                                        chains.truncate(header.current_hop as usize);
+                                        chains.reverse();
+                                        Route::Remote(chains)
+                                    },
+                                    _ => Route::Local
+                                },
+                                recipient: message.sender.clone().try_into()?,
+                                sender: Sender::Server {
+                                    chain: TruncatedChainId::new(&_env),
+                                    address: _env.contract.address.to_string(),
+                                }
+                            };
+                            execute::route_msg(deps, &mut app, ServerMessage::delivery_status(msg.id(), MessageStatus::Failed), status_header)?
+                        },
+                        _ => {
+                            println!("ibc_callback_handler execute error route_msg unknown message");
+                            vec![]
+                        },
+                    }
+                    // We failed to route a message, we send a failed status update to the sender
                 },
-                // We failed to update a message...
-                ServerIbcMessage::UpdateMessage { id, header, status } => {
-                    println!("ibc_callback_handler execute error update_msg: {:?}", id);
-                    vec![]
-                }
                 _ => {
                     println!("unknown message");
                     vec![]
@@ -73,7 +95,7 @@ pub fn ibc_callback_handler(
         }
     };
 
-    Ok(Response::default().add_messages(msgs))
+    Ok(Response::default().add_submessages(msgs))
 }
 // ANCHOR_END: ibc_callback_handler
 

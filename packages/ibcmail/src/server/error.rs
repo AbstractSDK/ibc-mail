@@ -46,4 +46,7 @@ pub enum ServerError {
 
     #[error("Awaited message not found: {0}")]
     AwaitedMsgNotFound(MessageHash),
+
+    #[error("No sending account")]
+    NoSenderAccount,
 }

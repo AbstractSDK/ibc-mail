@@ -6,3 +6,6 @@ use crate::{IbcMailMessage, MessageHash, MessageStatus};
 pub const RECEIVED: Map<MessageHash, IbcMailMessage> = Map::new("received");
 pub const SENT: Map<MessageHash, IbcMailMessage> = Map::new("sent");
 pub const STATUS: Map<MessageHash, MessageStatus> = Map::new("status");
+
+/// Set of features supported by the client
+pub const FEATURES: Map<String, bool> = Map::new("features");

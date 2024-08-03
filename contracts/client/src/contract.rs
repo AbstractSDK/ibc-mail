@@ -8,6 +8,7 @@ use crate::{dependencies::MAIL_SERVER_DEP, error::ClientError, handlers, APP_VER
 pub type ClientResult<T = Response> = Result<T, ClientError>;
 
 const APP: App = App::new(IBCMAIL_CLIENT_ID, APP_VERSION, None)
+    .with_instantiate(handlers::instantiate_handler)
     .with_execute(handlers::execute_handler)
     .with_query(handlers::query_handler)
     .with_migrate(handlers::migrate_handler)

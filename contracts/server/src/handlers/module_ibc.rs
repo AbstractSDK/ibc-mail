@@ -1,14 +1,13 @@
 use abstract_adapter::sdk::AbstractResponse;
 use abstract_adapter::std::ibc::ModuleIbcInfo;
-use cosmwasm_std::{from_json, Binary, DepsMut, Env, StdResult, StdError};
+use cosmwasm_std::{Binary, DepsMut, Env, from_json};
 
 use ibcmail::{
-    server::{error::ServerError, msg::ServerIbcMessage, ServerAdapter},
     IBCMAIL_SERVER_ID,
+    server::{error::ServerError, msg::ServerIbcMessage, ServerAdapter},
 };
-use ibcmail::server::state::AWAITING;
+
 use crate::{contract::ServerResult, handlers::execute::route_msg};
-use crate::handlers::execute::update_message_status;
 
 // ANCHOR: module_ibc_handler
 pub fn module_ibc_handler(
@@ -29,19 +28,9 @@ pub fn module_ibc_handler(
         ServerIbcMessage::RouteMessage { msg, mut header } => {
             header.current_hop += 1;
 
-            let msg = route_msg(deps, msg, header, &mut app)?;
+            let msgs = route_msg(deps, &mut app, msg, header)?;
 
-            Ok(app.response("module_ibc").add_attribute("method", "route").add_message(msg))
-        }
-        ServerIbcMessage::UpdateMessage { id, header, status } => {
-            println!("module_ibc_handler update_msg: {:?}, status: {:?}", id, status);
-            // TODO: custom error
-            let from_chain = AWAITING.load(deps.storage, &id).map_err(|_| ServerError::Std(StdError::generic_err(format!("Message not found: {:?}", id))))?;
-            AWAITING.remove(deps.storage, &id);
-
-            let msg = update_message_status(deps, &mut app, id, header, status)?;
-
-            Ok(app.response("module_ibc").add_attribute("method", "update_status").add_message(msg))
+            Ok(app.response("module_ibc").add_attribute("method", "route").add_submessages(msgs))
         }
         _ => Err(ServerError::UnauthorizedIbcMessage {}),
     }

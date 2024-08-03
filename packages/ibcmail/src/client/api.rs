@@ -2,7 +2,7 @@ use abstract_adapter::{sdk::AbstractSdkResult, std::objects::module::ModuleId};
 
 use abstract_app::sdk::AppInterface;
 
-use cosmwasm_std::{CosmosMsg, Deps};
+use cosmwasm_std::{Addr, CosmosMsg, Deps};
 
 use crate::{client::msg::ClientExecuteMsg, Header, IbcMailMessage, Message, Route, IBCMAIL_CLIENT_ID, MessageHash, MessageStatus};
 
@@ -31,6 +31,10 @@ impl<'a, T: ClientInterface> MailClient<'a, T> {
     /// returns the module id
     fn module_id(&self) -> ModuleId {
         self.module_id
+    }
+
+    pub fn module_address(&self) -> AbstractSdkResult<Addr> {
+        self.base.modules(self.deps).module_address(self.module_id())
     }
 
     // Execute a request on the ibc mail client

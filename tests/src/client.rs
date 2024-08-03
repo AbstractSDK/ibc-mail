@@ -183,6 +183,29 @@ mod send_msg {
     }
 
     #[test]
+    fn local_message_gets_delivery_result() -> anyhow::Result<()> {
+        // Create a sender and mock env
+        let mock = MockBech32::new("mock");
+        let env = TestEnv::setup(mock)?;
+        let client1 = env.client1;
+        let client2 = env.client2;
+
+        let msg = Message::new(
+            Recipient::account(client2.account().id()?, None),
+            "test-subject",
+            "test-body",
+        );
+
+        let res = client1.send_message(msg, None);
+        assert_that!(res).is_ok();
+
+        let received_messages = client2.list_messages(MessageStatus::Received, None, None, None)?.messages;
+        assert_that!(received_messages).has_length(1);
+
+        Ok(())
+    }
+
+    #[test]
     fn can_send_local_message_to_namespace() -> anyhow::Result<()> {
         // Create a sender and mock env
         let mock = MockBech32::new("mock");
@@ -379,7 +402,7 @@ mod send_msg {
             ("juno-1", "juno"),
             (
                 "archway-1",
-                "arch",
+                "archway",
             ),
             (
                 "neutron-1",

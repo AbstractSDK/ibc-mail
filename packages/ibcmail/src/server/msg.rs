@@ -19,14 +19,41 @@ pub enum ServerExecuteMsg {
     },
 }
 
+#[non_exhaustive]
+#[cosmwasm_schema::cw_serde]
+pub enum ServerMessage {
+    Mail {
+        message: IbcMailMessage,
+    },
+    DeliveryStatus {
+        id: MessageHash,
+        status: MessageStatus,
+    }
+}
+
+impl ServerMessage {
+    pub fn id(&self) -> MessageHash {
+        match self {
+            ServerMessage::Mail { message } => message.id.clone(),
+            ServerMessage::DeliveryStatus { id, .. } => id.clone(),
+        }
+    }
+
+    pub fn mail(message: IbcMailMessage) -> Self {
+        ServerMessage::Mail { message }
+    }
+
+    pub fn delivery_status(id: MessageHash, status: MessageStatus) -> Self {
+        ServerMessage::DeliveryStatus { id, status }
+    }
+}
+
 /// App execute messages
 #[non_exhaustive]
 #[cosmwasm_schema::cw_serde]
 pub enum ServerIbcMessage {
     /// Route a message
-    RouteMessage { msg: IbcMailMessage, header: Header },
-    /// Send a status update for a message
-    UpdateMessage { id: MessageHash, header: Header, status: MessageStatus },
+    RouteMessage { msg: ServerMessage, header: Header },
 }
 
 /// App execute messages

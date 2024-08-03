@@ -1,5 +1,6 @@
 pub mod client;
 pub mod server;
+pub mod features;
 
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -10,7 +11,7 @@ use abstract_app::sdk::ModuleRegistry;
 use abstract_app::std::objects::AccountId;
 use abstract_app::std::objects::{account::AccountTrace, namespace::Namespace};
 use const_format::concatcp;
-use cosmwasm_std::Timestamp;
+use cosmwasm_std::{Addr, StdError, StdResult, Timestamp};
 use crate::server::error::ServerError;
 
 pub const IBCMAIL_NAMESPACE: &str = "ibcmail";
@@ -54,7 +55,26 @@ pub struct IbcMailMessage {
 pub struct Header {
     pub current_hop: u32,
     pub route: Route,
-    pub recipient: Recipient
+    pub recipient: Recipient,
+    pub sender: Sender,
+}
+
+impl Header {
+    pub fn reverse(self, sender: Sender) -> StdResult<Header> {
+        let reverse_route = match self.route {
+            Route::Remote(mut route) => {
+                route.reverse();
+                Route::Remote(route)
+            }
+            Route::Local => Route::Local,
+        };
+        Ok(Header {
+            current_hop: 0,
+            route: reverse_route,
+            recipient: self.sender.clone().try_into()?,
+            sender
+        })
+    }
 }
 
 pub type Route = AccountTrace;
@@ -69,6 +89,10 @@ pub enum Recipient {
     Namespace {
         namespace: Namespace,
         chain: Option<TruncatedChainId>,
+    },
+    Server {
+        chain: TruncatedChainId,
+        address: String,
     },
 }
 
@@ -120,6 +144,11 @@ pub enum Sender {
         id: AccountId,
         chain: Option<TruncatedChainId>,
     },
+    Server {
+        chain: TruncatedChainId,
+        // String because it's a different chain
+        address: String,
+    }
 }
 
 impl Sender {
@@ -127,6 +156,18 @@ impl Sender {
         Sender::Account {
             id: account_id,
             chain,
+        }
+    }
+}
+
+impl TryFrom<Sender> for Recipient {
+    type Error = StdError;
+
+    fn try_from(sender: Sender) -> Result<Self, Self::Error> {
+        match sender {
+            Sender::Account { id, chain } => Ok(Recipient::Account { id, chain }),
+            Sender::Server { chain, address } => Ok(Recipient::Server { chain, address }),
+            _ => Err(StdError::generic_err("Cannot convert Sender to Recipient").into()),
         }
     }
 }
