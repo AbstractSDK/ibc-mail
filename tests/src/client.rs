@@ -88,7 +88,7 @@ fn create_test_message(from: AccountId, to: AccountId) -> IbcMailMessage {
 mod receive_msg {
     use speculoos::assert_that;
 
-    use ibcmail::{IBCMAIL_SERVER_ID, MessageStatus};
+    use ibcmail::{IBCMAIL_SERVER_ID, MessageKind};
 
     use super::*;
 
@@ -122,7 +122,7 @@ mod receive_msg {
 
         assert_that!(res).is_ok();
 
-        let messages = app.list_messages(MessageStatus::Received, None, None, None)?;
+        let messages = app.list_messages(MessageKind::Received, None, None, None)?;
         assert_that!(messages.messages).has_length(1);
 
         Ok(())
@@ -157,7 +157,7 @@ mod send_msg {
     use abstract_interface::Abstract;
     use cw_orch_interchain::{InterchainEnv, MockBech32InterchainEnv};
 
-    use ibcmail::{IBCMAIL_CLIENT_ID, Message, MessageStatus, Route, server::error::ServerError};
+    use ibcmail::{IBCMAIL_CLIENT_ID, Message, Route, server::error::ServerError, MessageKind};
 
     use super::*;
 
@@ -199,7 +199,7 @@ mod send_msg {
         let res = client1.send_message(msg, None);
         assert_that!(res).is_ok();
 
-        let received_messages = client2.list_messages(MessageStatus::Received, None, None, None)?.messages;
+        let received_messages = client2.list_messages(MessageKind::Received, None, None, None)?.messages;
         assert_that!(received_messages).has_length(1);
 
         Ok(())
@@ -261,10 +261,10 @@ mod send_msg {
     fn can_send_remote_message() -> anyhow::Result<()> {
         // Create a sender and mock env
         let interchain = MockBech32InterchainEnv::new(vec![
-            ("juno-1", "juno18k2uq7srsr8lwrae6zr0qahpn29rsp7tw83nyx"),
+            ("juno-1", "juno"),
             (
                 "archway-1",
-                "archway18k2uq7srsr8lwrae6zr0qahpn29rsp7td7wvfd",
+                "archway",
             ),
         ]);
 
@@ -294,7 +294,7 @@ mod send_msg {
 
         interchain.await_and_check_packets("archway-1", res?)?;
 
-        let arch_messages = arch_client.list_messages(MessageStatus::Received, None, None, None)?;
+        let arch_messages = arch_client.list_messages(MessageKind::Received, None, None, None)?;
         assert_that!(arch_messages.messages).is_empty();
 
         let juno_client_1_module_addresses = juno_client
@@ -323,22 +323,22 @@ mod send_msg {
         let juno_mail_client = ClientInterface::new(IBCMAIL_CLIENT_ID, juno_env.env.clone());
         juno_mail_client.set_address(&juno_client_1_module_addresses.modules[0].1.clone());
         let juno_mail_client_messages =
-            juno_mail_client.list_messages(MessageStatus::Received, None, None, None)?;
+            juno_mail_client.list_messages(MessageKind::Received, None, None, None)?;
         assert_that!(juno_mail_client_messages.messages).has_length(1);
 
-        let juno_messages = juno_client.list_messages(MessageStatus::Received, None, None, None)?;
+        let juno_messages = juno_client.list_messages(MessageKind::Received, None, None, None)?;
         assert_that!(juno_messages.messages).has_length(1);
 
         // Sanity check messages method
         let juno_message_id = juno_messages.messages.first().cloned().unwrap().id;
-        let juno_message = juno_client.messages(vec![juno_message_id], MessageStatus::Received)?;
+        let juno_message = juno_client.messages(vec![juno_message_id], MessageKind::Received)?;
         assert_that!(juno_message.messages).has_length(1);
 
         Ok(())
     }
 
     #[test]
-    fn send_remote_message_account_dne_callback() -> anyhow::Result<()> {
+    fn send_remote_message_1_hop_account_dne_updates_status_to_failed() -> anyhow::Result<()> {
         // Create a sender and mock env
         let interchain = MockBech32InterchainEnv::new(vec![
             ("juno-1", "juno"),
@@ -346,20 +346,14 @@ mod send_msg {
                 "archway-1",
                 "archway",
             ),
-            (
-                "neutron-1",
-                "neutron",
-            ),
         ]);
 
         // /Users/adair/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cw-orch-mock-0.22.0/src/queriers/env.rs:12:70:
         // index out of bounds: the len is 1 but the index is 1 (when initializing with "juno")
         let arch_env = TestEnv::setup(interchain.get_chain("archway-1")?)?;
         let juno_env = TestEnv::setup(interchain.get_chain("juno-1")?)?;
-        let neutron_env = TestEnv::setup(interchain.get_chain("neutron-1")?)?;
 
         arch_env.abs.connect_to(&juno_env.abs, &interchain)?;
-        juno_env.abs.connect_to(&neutron_env.abs, &interchain)?;
 
         let arch_client = arch_env.client1;
         let juno_client = juno_env.client1;
@@ -368,13 +362,13 @@ mod send_msg {
         let arch_to_juno_msg = Message::new(
             Recipient::account(
                 AccountId::local(420),
-                Some(TruncatedChainId::from_string("neutron".into())?),
+                Some(TruncatedChainId::from_string("juno".into())?),
             ),
             "test-subject",
             "test-body",
         );
 
-        let res = arch_client.send_message(arch_to_juno_msg, Some(Route::Remote(vec![TruncatedChainId::from_string("juno".into())?, TruncatedChainId::from_string("neutron".into())?])));
+        let res = arch_client.send_message(arch_to_juno_msg, Some(Route::Remote(vec![TruncatedChainId::from_string("juno".into())?])));
 
         assert_that!(res).is_ok();
 
@@ -390,6 +384,10 @@ mod send_msg {
 
         let packets = interchain.await_packets("archway-1", res?)?;
 
+        assert_that!(arch_client.list_messages(MessageKind::Received, None, None, None)?.messages).is_empty();
+        assert_that!(juno_client.list_messages(MessageKind::Received, None, None, None)?.messages).is_empty();
+
+        // interchain.await_packets("archway-1", res?)?;
         // println!("packets: {:?}", packets);
 
         Ok(())
@@ -446,7 +444,7 @@ mod send_msg {
 
         interchain.await_and_check_packets("archway-1", res.clone())?;
 
-        let arch_messages = arch_client.list_messages(MessageStatus::Received, None, None, None)?;
+        let arch_messages = arch_client.list_messages(MessageKind::Received, None, None, None)?;
         assert_that!(arch_messages.messages).is_empty();
 
         let neutron_client_1_module_addresses = neutron_client
@@ -466,7 +464,7 @@ mod send_msg {
         let neutron_mail_client = ClientInterface::new(IBCMAIL_CLIENT_ID, neutron_env.env.clone());
         neutron_mail_client.set_address(&neutron_client_1_module_addresses.modules[0].1.clone());
         let neutron_mail_client_messages =
-            neutron_mail_client.list_messages(MessageStatus::Received, None, None, None)?;
+            neutron_mail_client.list_messages(MessageKind::Received, None, None, None)?;
         assert_that!(neutron_mail_client_messages.messages).has_length(1);
 
         // let juno_messages = neutron_client.list_messages(None, None, None)?;

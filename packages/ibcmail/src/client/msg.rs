@@ -1,8 +1,6 @@
 use cosmwasm_schema::QueryResponses;
 
-use crate::{
-    client::ClientApp, IbcMailMessage, Message, MessageHash, MessageStatus, Route, Sender,
-};
+use crate::{client::ClientApp, IbcMailMessage, Message, MessageHash, DeliveryStatus, Route, Sender, MessageKind};
 
 // This is used for type safety and re-exporting the contract endpoint structs.
 abstract_app::app_msg_types!(ClientApp, ClientExecuteMsg, ClientQueryMsg);
@@ -20,9 +18,9 @@ pub enum ClientExecuteMsg {
     /// Receive a message from the server.
     ReceiveMessage(IbcMailMessage),
     /// Update the status of a message. only callable by the server
-    UpdateMessageStatus {
+    UpdateDeliveryStatus {
         id: MessageHash,
-        status: MessageStatus,
+        status: DeliveryStatus,
     },
     /// Send a message
     SendMessage {
@@ -40,14 +38,14 @@ pub enum ClientExecuteMsg {
 pub enum ClientQueryMsg {
     #[returns(MessagesResponse)]
     ListMessages {
-        status: MessageStatus,
+        kind: MessageKind,
         filter: Option<MessageFilter>,
         limit: Option<u32>,
         start_after: Option<MessageHash>,
     },
     #[returns(MessagesResponse)]
     Messages {
-        status: MessageStatus,
+        kind: MessageKind,
         ids: Vec<MessageHash>,
     },
 }

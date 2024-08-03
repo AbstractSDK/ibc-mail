@@ -2,7 +2,7 @@ use abstract_adapter::objects::TruncatedChainId;
 use abstract_adapter::std::ibc::{Callback, IbcResult};
 use cosmwasm_std::{CosmosMsg, DepsMut, Env, from_json, Response, SubMsg};
 
-use ibcmail::{Header, MessageStatus, Recipient, Route, Sender, server::{msg::ServerIbcMessage, ServerAdapter}};
+use ibcmail::{Header, DeliveryStatus, Recipient, Route, Sender, server::{msg::ServerIbcMessage, ServerAdapter}, DeliveryFailure};
 use ibcmail::server::msg::ServerMessage;
 use ibcmail::server::state::AWAITING;
 use crate::contract::ServerResult;
@@ -42,7 +42,8 @@ pub fn ibc_callback_handler(
         }
         // The destination server failed to process the message
         IbcResult::Execute { result: Err(e), initiator_msg } => {
-            println!("ibc_callback_handler execute error: {:?}", e);
+            println!("ibc_callback_handler execute error");
+            // println!("ibc_callback_handler execute error: {:?}", e);
             let origin_msg: ServerIbcMessage = from_json(initiator_msg)?;
             match origin_msg {
                 ServerIbcMessage::RouteMessage { msg, header } => {
@@ -57,7 +58,8 @@ pub fn ibc_callback_handler(
                                 current_hop: 0,
                                 route: match header.route {
                                     Route::Remote(mut chains) => {
-                                        chains.truncate(header.current_hop as usize);
+                                        // keep the current hop but remove everything after it
+                                        chains.truncate(header.current_hop as usize + 1);
                                         chains.reverse();
                                         Route::Remote(chains)
                                     },
@@ -69,7 +71,7 @@ pub fn ibc_callback_handler(
                                     address: _env.contract.address.to_string(),
                                 }
                             };
-                            execute::route_msg(deps, &mut app, ServerMessage::delivery_status(msg.id(), MessageStatus::Failed), status_header)?
+                            execute::route_msg(deps, &mut app, ServerMessage::delivery_status(msg.id(), DeliveryFailure::Unknown(e).into()), status_header)?
                         },
                         _ => {
                             println!("ibc_callback_handler execute error route_msg unknown message");

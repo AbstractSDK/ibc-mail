@@ -174,7 +174,7 @@ fn route_to_local_account(
             Ok(vec![SubMsg::reply_always(mail_client.receive_msg(message, header)?, DELIVER_MESSAGE_REPLY)])
         }
         ServerMessage::DeliveryStatus { id, status } => {
-            println!("updating local delivery message status: {:?}", header.recipient);
+            println!("updating local delivery message status: recipient: {:?} status: {:?}", header.recipient, status);
 
             let mail_client = get_recipient_mail_client(deps.as_ref(), app, &header.recipient)?;
             let is_delivery_enabled = FEATURES.query(&deps.querier, mail_client.module_address()?, DELIVERY_STATUS_FEATURE.to_string()).is_ok_and(|f| f.is_some_and(|f| f));

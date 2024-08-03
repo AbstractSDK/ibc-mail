@@ -2,7 +2,7 @@ use abstract_adapter::objects::TruncatedChainId;
 use abstract_adapter::sdk::AbstractResponse;
 use cosmwasm_std::{DepsMut, Env, Reply, SubMsgResult};
 
-use ibcmail::{Header, MessageStatus, Sender};
+use ibcmail::{Header, DeliveryStatus, Sender, DeliveryFailure};
 use ibcmail::server::msg::ServerMessage;
 use ibcmail::server::ServerAdapter;
 use ibcmail::server::state::AWAITING_DELIVERY;
@@ -13,10 +13,10 @@ use crate::handlers::execute::route_msg;
 pub fn deliver_message_reply(deps: DepsMut, env: Env, mut app: ServerAdapter, reply: Reply) -> ServerResult {
     let delivery_status = match reply.result {
         SubMsgResult::Ok(_) => {
-            MessageStatus::Received
+            DeliveryStatus::Delivered
         }
-        SubMsgResult::Err(_) => {
-            MessageStatus::Failed
+        SubMsgResult::Err(error) => {
+            DeliveryFailure::Unknown(error).into()
         }
     };
 

@@ -12,6 +12,7 @@ use abstract_app::std::objects::AccountId;
 use abstract_app::std::objects::{account::AccountTrace, namespace::Namespace};
 use const_format::concatcp;
 use cosmwasm_std::{Addr, StdError, StdResult, Timestamp};
+use thiserror::Error;
 use crate::server::error::ServerError;
 
 pub const IBCMAIL_NAMESPACE: &str = "ibcmail";
@@ -172,20 +173,53 @@ impl TryFrom<Sender> for Recipient {
     }
 }
 
-#[non_exhaustive]
 #[cosmwasm_schema::cw_serde]
-pub enum MessageStatus {
+pub enum MessageKind {
     Sent,
     Received,
-    Failed,
 }
 
-impl Display for MessageStatus {
+
+impl Display for MessageKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            MessageStatus::Sent => write!(f, "Sent"),
-            MessageStatus::Received => write!(f, "Received"),
-            MessageStatus::Failed => write!(f, "Failed"),
+            MessageKind::Sent => write!(f, "Sent"),
+            MessageKind::Received => write!(f, "Received"),
+        }
+    }
+}
+
+#[derive(Error)]
+#[non_exhaustive]
+#[cosmwasm_schema::cw_serde]
+pub enum DeliveryFailure {
+    #[error("Recipient not found")]
+    RecipientNotFound,
+    #[error("Unknown failure: {0}")]
+    Unknown(String),
+}
+
+
+#[non_exhaustive]
+#[cosmwasm_schema::cw_serde]
+pub enum DeliveryStatus {
+    Sent,
+    Delivered,
+    Failure(DeliveryFailure),
+}
+
+impl From<DeliveryFailure> for DeliveryStatus {
+    fn from(failure: DeliveryFailure) -> Self {
+        DeliveryStatus::Failure(failure)
+    }
+}
+
+impl Display for DeliveryStatus {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            DeliveryStatus::Sent => write!(f, "Sent"),
+            DeliveryStatus::Delivered => write!(f, "Received"),
+            DeliveryStatus::Failure(failure) => write!(f, "Failed: {}", failure),
         }
     }
 }

@@ -1,14 +1,11 @@
 use abstract_app::sdk::cw_helpers::load_many;
 use cosmwasm_std::{to_json_binary, Binary, Deps, Env};
 use cw_storage_plus::Bound;
-use ibcmail::{
-    client::{
-        error::ClientError,
-        msg::{MessageFilter, MessagesResponse},
-        state::{RECEIVED, SENT},
-    },
-    MessageHash, MessageStatus,
-};
+use ibcmail::{client::{
+    error::ClientError,
+    msg::{MessageFilter, MessagesResponse},
+    state::{RECEIVED, SENT},
+}, MessageHash, DeliveryStatus, MessageKind};
 
 use crate::{
     contract::{App, ClientResult},
@@ -22,11 +19,11 @@ pub fn query_handler(
     msg: ClientQueryMsg,
 ) -> ClientResult<Binary> {
     match msg {
-        ClientQueryMsg::Messages { status, ids } => {
+        ClientQueryMsg::Messages { kind: status, ids } => {
             to_json_binary(&query_messages(deps, status, ids)?)
         }
         ClientQueryMsg::ListMessages {
-            status,
+            kind: status,
             filter,
             start_after,
             limit,
@@ -43,12 +40,12 @@ pub fn query_handler(
 
 fn query_messages(
     deps: Deps,
-    status: MessageStatus,
+    kind: MessageKind,
     ids: Vec<MessageHash>,
 ) -> ClientResult<MessagesResponse> {
-    let map = match status {
-        MessageStatus::Received => RECEIVED,
-        MessageStatus::Sent => SENT,
+    let map = match kind {
+        MessageKind::Received => RECEIVED,
+        MessageKind::Sent => SENT,
         _ => return Err(ClientError::NotImplemented("message type".to_string())),
     };
 
@@ -60,14 +57,14 @@ fn query_messages(
 
 fn query_messages_list(
     deps: Deps,
-    status: MessageStatus,
+    status: MessageKind,
     _filter: Option<MessageFilter>,
     start: Option<MessageHash>,
     limit: Option<u32>,
 ) -> ClientResult<MessagesResponse> {
     let map = match status {
-        MessageStatus::Received => RECEIVED,
-        MessageStatus::Sent => SENT,
+        MessageKind::Received => RECEIVED,
+        MessageKind::Sent => SENT,
         _ => return Err(ClientError::NotImplemented("message type".to_string())),
     };
 

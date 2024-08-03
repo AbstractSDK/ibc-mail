@@ -8,7 +8,7 @@ use cosmwasm_std::{ensure_eq, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Addr};
 use ibcmail::{client::{
     state::{RECEIVED, SENT},
     ClientApp,
-}, server::api::{MailServer, ServerInterface}, IbcMailMessage, Message, Recipient, Route, Sender, IBCMAIL_SERVER_ID, MessageHash, MessageStatus};
+}, server::api::{MailServer, ServerInterface}, IbcMailMessage, Message, Recipient, Route, Sender, IBCMAIL_SERVER_ID, MessageHash, DeliveryStatus};
 use ibcmail::client::state::STATUS;
 use crate::{
     contract::{App, ClientResult},
@@ -29,7 +29,7 @@ pub fn execute_handler(
             send_msg(deps, env, info, message, route, app)
         }
         ClientExecuteMsg::ReceiveMessage(message) => receive_msg(deps, info, app, message),
-        ClientExecuteMsg::UpdateMessageStatus { id, status } => update_msg_status(deps, info, app, id, status),
+        ClientExecuteMsg::UpdateDeliveryStatus { id, status } => update_delivery_status(deps, info, app, id, status),
     }
 }
 // # ANCHOR_END: execute_handler
@@ -75,7 +75,6 @@ fn send_msg(
 // # ANCHOR: receive_msg
 fn receive_msg(deps: DepsMut, info: MessageInfo, app: App, msg: IbcMailMessage) -> ClientResult {
     ensure_server_sender(deps.as_ref(), &app, info.sender)?;
-
     ensure_correct_recipient(deps.as_ref(), &msg.message.recipient, &app)?;
 
     RECEIVED.save(deps.storage, msg.id.clone(), &msg)?;
@@ -86,12 +85,12 @@ fn receive_msg(deps: DepsMut, info: MessageInfo, app: App, msg: IbcMailMessage) 
 }
 // # ANCHOR_END: receive_msg
 
-fn update_msg_status(
+fn update_delivery_status(
     deps: DepsMut,
     info: MessageInfo,
     app: App,
     id: MessageHash,
-    status: MessageStatus,
+    status: DeliveryStatus,
 ) -> ClientResult {
     ensure_server_sender(deps.as_ref(), &app, info.sender)?;
 
