@@ -49,36 +49,47 @@ pub struct IbcMailMessage {
     pub version: String,
     pub timestamp: Timestamp,
     pub message: Message,
+    pub reply_to: Option<MessageHash>,
 }
 
 #[cosmwasm_schema::cw_serde]
 pub struct Header {
-    // TODO: remove current hop
-    pub route: Route,
     pub sender: Sender,
     pub recipient: Recipient,
     pub id: MessageHash,
     pub version: String,
     pub timestamp: Timestamp,
+    pub reply_to: Option<MessageHash>,
 }
 
-impl Header {
-    pub fn reverse(self, sender: Sender) -> StdResult<Header> {
-        let reverse_route = match self.route {
+pub type Route = AccountTrace;
+
+#[derive(Default)]
+#[cosmwasm_schema::cw_serde]
+pub struct ClientMetadata {
+    pub route: Option<Route>,
+}
+
+impl ClientMetadata {
+    pub fn new_with_route(route: Route) -> Self {
+        Self { route: Some(route) }
+    }
+}
+
+#[cosmwasm_schema::cw_serde]
+pub struct ServerMetadata {
+    pub route: Route,
+}
+
+impl ServerMetadata {
+    pub fn reverse_route(&self) -> StdResult<Route> {
+        match self.route.clone() {
             Route::Remote(mut route) => {
                 route.reverse();
-                Route::Remote(route)
+                Ok(Route::Remote(route))
             }
-            Route::Local => Route::Local,
-        };
-        Ok(Header {
-            route: reverse_route,
-            recipient: self.sender.clone().try_into()?,
-            sender,
-            id: self.id,
-            version: self.version,
-            timestamp: self.timestamp,
-        })
+            Route::Local => Ok(Route::Local),
+        }
     }
 
     pub fn current_hop(&self, current_chain: &TruncatedChainId) -> StdResult<u32> {
@@ -94,8 +105,6 @@ impl Header {
         }
     }
 }
-
-pub type Route = AccountTrace;
 
 #[non_exhaustive]
 #[cosmwasm_schema::cw_serde]

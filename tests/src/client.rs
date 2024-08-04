@@ -82,17 +82,18 @@ fn create_server_test_msg(from: AccountId, to: AccountId) -> IbcMailMessage {
         },
         timestamp: Default::default(),
         version: "0.0.1".to_string(),
+        reply_to: None,
     }
 }
 
 fn temp_ibc_mail_msg_to_header(msg: IbcMailMessage, route: Route) -> Header {
     Header {
-        route,
         recipient: msg.recipient.clone(),
         id: msg.id.clone(),
         version: msg.version.clone(),
         sender: msg.sender.clone(),
         timestamp: msg.timestamp,
+        reply_to: msg.reply_to,
     }
 }
 
@@ -171,7 +172,9 @@ mod send_msg {
     use abstract_interface::Abstract;
     use cw_orch_interchain::{InterchainEnv, MockBech32InterchainEnv};
 
-    use ibcmail::{server::error::ServerError, Message, MessageKind, Route, IBCMAIL_CLIENT_ID};
+    use ibcmail::{
+        server::error::ServerError, ClientMetadata, Message, MessageKind, Route, IBCMAIL_CLIENT_ID,
+    };
 
     use super::*;
 
@@ -357,9 +360,9 @@ mod send_msg {
                 AccountId::local(420),
                 Some(TruncatedChainId::from_string("juno".into())?),
             ),
-            Some(Route::Remote(vec![TruncatedChainId::from_string(
-                "juno".into(),
-            )?])),
+            Some(ClientMetadata::new_with_route(Route::Remote(vec![
+                TruncatedChainId::from_string("juno".into())?,
+            ]))),
         );
 
         assert_that!(res).is_ok();
@@ -426,10 +429,10 @@ mod send_msg {
                 neutron_client.account().id()?,
                 Some(TruncatedChainId::from_string("neutron".into())?),
             ),
-            Some(AccountTrace::Remote(vec![
+            Some(ClientMetadata::new_with_route(AccountTrace::Remote(vec![
                 "juno".parse()?,
                 TruncatedChainId::from_str("neutron")?,
-            ])),
+            ]))),
         )?;
 
         interchain.await_and_check_packets("archway-1", res.clone())?;

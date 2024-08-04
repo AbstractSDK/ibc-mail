@@ -9,7 +9,7 @@ use cw_orch_interchain::{ChannelCreationValidator, DaemonInterchainEnv, Intercha
 use networks::{HARPOON_4, PION_1};
 
 use client::ClientInterface;
-use ibcmail::{client::msg::ClientExecuteMsgFns, Message};
+use ibcmail::{client::msg::ClientExecuteMsgFns, ClientMetadata, Message};
 use tests::TEST_NAMESPACE;
 
 const SRC: ChainInfo = PION_1;
@@ -44,9 +44,9 @@ fn test() -> anyhow::Result<()> {
     let send = src_client.send_message(
         mail_msg,
         dst_acc.id()?.into(),
-        Some(AccountTrace::Remote(vec![TruncatedChainId::from_chain_id(
-            DST.chain_id,
-        )])),
+        Some(ClientMetadata::new_with_route(AccountTrace::Remote(vec![
+            TruncatedChainId::from_chain_id(DST.chain_id),
+        ]))),
     )?;
 
     interchain.await_and_check_packets(SRC.chain_id, send)?;

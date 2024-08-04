@@ -1,8 +1,8 @@
 use cosmwasm_schema::QueryResponses;
 
 use crate::{
-    client::ClientApp, DeliveryStatus, Header, IbcMailMessage, Message, MessageHash, MessageKind,
-    Recipient, Route, Sender,
+    client::ClientApp, ClientMetadata, DeliveryStatus, Header, IbcMailMessage, Message,
+    MessageHash, MessageKind, Recipient, Route, Sender,
 };
 
 // This is used for type safety and re-exporting the contract endpoint structs.
@@ -32,7 +32,7 @@ pub enum ClientExecuteMsg {
     SendMessage {
         recipient: Recipient,
         message: Message,
-        route: Option<Route>,
+        metadata: Option<ClientMetadata>,
     },
 }
 // # ANCHOR_END: execute_msg

@@ -21,7 +21,7 @@ use cw_orch_interchain::{ChannelCreationValidator, DaemonInterchainEnv, Intercha
 use networks::{HARPOON_4, PION_1};
 
 use client::ClientInterface;
-use ibcmail::{client::msg::ClientExecuteMsgFns, Message, IBCMAIL_NAMESPACE};
+use ibcmail::{client::msg::ClientExecuteMsgFns, ClientMetadata, Message, IBCMAIL_NAMESPACE};
 use tests::TEST_NAMESPACE;
 
 const SRC: ChainInfo = HARPOON_4;
@@ -102,9 +102,9 @@ fn test() -> anyhow::Result<()> {
     let send = dst_client.send_message(
         Message::new("test-subject", "test-body"),
         src_acc.id()?.into(),
-        Some(AccountTrace::Remote(vec![TruncatedChainId::from_chain_id(
-            SRC.chain_id,
-        )])),
+        Some(ClientMetadata::new_with_route(AccountTrace::Remote(vec![
+            TruncatedChainId::from_chain_id(SRC.chain_id),
+        ]))),
     )?;
 
     interchain.await_and_check_packets(DST.chain_id, send)?;

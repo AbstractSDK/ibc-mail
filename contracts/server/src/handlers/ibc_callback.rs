@@ -5,7 +5,7 @@ use cosmwasm_std::{from_json, DepsMut, Env, Response, SubMsg};
 use ibcmail::server::msg::ServerMessage;
 use ibcmail::{
     server::{msg::ServerIbcMessage, ServerAdapter},
-    DeliveryFailure, Header, Route, Sender,
+    DeliveryFailure, Header, Route, Sender, ServerMetadata,
 };
 
 use crate::contract::ServerResult;
@@ -38,11 +38,16 @@ pub fn ibc_callback_handler(
 
             match origin_msg {
                 // We successfully routed a packet, and need to send an update to the sender
-                ServerIbcMessage::RouteMessage { msg, header } => {
+                ServerIbcMessage::RouteMessage {
+                    msg,
+                    header,
+                    metadata,
+                } => {
                     println!(
-                        "ibc_callback_handler success route_msg id: {:?}, header: {:?}",
+                        "ibc_callback_handler success route_msg id: {:?}, header: {:?}, metadata: {:?}",
                         msg.id(),
-                        header
+                        header,
+                        metadata
                     );
                     vec![]
                     // vec![execute::update_message_status(deps, &mut app, msg.id, header, MessageStatus::Received)?]
@@ -62,14 +67,19 @@ pub fn ibc_callback_handler(
             // println!("ibc_callback_handler execute error: {:?}", e);
             let origin_msg: ServerIbcMessage = from_json(initiator_msg)?;
             match origin_msg {
-                ServerIbcMessage::RouteMessage { msg, header } => {
+                ServerIbcMessage::RouteMessage {
+                    msg,
+                    header,
+                    metadata,
+                } => {
                     println!(
-                        "ibc_callback_handler execute error route_msg id: {:?}, header: {:?}",
+                        "ibc_callback_handler execute error route_msg id: {:?}, header: {:?}, metadata: {:?}",
                         msg.id(),
-                        header
+                        header,
+                        metadata
                     );
                     let current_chain = TruncatedChainId::new(&_env);
-                    let current_hop = header.current_hop(&current_chain)?;
+                    let current_hop = metadata.current_hop(&current_chain)?;
                     match msg {
                         // We failed to deliver a message, we send a failed status update to the sender
                         ServerMessage::Mail { ref message } => {
@@ -78,15 +88,6 @@ pub fn ibc_callback_handler(
                             // expected: juno archway
                             // need to remove anything after the current hop
                             let status_header = Header {
-                                route: match header.route {
-                                    Route::Remote(mut chains) => {
-                                        // keep the current hop but remove everything after it
-                                        chains.truncate(current_hop as usize + 1);
-                                        chains.reverse();
-                                        Route::Remote(chains)
-                                    }
-                                    _ => Route::Local,
-                                },
                                 sender: Sender::Server {
                                     chain: current_chain.clone(),
                                     address: _env.contract.address.to_string(),
@@ -96,17 +97,32 @@ pub fn ibc_callback_handler(
                                 id: message.id.clone(),
                                 version: message.version.clone(),
                                 timestamp: _env.block.time,
+                                reply_to: None,
                             };
 
-                            execute::route_msg(
+                            let status_metadata = ServerMetadata {
+                                route: match metadata.route {
+                                    Route::Remote(mut chains) => {
+                                        // keep the current hop but remove everything after it
+                                        chains.truncate(current_hop as usize + 1);
+                                        chains.reverse();
+                                        Route::Remote(chains)
+                                    }
+                                    _ => Route::Local,
+                                },
+                            };
+
+                            let status_message = ServerMessage::delivery_status(
+                                msg.id(),
+                                DeliveryFailure::Unknown(e).into(),
+                            );
+                            execute::route_message(
                                 deps,
-                                &current_chain,
                                 &mut app,
+                                &current_chain,
                                 status_header,
-                                ServerMessage::delivery_status(
-                                    msg.id(),
-                                    DeliveryFailure::Unknown(e).into(),
-                                ),
+                                status_metadata,
+                                status_message,
                             )?
                         }
                         _ => {

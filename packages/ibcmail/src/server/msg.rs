@@ -1,6 +1,9 @@
 use cosmwasm_schema::QueryResponses;
 
-use crate::{server::ServerAdapter, DeliveryStatus, Header, IbcMailMessage, MessageHash, Route};
+use crate::{
+    server::ServerAdapter, ClientMetadata, DeliveryStatus, Header, IbcMailMessage, MessageHash,
+    Route, ServerMetadata,
+};
 
 // This is used for type safety and re-exporting the contract endpoint structs.
 abstract_adapter::adapter_msg_types!(ServerAdapter, ServerExecuteMsg, ServerQueryMsg);
@@ -14,8 +17,9 @@ pub struct ServerInstantiateMsg {}
 pub enum ServerExecuteMsg {
     /// Process a message sent by the client
     ProcessMessage {
-        msg: IbcMailMessage,
-        route: Option<Route>,
+        message: IbcMailMessage,
+        header: Header,
+        metadata: Option<ClientMetadata>,
     },
 }
 
@@ -53,7 +57,11 @@ impl ServerMessage {
 #[cosmwasm_schema::cw_serde]
 pub enum ServerIbcMessage {
     /// Route a message
-    RouteMessage { msg: ServerMessage, header: Header },
+    RouteMessage {
+        msg: ServerMessage,
+        header: Header,
+        metadata: ServerMetadata,
+    },
 }
 
 /// App execute messages

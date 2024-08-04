@@ -17,8 +17,8 @@ use ibcmail::{
         ClientApp,
     },
     server::api::{MailServer, ServerInterface},
-    DeliveryStatus, Header, IbcMailMessage, Message, MessageHash, Recipient, Route, Sender,
-    IBCMAIL_SERVER_ID,
+    ClientMetadata, DeliveryStatus, Header, IbcMailMessage, Message, MessageHash, Recipient,
+    Sender, IBCMAIL_SERVER_ID,
 };
 
 // # ANCHOR: execute_handler
@@ -33,8 +33,8 @@ pub fn execute_handler(
         ClientExecuteMsg::SendMessage {
             message,
             recipient,
-            route,
-        } => send_msg(deps, env, info, app, message, recipient, route),
+            metadata,
+        } => send_msg(deps, env, info, app, message, recipient, metadata),
         ClientExecuteMsg::ReceiveMessage { message, header } => {
             receive_msg(deps, info, app, message, header)
         }
@@ -53,31 +53,45 @@ fn send_msg(
     app: ClientApp,
     msg: Message,
     recipient: Recipient,
-    route: Option<Route>,
+    metadata: Option<ClientMetadata>,
 ) -> ClientResult {
     // validate basic fields of message, construct message to send to server
     let to_hash = format!("{:?}{:?}{:?}", env.block.time, msg.subject, recipient);
     let hash = <sha2::Sha256 as sha2::Digest>::digest(to_hash);
     let base_64_hash = BASE64_STANDARD.encode(hash);
+
+    let sender = Sender::account(
+        app.account_id(deps.as_ref()).unwrap(),
+        Some(TruncatedChainId::new(&env)),
+    );
+    let version = app.version().to_string();
+
     let to_send = IbcMailMessage {
-        id: base_64_hash,
-        sender: Sender::account(
-            app.account_id(deps.as_ref()).unwrap(),
-            Some(TruncatedChainId::new(&env)),
-        ),
-        recipient,
+        id: base_64_hash.clone(),
+        sender: sender.clone(),
+        recipient: recipient.clone(),
         message: Message {
             subject: msg.subject,
             body: msg.body,
         },
         timestamp: env.block.time,
-        version: app.version().to_string(),
+        version: version.clone(),
+        reply_to: None,
+    };
+
+    let client_header = Header {
+        sender,
+        recipient,
+        id: base_64_hash,
+        version: version,
+        timestamp: env.block.time,
+        reply_to: None,
     };
 
     SENT.save(deps.storage, to_send.id.clone(), &to_send)?;
 
     let server: MailServer<_> = app.mail_server(deps.as_ref());
-    let route_msg: CosmosMsg = server.process_msg(to_send, route)?;
+    let route_msg: CosmosMsg = server.process_msg(to_send, client_header, metadata)?;
 
     Ok(app.response("send").add_message(route_msg))
 }

@@ -1,4 +1,5 @@
 use crate::MessageHash;
+use abstract_adapter::objects::AccountId;
 use abstract_adapter::std::ibc::ModuleIbcInfo;
 use abstract_adapter::{
     sdk::AbstractSdkError, std::AbstractError, AdapterError as AbstractAdapterError,
@@ -49,4 +50,10 @@ pub enum ServerError {
 
     #[error("No sending account")]
     NoSenderAccount,
+
+    #[error("Mismatched sender. Expected: {expected:?}, Actual: {actual:?}")]
+    MismatchedSender {
+        expected: AccountId,
+        actual: AccountId,
+    },
 }

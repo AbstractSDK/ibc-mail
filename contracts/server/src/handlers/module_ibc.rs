@@ -8,7 +8,7 @@ use ibcmail::{
     IBCMAIL_SERVER_ID,
 };
 
-use crate::{contract::ServerResult, handlers::execute::route_msg};
+use crate::{contract::ServerResult, handlers::execute::route_message};
 
 // ANCHOR: module_ibc_handler
 pub fn module_ibc_handler(
@@ -26,8 +26,19 @@ pub fn module_ibc_handler(
     let server_msg: ServerIbcMessage = from_json(msg)?;
 
     match server_msg {
-        ServerIbcMessage::RouteMessage { msg, header } => {
-            let msgs = route_msg(deps, &TruncatedChainId::new(&env), &mut app, header, msg)?;
+        ServerIbcMessage::RouteMessage {
+            msg,
+            header,
+            metadata,
+        } => {
+            let msgs = route_message(
+                deps,
+                &mut app,
+                &TruncatedChainId::new(&env),
+                header,
+                metadata,
+                msg,
+            )?;
 
             Ok(app
                 .response("module_ibc")

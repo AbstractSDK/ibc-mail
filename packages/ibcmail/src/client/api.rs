@@ -1,12 +1,10 @@
 use abstract_adapter::{sdk::AbstractSdkResult, std::objects::module::ModuleId};
-
 use abstract_app::sdk::AppInterface;
-
 use cosmwasm_std::{Addr, CosmosMsg, Deps};
 
 use crate::{
-    client::msg::ClientExecuteMsg, DeliveryStatus, Header, IbcMailMessage, Message, MessageHash,
-    Recipient, Route, IBCMAIL_CLIENT_ID,
+    client::msg::ClientExecuteMsg, ClientMetadata, DeliveryStatus, Header, IbcMailMessage, Message,
+    MessageHash, Recipient, IBCMAIL_CLIENT_ID,
 };
 
 // API for Abstract SDK users
@@ -53,12 +51,12 @@ impl<'a, T: ClientInterface> MailClient<'a, T> {
         &self,
         recipient: Recipient,
         message: Message,
-        route: Option<Route>,
+        metadata: Option<ClientMetadata>,
     ) -> AbstractSdkResult<CosmosMsg> {
         self.request(ClientExecuteMsg::SendMessage {
             recipient,
             message,
-            route,
+            metadata,
         })
     }
 

@@ -1,32 +1,29 @@
-use abstract_adapter::objects::TruncatedChainId;
-use abstract_adapter::sdk::{
-    features::ModuleIdentification, AccountVerification, ModuleRegistryInterface,
+use abstract_adapter::{
+    objects::TruncatedChainId,
+    sdk::{features::ModuleIdentification, AccountVerification, ModuleRegistryInterface},
+    std::ibc::Callback,
+    std::version_control::AccountBase,
+    std::{
+        ibc_client,
+        objects::{account::AccountTrace, module::ModuleInfo},
+        IBC_CLIENT,
+    },
+    traits::{AbstractResponse, AccountIdentification},
 };
-use abstract_adapter::std::ibc::Callback;
-use abstract_adapter::std::version_control::AccountBase;
-use abstract_adapter::std::{
-    ibc_client,
-    objects::{account::AccountTrace, module::ModuleInfo},
-    IBC_CLIENT,
-};
-use abstract_adapter::traits::{AbstractResponse, AccountIdentification};
 use cosmwasm_std::{
-    to_json_binary, wasm_execute, Addr, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo,
-    StdResult, SubMsg,
+    ensure_eq, to_json_binary, wasm_execute, Addr, CosmosMsg, Deps, DepsMut, Empty, Env,
+    MessageInfo, StdResult, SubMsg,
 };
 
-use ibcmail::client::api::MailClient;
-use ibcmail::client::state::FEATURES;
-use ibcmail::features::DELIVERY_STATUS_FEATURE;
-use ibcmail::server::msg::ServerMessage;
-use ibcmail::server::state::{AWAITING, AWAITING_DELIVERY};
 use ibcmail::{
-    client::api::ClientInterface,
+    client::{api::ClientInterface, api::MailClient, state::FEATURES},
+    features::DELIVERY_STATUS_FEATURE,
     server::{
-        msg::{ServerExecuteMsg, ServerIbcMessage},
+        msg::{ServerExecuteMsg, ServerIbcMessage, ServerMessage},
+        state::{AWAITING, AWAITING_DELIVERY},
         ServerAdapter,
     },
-    Header, IbcMailMessage, Recipient, Route, Sender,
+    ClientMetadata, Header, IbcMailMessage, Recipient, Route, Sender, ServerMetadata,
 };
 
 use crate::replies::DELIVER_MESSAGE_REPLY;
@@ -44,31 +41,72 @@ pub fn execute_handler(
     msg: ServerExecuteMsg,
 ) -> ServerResult {
     match msg {
-        ServerExecuteMsg::ProcessMessage { msg, route } => {
-            process_message(deps, env, info, msg, route, app)
-        }
+        ServerExecuteMsg::ProcessMessage {
+            message,
+            header,
+            metadata,
+        } => process_message(deps, env, info, app, message, header, metadata),
     }
 }
 // ANCHOR_END: execute_handler
+
+fn check_sender(
+    deps: Deps,
+    module: &Adapter,
+    current_chain: &TruncatedChainId,
+    sender_to_check: Sender,
+) -> ServerResult<Sender> {
+    let expected_sender = module
+        .account_id(deps)
+        .map_err(|_| ServerError::NoSenderAccount)?;
+
+    match sender_to_check {
+        Sender::Account { id, chain } => {
+            ensure_eq!(
+                id,
+                expected_sender,
+                ServerError::MismatchedSender {
+                    expected: expected_sender,
+                    actual: id,
+                }
+            );
+
+            Ok(Sender::account(id, Some(current_chain.clone())))
+        }
+        Sender::Server { address, chain } => {
+            panic!("Server sender not implemented");
+        }
+        _ => Err(ServerError::NotImplemented(
+            "Non-account senders not supported".to_string(),
+        )),
+    }
+}
 
 fn process_message(
     deps: DepsMut,
     env: Env,
     _info: MessageInfo,
-    msg: IbcMailMessage,
-    route: Option<Route>,
-    mut app: Adapter,
+    mut module: Adapter,
+    message: IbcMailMessage,
+    header: Header,
+    metadata: Option<ClientMetadata>,
 ) -> ServerResult {
-    println!("processing message: {:?} with route {:?}", msg, route);
-
-    let sender_acc_id = app
-        .account_id(deps.as_ref())
-        .map_err(|_| ServerError::NoSenderAccount)?;
+    println!(
+        "processing message: {:?} with route {:?}",
+        message, metadata
+    );
 
     let current_chain = TruncatedChainId::new(&env);
-    let sender = Sender::account(sender_acc_id, Some(current_chain.clone()));
+    let checked_sender = check_sender(
+        deps.as_ref(),
+        &module,
+        &current_chain,
+        header.sender.clone(),
+    )?;
 
-    let route: Route = if let Some(route) = route {
+    let client_metadata = metadata.unwrap_or_default();
+
+    let route: Route = if let Some(route) = client_metadata.route {
         Ok::<_, ServerError>(match route {
             Route::Local => Route::Local,
             Route::Remote(mut chains) => {
@@ -87,8 +125,9 @@ fn process_message(
             }
         })
     } else {
-        println!("processing message recipient: {:?}", msg.recipient);
-        match msg.recipient.clone() {
+        // We weren't provided a route
+        println!("processing message recipient: {:?}", message.recipient);
+        match message.recipient.clone() {
             // TODO: add smarter routing
             Recipient::Account { id: _, chain } => Ok(chain.map_or(AccountTrace::Local, |chain| {
                 if chain == current_chain {
@@ -116,44 +155,46 @@ fn process_message(
     }?;
 
     let header = Header {
-        route,
-        recipient: msg.recipient.clone(),
-        id: msg.id.clone(),
-        version: msg.version.clone(),
-        sender,
-        timestamp: msg.timestamp,
+        recipient: header.recipient.clone(),
+        id: header.id.clone(),
+        version: header.version.clone(),
+        sender: checked_sender,
+        timestamp: header.timestamp,
+        reply_to: None,
     };
 
-    let msgs = route_msg(
+    let msgs = route_message(
         deps,
+        &mut module,
         &current_chain,
-        &mut app,
         header,
-        ServerMessage::mail(msg),
+        ServerMetadata { route },
+        ServerMessage::mail(message),
     )?;
 
-    Ok(app.response("route").add_submessages(msgs))
+    Ok(module.response("route").add_submessages(msgs))
 }
 
-pub(crate) fn route_msg(
+pub(crate) fn route_message(
     deps: DepsMut,
-    current_chain: &TruncatedChainId,
     app: &mut ServerAdapter,
+    current_chain: &TruncatedChainId,
     header: Header,
-    msg: ServerMessage,
+    metadata: ServerMetadata,
+    message: ServerMessage,
 ) -> ServerResult<Vec<SubMsg>> {
-    println!("routing message: {:?}, metadata: {:?}", msg, header);
+    println!("routing message: {:?}, metadata: {:?}", message, header);
 
-    let current_hop = header.current_hop(current_chain)?;
+    let current_hop = metadata.current_hop(current_chain)?;
 
-    match header.route {
-        AccountTrace::Local => route_to_local_account(deps, app, msg, header),
+    match metadata.route {
+        AccountTrace::Local => route_to_local_account(deps, app, message, header, metadata),
         AccountTrace::Remote(ref chains) => {
             println!("routing to chains: {:?}", chains);
             // check index of hop. If we are on the final hop, route to local account
             if current_hop == (chains.len() - 1) as u32 {
                 println!("routing to local account: {:?}", chains.last().unwrap());
-                return route_to_local_account(deps, app, msg.clone(), header);
+                return route_to_local_account(deps, app, message.clone(), header, metadata);
             }
             // TODO verify that the chain is a valid chain
 
@@ -161,20 +202,21 @@ pub(crate) fn route_msg(
                 chains
                     .get(current_hop as usize + 1)
                     .ok_or(ServerError::InvalidRoute {
-                        route: header.route.clone(),
+                        route: metadata.route.clone(),
                         hop: current_hop,
                     })?;
 
             // Awaiting callback
             // Save that we're awaiting callbacks from dest chain onwards.
-            AWAITING.save(deps.storage, &msg.id(), dest_chain)?;
+            AWAITING.save(deps.storage, &message.id(), dest_chain)?;
 
             let msg = remote_server_msg(
                 deps,
                 app,
                 &ServerIbcMessage::RouteMessage {
-                    msg,
+                    msg: message,
                     header: header.clone(),
+                    metadata: metadata.clone(),
                 },
                 dest_chain,
             )?;
@@ -189,13 +231,14 @@ fn route_to_local_account(
     app: &mut ServerAdapter,
     msg: ServerMessage,
     header: Header,
+    metadata: ServerMetadata,
 ) -> ServerResult<Vec<SubMsg>> {
     println!("routing to local account: {:?}", header.recipient);
     // This is a local message
     match msg {
         ServerMessage::Mail { message } => {
             AWAITING_DELIVERY.update(deps.storage, |mut awaiting| -> StdResult<Vec<_>> {
-                awaiting.push((message.id.clone(), header.clone()));
+                awaiting.push((message.id.clone(), header.clone(), metadata.clone()));
                 Ok(awaiting)
             })?;
 
