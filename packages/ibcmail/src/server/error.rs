@@ -1,4 +1,4 @@
-use crate::MessageHash;
+use crate::{DeliveryFailure, MessageHash};
 use abstract_adapter::objects::AccountId;
 use abstract_adapter::std::ibc::ModuleIbcInfo;
 use abstract_adapter::{
@@ -26,6 +26,9 @@ pub enum ServerError {
 
     #[error("{0}")]
     Admin(#[from] AdminError),
+
+    #[error("{0}")]
+    DeliveryFailure(#[from] DeliveryFailure),
 
     #[error("{0}")]
     AdapterError(#[from] AbstractAdapterError),

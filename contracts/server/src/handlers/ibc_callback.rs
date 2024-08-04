@@ -118,6 +118,7 @@ pub fn ibc_callback_handler(
                             );
                             execute::route_message(
                                 deps,
+                                &_env,
                                 &mut app,
                                 &current_chain,
                                 status_header,

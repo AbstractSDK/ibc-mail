@@ -6,13 +6,14 @@ use abstract_app::sdk::cw_helpers::load_many;
 use cosmwasm_std::{to_json_binary, Binary, Deps, Env};
 use cw_storage_plus::Bound;
 use ibcmail::client::msg::SentMessagesResponse;
+use ibcmail::client::state::SENT_STATUS;
 use ibcmail::{
     client::{
         error::ClientError,
         msg::{MessageFilter, ReceivedMessagesResponse},
         state::{RECEIVED, SENT},
     },
-    MessageHash, MessageKind,
+    MessageHash, MessageKind, SentMessage,
 };
 
 pub fn query_handler(
@@ -68,7 +69,17 @@ fn query_sent_messages_list(
         |_id, message| Ok::<_, ClientError>(message),
     )?;
 
-    Ok(SentMessagesResponse { messages })
+    let mut result = vec![];
+    for (message, header) in messages {
+        let status = SENT_STATUS.load(deps.storage, header.id.clone())?;
+        result.push(SentMessage {
+            message,
+            header,
+            status,
+        });
+    }
+
+    Ok(SentMessagesResponse { messages: result })
 }
 
 fn query_received_messages_list(

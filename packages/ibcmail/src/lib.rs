@@ -33,6 +33,13 @@ pub struct MailMessage {
 // # ANCHOR_END: message
 
 #[cosmwasm_schema::cw_serde]
+pub struct SentMessage {
+    pub message: MailMessage,
+    pub header: Header,
+    pub status: DeliveryStatus,
+}
+
+#[cosmwasm_schema::cw_serde]
 pub struct ReceivedMessage {
     pub message: MailMessage,
     pub header: Header,

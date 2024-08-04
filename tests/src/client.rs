@@ -1,11 +1,18 @@
+use std::str::FromStr;
+
+use abstract_app::objects::TruncatedChainId;
 use abstract_app::objects::{namespace::Namespace, AccountId};
+use abstract_app::{objects::account::AccountTrace, std::version_control::ExecuteMsgFns};
 use abstract_client::{AbstractClient, Application};
-use cosmwasm_schema::schemars::schema::Metadata;
+use abstract_cw_orch_polytone::PolytoneConnection;
+use abstract_interface::Abstract;
 use cw_orch::{anyhow, prelude::*};
+use cw_orch_interchain::{InterchainEnv, MockBech32InterchainEnv, MockInterchainEnv};
 use speculoos::prelude::*;
 
 // Use prelude to get all the necessary imports
 use client::{contract::interface::ClientInterface, msg::ClientInstantiateMsg, *};
+use ibcmail::{server::error::ServerError, ClientMetadata, IBCMAIL_CLIENT_ID};
 use ibcmail::{
     server::msg::ServerInstantiateMsg, Header, MailMessage, ReceivedMessage, Recipient, Route,
     Sender, ServerMetadata, IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID,
@@ -69,6 +76,33 @@ impl<Env: CwEnv> TestEnv<Env> {
             client1: app,
             client2: app2,
         })
+    }
+
+    pub fn assert_no_received_messages(&self) -> anyhow::Result<()> {
+        assert_that!(
+            self.client1
+                .list_received_messages(None, None, None)?
+                .messages
+        )
+        .is_empty();
+        assert_that!(
+            self.client2
+                .list_received_messages(None, None, None)?
+                .messages
+        )
+        .is_empty();
+        Ok(())
+    }
+}
+
+impl<Env: CwEnv + cw_orch_interchain::IbcQueryHandler> TestEnv<Env> {
+    pub fn connect_to(
+        &self,
+        other: &TestEnv<Env>,
+        interchain: &impl cw_orch_interchain::InterchainEnv<Env>,
+    ) -> anyhow::Result<()> {
+        self.abs.connect_to(&other.abs, interchain)?;
+        Ok(())
     }
 }
 
@@ -267,7 +301,7 @@ mod send_msg {
         let arch_env = TestEnv::setup(interchain.get_chain("archway-1")?)?;
         let juno_env = TestEnv::setup(interchain.get_chain("juno-1")?)?;
 
-        arch_env.abs.connect_to(&juno_env.abs, &interchain)?;
+        arch_env.connect_to(&juno_env, &interchain)?;
 
         let arch_client = arch_env.client1;
         let juno_client = juno_env.client1;
@@ -332,64 +366,6 @@ mod send_msg {
     }
 
     #[test]
-    fn send_remote_message_1_hop_account_dne_updates_status_to_failed() -> anyhow::Result<()> {
-        // Create a sender and mock env
-        let interchain =
-            MockBech32InterchainEnv::new(vec![("juno-1", "juno"), ("archway-1", "archway")]);
-
-        let arch_env = TestEnv::setup(interchain.get_chain("archway-1")?)?;
-        let juno_env = TestEnv::setup(interchain.get_chain("juno-1")?)?;
-
-        arch_env.abs.connect_to(&juno_env.abs, &interchain)?;
-
-        let arch_client = arch_env.client1;
-        let juno_client = juno_env.client1;
-
-        // the trait `From<&str>` is not implemented for `abstract_app::objects::chain_name::TruncatedChainId`
-        let arch_to_juno_msg = MailMessage::new("test-subject", "test-body");
-
-        let res = arch_client.send_message(
-            arch_to_juno_msg,
-            Recipient::account(
-                AccountId::local(420),
-                Some(TruncatedChainId::from_string("juno".into())?),
-            ),
-            Some(ClientMetadata::new_with_route(Route::Remote(vec![
-                TruncatedChainId::from_string("juno".into())?,
-            ]))),
-        );
-
-        assert_that!(res).is_ok();
-
-        let server = ServerInterface::new(IBCMAIL_SERVER_ID, arch_env.env.clone());
-        println!("server: {:?}", server.address()?);
-        let abstr = Abstract::new(arch_env.env.clone());
-        println!("ibc_host: {:?}", abstr.ibc.host.address()?);
-        let poly = PolytoneConnection::load_from(arch_env.env.clone(), juno_env.env.clone());
-        println!("poly_note: {:?}", poly.note.address()?);
-
-        let packets = interchain.await_packets("archway-1", res?)?;
-
-        assert_that!(
-            arch_client
-                .list_received_messages(None, None, None)?
-                .messages
-        )
-        .is_empty();
-        assert_that!(
-            juno_client
-                .list_received_messages(None, None, None)?
-                .messages
-        )
-        .is_empty();
-
-        // interchain.await_packets("archway-1", res?)?;
-        // println!("packets: {:?}", packets);
-
-        Ok(())
-    }
-
-    #[test]
     fn can_send_remote_message_2_hop() -> anyhow::Result<()> {
         // Create a sender and mock env
         let interchain = MockBech32InterchainEnv::new(vec![
@@ -404,8 +380,8 @@ mod send_msg {
         let juno_env = TestEnv::setup(interchain.get_chain("juno-1")?)?;
         let neutron_env = TestEnv::setup(interchain.get_chain("neutron-1")?)?;
 
-        arch_env.abs.connect_to(&juno_env.abs, &interchain)?;
-        juno_env.abs.connect_to(&neutron_env.abs, &interchain)?;
+        arch_env.connect_to(&juno_env, &interchain)?;
+        juno_env.connect_to(&neutron_env, &interchain)?;
 
         // ibc_abstract_setup(&interchain, "archway-1", "juno-1")?;
         // ibc_abstract_setup(&interchain, "juno-1", "neutron-1")?;
@@ -456,6 +432,138 @@ mod send_msg {
 
         // let juno_messages = neutron_client.list_messages(None, None, None)?;
         // assert_that!(juno_messages.messages).has_length(1);
+
+        Ok(())
+    }
+}
+
+mod update_status {
+    use super::*;
+    use ibcmail::DeliveryFailure;
+    use ibcmail::DeliveryStatus;
+    use speculoos::assert_that;
+
+    #[test]
+    fn send_remote_message_1_hop_account_dne_updates_status_to_failed() -> anyhow::Result<()> {
+        // Create a sender and mock env
+        let interchain =
+            MockBech32InterchainEnv::new(vec![("juno-1", "juno"), ("archway-1", "archway")]);
+
+        let arch_env = TestEnv::setup(interchain.get_chain("archway-1")?)?;
+        let juno_env = TestEnv::setup(interchain.get_chain("juno-1")?)?;
+
+        arch_env.connect_to(&juno_env, &interchain)?;
+
+        let arch_client = arch_env.client1;
+        let juno_client = juno_env.client1;
+
+        // the trait `From<&str>` is not implemented for `abstract_app::objects::chain_name::TruncatedChainId`
+        let arch_to_juno_msg = MailMessage::new("test-subject", "test-body");
+
+        let res = arch_client.send_message(
+            arch_to_juno_msg,
+            Recipient::account(
+                AccountId::local(420),
+                Some(TruncatedChainId::from_string("juno".into())?),
+            ),
+            Some(ClientMetadata::new_with_route(Route::Remote(vec![
+                TruncatedChainId::from_string("juno".into())?,
+            ]))),
+        );
+
+        assert_that!(res).is_ok();
+
+        let server = ServerInterface::new(IBCMAIL_SERVER_ID, arch_env.env.clone());
+        println!("server: {:?}", server.address()?);
+        let abstr = Abstract::new(arch_env.env.clone());
+        println!("ibc_host: {:?}", abstr.ibc.host.address()?);
+        let poly = PolytoneConnection::load_from(arch_env.env.clone(), juno_env.env.clone());
+        println!("poly_note: {:?}", poly.note.address()?);
+
+        let packets = interchain.await_packets("archway-1", res?)?;
+
+        assert_that!(
+            arch_client
+                .list_received_messages(None, None, None)?
+                .messages
+        )
+        .is_empty();
+        assert_that!(
+            juno_client
+                .list_received_messages(None, None, None)?
+                .messages
+        )
+        .is_empty();
+
+        // interchain.await_packets("archway-1", res?)?;
+        // println!("packets: {:?}", packets);
+
+        Ok(())
+    }
+
+    #[test]
+    fn send_remote_message_2_hop_account_dne_updates_status_to_failed() -> anyhow::Result<()> {
+        // Create a sender and mock env
+        let interchain = MockBech32InterchainEnv::new(vec![
+            ("juno-1", "juno"),
+            ("archway-1", "archway"),
+            ("neutron-1", "neutron"),
+        ]);
+
+        let arch_env = TestEnv::setup(interchain.get_chain("archway-1")?)?;
+        let juno_env = TestEnv::setup(interchain.get_chain("juno-1")?)?;
+        let neutron_env = TestEnv::setup(interchain.get_chain("neutron-1")?)?;
+
+        arch_env.connect_to(&juno_env, &interchain)?;
+        juno_env.connect_to(&neutron_env, &interchain)?;
+
+        let arch_client = arch_env.client1.clone();
+        let juno_client = juno_env.client1.clone();
+        let neutron_client = neutron_env.client1.clone();
+
+        // the trait `From<&str>` is not implemented for `abstract_app::objects::chain_name::TruncatedChainId`
+        let mail_message = MailMessage::new("test-subject", "test-body");
+
+        let res = arch_client.send_message(
+            mail_message,
+            Recipient::account(
+                AccountId::local(420),
+                Some(TruncatedChainId::from_string("neutron".into())?),
+            ),
+            Some(ClientMetadata::new_with_route(Route::Remote(vec![
+                TruncatedChainId::from_string("juno".into())?,
+                TruncatedChainId::from_string("neutron".into())?,
+            ]))),
+        );
+
+        assert_that!(res).is_ok();
+
+        let server = ServerInterface::new(IBCMAIL_SERVER_ID, arch_env.env.clone());
+        println!("server: {:?}", server.address()?);
+        let abstr = Abstract::new(arch_env.env.clone());
+        println!("ibc_host: {:?}", abstr.ibc.host.address()?);
+        let poly = PolytoneConnection::load_from(arch_env.env.clone(), juno_env.env.clone());
+        println!("poly_note: {:?}", poly.note.address()?);
+
+        let packets = interchain.await_packets("archway-1", res?)?;
+
+        arch_env.assert_no_received_messages()?;
+        juno_env.assert_no_received_messages()?;
+        neutron_env.assert_no_received_messages()?;
+
+        assert_that!(arch_client.list_sent_messages(None, None, None)?.messages).has_length(1);
+
+        let sent_message = arch_client
+            .list_sent_messages(None, None, None)?
+            .messages
+            .first()
+            .cloned()
+            .unwrap();
+        assert_that!(sent_message.status)
+            .is_equal_to(DeliveryStatus::from(DeliveryFailure::RecipientNotFound));
+
+        // interchain.await_packets("archway-1", res?)?;
+        // println!("packets: {:?}", packets);
 
         Ok(())
     }

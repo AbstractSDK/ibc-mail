@@ -10,7 +10,7 @@ use abstract_app::{
 };
 use base64::prelude::*;
 use cosmwasm_std::{ensure_eq, Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo};
-use ibcmail::client::state::STATUS;
+use ibcmail::client::state::SENT_STATUS;
 use ibcmail::{
     client::{
         state::{RECEIVED, SENT},
@@ -118,7 +118,7 @@ fn update_delivery_status(
     // ensure that the message exists
     SENT.load(deps.storage, id.clone())
         .map_err(|_| ClientError::MessageNotFound(id.clone()))?;
-    STATUS.save(deps.storage, id.clone(), &status)?;
+    SENT_STATUS.save(deps.storage, id.clone(), &status)?;
 
     Ok(app
         .response("update_msg_status")

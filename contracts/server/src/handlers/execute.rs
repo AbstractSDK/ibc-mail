@@ -23,7 +23,8 @@ use ibcmail::{
         state::{AWAITING, AWAITING_DELIVERY},
         ServerAdapter,
     },
-    ClientMetadata, Header, MailMessage, Recipient, Route, Sender, ServerMetadata,
+    ClientMetadata, DeliveryFailure, DeliveryStatus, Header, MailMessage, MessageHash, Recipient,
+    Route, Sender, ServerMetadata,
 };
 
 use crate::replies::DELIVER_MESSAGE_REPLY;
@@ -34,7 +35,7 @@ use crate::{
 
 // ANCHOR: execute_handler
 pub fn execute_handler(
-    deps: DepsMut,
+    mut deps: DepsMut,
     env: Env,
     info: MessageInfo,
     app: Adapter,
@@ -83,7 +84,7 @@ fn check_sender(
 }
 
 fn process_message(
-    deps: DepsMut,
+    mut deps: DepsMut,
     env: Env,
     _info: MessageInfo,
     mut module: Adapter,
@@ -163,12 +164,15 @@ fn process_message(
         reply_to: None,
     };
 
+    let server_metadata = ServerMetadata { route };
+
     let msgs = route_message(
-        deps,
+        deps.branch(),
+        &env,
         &mut module,
         &current_chain,
-        header,
-        ServerMetadata { route },
+        header.clone(),
+        server_metadata.clone(),
         ServerMessage::mail(message),
     )?;
 
@@ -176,8 +180,9 @@ fn process_message(
 }
 
 pub(crate) fn route_message(
-    deps: DepsMut,
-    app: &mut ServerAdapter,
+    mut deps: DepsMut,
+    env: &Env,
+    module: &mut ServerAdapter,
     current_chain: &TruncatedChainId,
     header: Header,
     metadata: ServerMetadata,
@@ -187,41 +192,72 @@ pub(crate) fn route_message(
 
     let current_hop = metadata.current_hop(current_chain)?;
 
-    match metadata.route {
-        AccountTrace::Local => route_to_local_account(deps, app, message, header, metadata),
+    let branched_deps = deps.branch();
+
+    let routing = match metadata.route {
+        AccountTrace::Local => route_to_local_account(
+            branched_deps,
+            module,
+            message,
+            header.clone(),
+            metadata.clone(),
+        ),
         AccountTrace::Remote(ref chains) => {
             println!("routing to chains: {:?}", chains);
             // check index of hop. If we are on the final hop, route to local account
             if current_hop == (chains.len() - 1) as u32 {
                 println!("routing to local account: {:?}", chains.last().unwrap());
-                return route_to_local_account(deps, app, message.clone(), header, metadata);
+                route_to_local_account(
+                    branched_deps,
+                    module,
+                    message.clone(),
+                    header.clone(),
+                    metadata.clone(),
+                )
+            } else {
+                // TODO verify that the chain is a valid chain
+                let dest_chain =
+                    chains
+                        .get(current_hop as usize + 1)
+                        .ok_or(ServerError::InvalidRoute {
+                            route: metadata.route.clone(),
+                            hop: current_hop,
+                        })?;
+
+                // Awaiting callback
+                // Save that we're awaiting callbacks from dest chain onwards.
+                AWAITING.save(branched_deps.storage, &header.id, dest_chain)?;
+
+                let msg = remote_server_msg(
+                    branched_deps,
+                    module,
+                    &ServerIbcMessage::RouteMessage {
+                        msg: message,
+                        header: header.clone(),
+                        metadata: metadata.clone(),
+                    },
+                    dest_chain,
+                )?;
+                Ok::<Vec<SubMsg>, ServerError>(vec![SubMsg::new(msg)])
             }
-            // TODO verify that the chain is a valid chain
-
-            let dest_chain =
-                chains
-                    .get(current_hop as usize + 1)
-                    .ok_or(ServerError::InvalidRoute {
-                        route: metadata.route.clone(),
-                        hop: current_hop,
-                    })?;
-
-            // Awaiting callback
-            // Save that we're awaiting callbacks from dest chain onwards.
-            AWAITING.save(deps.storage, &header.id, dest_chain)?;
-
-            let msg = remote_server_msg(
-                deps,
-                app,
-                &ServerIbcMessage::RouteMessage {
-                    msg: message,
-                    header: header.clone(),
-                    metadata: metadata.clone(),
-                },
-                dest_chain,
-            )?;
-            Ok::<Vec<SubMsg>, ServerError>(vec![SubMsg::new(msg)])
         }
+    };
+
+    // ensure that the route is valid, otherwise send a status update
+    match routing {
+        Ok(msgs) => Ok(msgs),
+        Err(e) => match e {
+            ServerError::DeliveryFailure(delivery_failure) => send_delivery_status(
+                deps,
+                &env,
+                module,
+                &current_chain,
+                header,
+                metadata,
+                delivery_failure.into(),
+            ),
+            _ => return Err(e),
+        },
     }
 }
 
@@ -238,11 +274,13 @@ fn route_to_local_account(
     match msg {
         ServerMessage::Mail { message } => {
             AWAITING_DELIVERY.update(deps.storage, |mut awaiting| -> StdResult<Vec<_>> {
-                awaiting.push((header.id.clone(), header.clone(), metadata.clone()));
+                awaiting.push((header.clone(), metadata.clone()));
                 Ok(awaiting)
             })?;
 
-            let mail_client = get_recipient_mail_client(deps.as_ref(), app, &header.recipient)?;
+            let mail_client = get_recipient_mail_client(deps.as_ref(), app, &header.recipient)
+                .map_err(|e| DeliveryFailure::RecipientNotFound)?;
+
             Ok(vec![SubMsg::reply_always(
                 mail_client.receive_msg(message, header, metadata)?,
                 DELIVER_MESSAGE_REPLY,
@@ -319,5 +357,48 @@ fn remote_server_msg(
 
     let msg: CosmosMsg = wasm_execute(ibc_client_addr, &ibc_client_msg, vec![])?.into();
     // ANCHOR_END: ibc_client
+    Ok(msg)
+}
+
+/// Send a delivery status update to the
+pub(crate) fn send_delivery_status(
+    deps: DepsMut,
+    env: &Env,
+    module: &mut ServerAdapter,
+    current_chain: &TruncatedChainId,
+    origin_header: Header,
+    origin_metadata: ServerMetadata,
+    delivery_status: DeliveryStatus,
+) -> Result<Vec<SubMsg>, ServerError> {
+    let message_id = origin_header.id.clone();
+    let delivery_message = ServerMessage::delivery_status(message_id.clone(), delivery_status);
+
+    let delivery_header = Header {
+        sender: Sender::Server {
+            address: env.contract.address.to_string(),
+            chain: TruncatedChainId::new(&env),
+        },
+        recipient: origin_header.sender.try_into()?,
+        // TODO: new ID?
+        id: message_id.clone(),
+        // TODO: version?
+        version: origin_header.version,
+        timestamp: env.block.time,
+        reply_to: None,
+    };
+
+    let delivery_metadata = ServerMetadata {
+        route: origin_metadata.reverse_route()?,
+    };
+
+    let msg = route_message(
+        deps,
+        &env,
+        module,
+        &current_chain,
+        delivery_header,
+        delivery_metadata,
+        delivery_message,
+    )?;
     Ok(msg)
 }

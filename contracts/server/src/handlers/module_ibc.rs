@@ -33,6 +33,7 @@ pub fn module_ibc_handler(
         } => {
             let msgs = route_message(
                 deps,
+                &env,
                 &mut app,
                 &TruncatedChainId::new(&env),
                 header,

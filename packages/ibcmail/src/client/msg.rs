@@ -2,7 +2,7 @@ use cosmwasm_schema::QueryResponses;
 
 use crate::{
     client::ClientApp, ClientMetadata, DeliveryStatus, Header, MailMessage, MessageHash,
-    MessageKind, ReceivedMessage, Recipient, Sender, ServerMetadata,
+    MessageKind, ReceivedMessage, Recipient, Sender, SentMessage, ServerMetadata,
 };
 
 // This is used for type safety and re-exporting the contract endpoint structs.
@@ -69,10 +69,15 @@ pub struct ConfigResponse {}
 
 #[cosmwasm_schema::cw_serde]
 pub struct SentMessagesResponse {
-    pub messages: Vec<(MailMessage, Header)>,
+    pub messages: Vec<SentMessage>,
 }
 
 #[cosmwasm_schema::cw_serde]
 pub struct ReceivedMessagesResponse {
     pub messages: Vec<ReceivedMessage>,
+}
+
+#[cosmwasm_schema::cw_serde]
+pub struct MessageStatusesResponse {
+    pub statuses: Vec<(MessageHash, DeliveryStatus)>,
 }
