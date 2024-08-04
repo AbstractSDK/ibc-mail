@@ -13,7 +13,7 @@ use ibcmail::{
         msg::{MessageFilter, ReceivedMessagesResponse},
         state::{RECEIVED, SENT},
     },
-    MessageHash, MessageKind, SentMessage,
+    MessageHash, SentMessage,
 };
 
 pub fn query_handler(

@@ -18,7 +18,7 @@ use ibcmail::{
     },
     server::api::{MailServer, ServerInterface},
     ClientMetadata, DeliveryStatus, Header, MailMessage, MessageHash, ReceivedMessage, Recipient,
-    Sender, ServerMetadata, IBCMAIL_SERVER_ID,
+    Sender, IBCMAIL_SERVER_ID,
 };
 
 // # ANCHOR: execute_handler

@@ -1,18 +1,15 @@
-use std::str::FromStr;
-
 use abstract_app::objects::TruncatedChainId;
 use abstract_app::objects::{namespace::Namespace, AccountId};
-use abstract_app::{objects::account::AccountTrace, std::version_control::ExecuteMsgFns};
 use abstract_client::{AbstractClient, Application};
 use abstract_cw_orch_polytone::PolytoneConnection;
 use abstract_interface::Abstract;
 use cw_orch::{anyhow, prelude::*};
-use cw_orch_interchain::{InterchainEnv, MockBech32InterchainEnv, MockInterchainEnv};
+use cw_orch_interchain::{InterchainEnv, MockBech32InterchainEnv};
 use speculoos::prelude::*;
 
 // Use prelude to get all the necessary imports
 use client::{contract::interface::ClientInterface, msg::ClientInstantiateMsg, *};
-use ibcmail::{server::error::ServerError, ClientMetadata, IBCMAIL_CLIENT_ID};
+use ibcmail::ClientMetadata;
 use ibcmail::{
     server::msg::ServerInstantiateMsg, Header, MailMessage, ReceivedMessage, Recipient, Route,
     Sender, ServerMetadata, IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID,
@@ -127,7 +124,7 @@ fn create_received_message(from: AccountId, to: AccountId, route: Route) -> Rece
 mod receive_msg {
     use speculoos::assert_that;
 
-    use ibcmail::{MessageKind, IBCMAIL_SERVER_ID};
+    use ibcmail::IBCMAIL_SERVER_ID;
 
     use super::*;
 
@@ -197,14 +194,10 @@ mod send_msg {
 
     use abstract_app::objects::TruncatedChainId;
     use abstract_app::{objects::account::AccountTrace, std::version_control::ExecuteMsgFns};
-    use abstract_cw_orch_polytone::PolytoneConnection;
-    use abstract_interface::Abstract;
+
     use cw_orch_interchain::{InterchainEnv, MockBech32InterchainEnv};
 
-    use ibcmail::{
-        server::error::ServerError, ClientMetadata, MailMessage, MessageKind, Route,
-        IBCMAIL_CLIENT_ID,
-    };
+    use ibcmail::{server::error::ServerError, ClientMetadata, MailMessage, IBCMAIL_CLIENT_ID};
 
     use super::*;
 

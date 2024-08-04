@@ -1,8 +1,8 @@
 use cosmwasm_schema::QueryResponses;
 
 use crate::{
-    client::ClientApp, ClientMetadata, DeliveryStatus, Header, MailMessage, MessageHash,
-    MessageKind, ReceivedMessage, Recipient, Sender, SentMessage, ServerMetadata,
+    client::ClientApp, ClientMetadata, DeliveryStatus, MailMessage, MessageHash, ReceivedMessage,
+    Recipient, Sender, SentMessage,
 };
 
 // This is used for type safety and re-exporting the contract endpoint structs.

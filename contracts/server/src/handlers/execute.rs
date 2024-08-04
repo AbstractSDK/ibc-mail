@@ -23,8 +23,8 @@ use ibcmail::{
         state::{AWAITING, AWAITING_DELIVERY},
         ServerAdapter,
     },
-    ClientMetadata, DeliveryFailure, DeliveryStatus, Header, MailMessage, MessageHash, Recipient,
-    Route, Sender, ServerMetadata,
+    ClientMetadata, DeliveryFailure, DeliveryStatus, Header, MailMessage, Recipient, Route, Sender,
+    ServerMetadata,
 };
 
 use crate::replies::DELIVER_MESSAGE_REPLY;
@@ -35,7 +35,7 @@ use crate::{
 
 // ANCHOR: execute_handler
 pub fn execute_handler(
-    mut deps: DepsMut,
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
     app: Adapter,
@@ -249,14 +249,14 @@ pub(crate) fn route_message(
         Err(e) => match e {
             ServerError::DeliveryFailure(delivery_failure) => send_delivery_status(
                 deps,
-                &env,
+                env,
                 module,
-                &current_chain,
+                current_chain,
                 header,
                 metadata,
                 delivery_failure.into(),
             ),
-            _ => return Err(e),
+            _ => Err(e),
         },
     }
 }
@@ -376,7 +376,7 @@ pub(crate) fn send_delivery_status(
     let delivery_header = Header {
         sender: Sender::Server {
             address: env.contract.address.to_string(),
-            chain: TruncatedChainId::new(&env),
+            chain: TruncatedChainId::new(env),
         },
         recipient: origin_header.sender.try_into()?,
         // TODO: new ID?
@@ -393,9 +393,9 @@ pub(crate) fn send_delivery_status(
 
     let msg = route_message(
         deps,
-        &env,
+        env,
         module,
-        &current_chain,
+        current_chain,
         delivery_header,
         delivery_metadata,
         delivery_message,
