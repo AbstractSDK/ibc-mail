@@ -100,7 +100,8 @@ fn test() -> anyhow::Result<()> {
     // )?;
 
     let send = dst_client.send_message(
-        Message::new(src_acc.id()?.into(), "test-subject", "test-body"),
+        Message::new("test-subject", "test-body"),
+        src_acc.id()?.into(),
         Some(AccountTrace::Remote(vec![TruncatedChainId::from_chain_id(
             SRC.chain_id,
         )])),
@@ -157,6 +158,7 @@ pub fn approve_mail_modules<Env: CwEnv>(vc: &VersionControl<Env>) -> anyhow::Res
     )?;
     Ok(())
 }
+
 
 #[derive(Parser, Default, Debug)]
 #[command(author, version, about, long_about = None)]

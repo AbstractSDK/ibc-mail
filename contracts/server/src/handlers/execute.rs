@@ -81,20 +81,20 @@ fn process_message(
                         Route::Remote(chains)
                     }
                 } else {
-                    chains.insert(0, current_chain);
+                    chains.insert(0, current_chain.clone());
                     Route::Remote(chains)
                 }
             }
         })
     } else {
-        println!("processing message recipient: {:?}", msg.message.recipient);
-        match msg.message.recipient.clone() {
+        println!("processing message recipient: {:?}", msg.recipient);
+        match msg.recipient.clone() {
             // TODO: add smarter routing
             Recipient::Account { id: _, chain } => Ok(chain.map_or(AccountTrace::Local, |chain| {
                 if chain == current_chain {
                     AccountTrace::Local
                 } else {
-                    AccountTrace::Remote(vec![current_chain, chain.clone()])
+                    AccountTrace::Remote(vec![current_chain.clone(), chain.clone()])
                 }
             })),
             Recipient::Namespace {
@@ -104,7 +104,7 @@ fn process_message(
                 if chain == current_chain {
                     AccountTrace::Local
                 } else {
-                    AccountTrace::Remote(vec![current_chain, chain.clone()])
+                    AccountTrace::Remote(vec![current_chain.clone(), chain.clone()])
                 }
             })),
             _ => {
@@ -116,31 +116,37 @@ fn process_message(
     }?;
 
     let header = Header {
-        current_hop: 0,
+
         route,
-        recipient: msg.message.recipient.clone(),
+        recipient: msg.recipient.clone(),
+        id: msg.id.clone(),
+        version: msg.version.clone(),
         sender,
+        timestamp: msg.timestamp.clone()
     };
 
-    let msgs = route_msg(deps, &mut app, ServerMessage::mail(msg), header)?;
+    let msgs = route_msg(deps, &current_chain, &mut app, header, ServerMessage::mail(msg))?;
 
     Ok(app.response("route").add_submessages(msgs))
 }
 
 pub(crate) fn route_msg(
     deps: DepsMut,
+    current_chain: &TruncatedChainId,
     app: &mut ServerAdapter,
-    msg: ServerMessage,
     header: Header,
+    msg: ServerMessage,
 ) -> ServerResult<Vec<SubMsg>> {
     println!("routing message: {:?}, metadata: {:?}", msg, header);
+
+    let current_hop = header.current_hop(current_chain)?;
 
     match header.route {
         AccountTrace::Local => route_to_local_account(deps, app, msg, header),
         AccountTrace::Remote(ref chains) => {
             println!("routing to chains: {:?}", chains);
             // check index of hop. If we are on the final hop, route to local account
-            if header.current_hop == (chains.len() - 1) as u32 {
+            if current_hop == (chains.len() - 1) as u32 {
                 println!("routing to local account: {:?}", chains.last().unwrap());
                 return route_to_local_account(deps, app, msg.clone(), header);
             }
@@ -148,10 +154,10 @@ pub(crate) fn route_msg(
 
             let dest_chain =
                 chains
-                    .get(header.current_hop as usize + 1)
+                    .get(current_hop as usize + 1)
                     .ok_or(ServerError::InvalidRoute {
                         route: header.route.clone(),
-                        hop: header.current_hop,
+                        hop: current_hop,
                     })?;
 
             // Awaiting callback

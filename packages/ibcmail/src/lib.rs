@@ -27,16 +27,14 @@ pub type MessageHash = String;
 // # ANCHOR: message
 #[cosmwasm_schema::cw_serde]
 pub struct Message {
-    pub recipient: Recipient,
     pub subject: String,
     pub body: String,
 }
 // # ANCHOR_END: message
 
 impl Message {
-    pub fn new(recipient: Recipient, subject: impl Into<String>, body: impl Into<String>) -> Self {
+    pub fn new(subject: impl Into<String>, body: impl Into<String>) -> Self {
         Self {
-            recipient,
             subject: subject.into(),
             body: body.into(),
         }
@@ -47,6 +45,7 @@ impl Message {
 pub struct IbcMailMessage {
     pub id: MessageHash,
     pub sender: Sender,
+    pub recipient: Recipient,
     pub version: String,
     pub timestamp: Timestamp,
     pub message: Message,
@@ -54,10 +53,13 @@ pub struct IbcMailMessage {
 
 #[cosmwasm_schema::cw_serde]
 pub struct Header {
-    pub current_hop: u32,
+    // TODO: remove current hop
     pub route: Route,
-    pub recipient: Recipient,
     pub sender: Sender,
+    pub recipient: Recipient,
+    pub id: MessageHash,
+    pub version: String,
+    pub timestamp: Timestamp
 }
 
 impl Header {
@@ -70,11 +72,27 @@ impl Header {
             Route::Local => Route::Local,
         };
         Ok(Header {
-            current_hop: 0,
+
             route: reverse_route,
             recipient: self.sender.clone().try_into()?,
             sender,
+            id: self.id,
+            version: self.version,
+            timestamp: self.timestamp,
         })
+    }
+
+    pub fn current_hop(&self, current_chain: &TruncatedChainId) -> StdResult<u32> {
+        match self.route {
+            Route::Local => Ok(0),
+            Route::Remote(ref route) => {
+                let position = route.iter().position(|chain| chain == current_chain);
+                match position {
+                    Some(position) => Ok(position as u32),
+                    None => Err(StdError::generic_err("Current chain not in route"))
+                }
+            }
+        }
     }
 }
 

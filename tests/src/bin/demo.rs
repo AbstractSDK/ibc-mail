@@ -39,10 +39,11 @@ fn test() -> anyhow::Result<()> {
         .namespace(Namespace::new(TEST_NAMESPACE)?)
         .build()?;
 
-    let mail_msg = Message::new(dst_acc.id()?.into(), "test-subject", "test-body");
+    let mail_msg = Message::new("test-subject", "test-body");
 
     let send = src_client.send_message(
         mail_msg,
+        dst_acc.id()?.into(),
         Some(AccountTrace::Remote(vec![TruncatedChainId::from_chain_id(
             DST.chain_id,
         )])),

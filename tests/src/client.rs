@@ -5,10 +5,7 @@ use speculoos::prelude::*;
 
 // Use prelude to get all the necessary imports
 use client::{contract::interface::ClientInterface, msg::ClientInstantiateMsg, *};
-use ibcmail::{
-    server::msg::ServerInstantiateMsg, IbcMailMessage, Message, Recipient, Sender,
-    IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID,
-};
+use ibcmail::{server::msg::ServerInstantiateMsg, IbcMailMessage, Message, Recipient, Sender, IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID, MessageKind, Header, Route};
 use server::ServerInterface;
 
 struct TestEnv<Env: CwEnv> {
@@ -71,17 +68,29 @@ impl<Env: CwEnv> TestEnv<Env> {
     }
 }
 
-fn create_test_message(from: AccountId, to: AccountId) -> IbcMailMessage {
+fn create_server_test_msg(from: AccountId, to: AccountId) -> IbcMailMessage {
     IbcMailMessage {
         id: "test-id".to_string(),
         sender: Sender::account(from.clone(), None),
+        recipient: Recipient::account(to.clone(), None),
         message: Message {
-            recipient: Recipient::account(to.clone(), None),
             subject: "test-subject".to_string(),
             body: "test-body".to_string(),
         },
         timestamp: Default::default(),
         version: "0.0.1".to_string(),
+    }
+}
+
+fn temp_ibc_mail_msg_to_header(msg: IbcMailMessage, route: Route) -> Header {
+    Header {
+
+        route,
+        recipient: msg.recipient.clone(),
+        id: msg.id.clone(),
+        version: msg.version.clone(),
+        sender: msg.sender.clone(),
+        timestamp: msg.timestamp.clone(),
     }
 }
 
@@ -109,7 +118,7 @@ mod receive_msg {
             server_account_id, app_account_id
         );
 
-        let msg = create_test_message(server_account_id.clone(), app_account_id.clone());
+        let msg = create_server_test_msg(server_account_id.clone(), app_account_id.clone());
         let server_addr = app
             .account()
             .module_addresses(vec![IBCMAIL_SERVER_ID.into()])?
@@ -118,7 +127,7 @@ mod receive_msg {
             .clone();
 
         println!("app_account_id: {:?}", app.account().id());
-        let res = app.call_as(&server_addr).receive_message(msg);
+        let res = app.call_as(&server_addr).receive_message(temp_ibc_mail_msg_to_header(msg.clone(), Route::Local), msg.clone());
 
         assert_that!(res).is_ok();
 
@@ -137,8 +146,8 @@ mod receive_msg {
 
         let app_account_id = app.account().id().unwrap();
 
-        let msg = create_test_message(app_account_id.clone(), app_account_id.clone());
-        let res = app.receive_message(msg);
+        let msg = create_server_test_msg(app_account_id.clone(), app_account_id.clone());
+        let res = app.receive_message(temp_ibc_mail_msg_to_header(msg.clone(), Route::Local), msg);
 
         assert_that!(res)
             .is_err()
@@ -169,13 +178,13 @@ mod send_msg {
         let client1 = env.client1;
         let client2 = env.client2;
 
+        let recipient = Recipient::account(client2.account().id()?, None);
         let msg = Message::new(
-            Recipient::account(client2.account().id()?, None),
             "test-subject",
             "test-body",
         );
 
-        let res = client1.send_message(msg, None);
+        let res = client1.send_message(msg, recipient, None);
 
         assert_that!(res).is_ok();
 
@@ -190,13 +199,13 @@ mod send_msg {
         let client1 = env.client1;
         let client2 = env.client2;
 
+        let recipient = Recipient::account(client2.account().id()?, None);
         let msg = Message::new(
-            Recipient::account(client2.account().id()?, None),
             "test-subject",
             "test-body",
         );
 
-        let res = client1.send_message(msg, None);
+        let res = client1.send_message(msg, recipient, None);
         assert_that!(res).is_ok();
 
         let received_messages = client2
@@ -222,12 +231,11 @@ mod send_msg {
             .claim_namespace(client2.account().id()?, namespace.to_string())?;
 
         let msg = Message::new(
-            Recipient::namespace(namespace.try_into()?, None),
             "test-subject",
             "test-body",
         );
 
-        let res = client1.send_message(msg, None);
+        let res = client1.send_message(msg, Recipient::namespace(namespace.try_into()?, None),None);
         assert_that!(res).is_ok();
 
         Ok(())
@@ -243,12 +251,11 @@ mod send_msg {
         let bad_namespace: Namespace = "nope".try_into()?;
 
         let msg = Message::new(
-            Recipient::namespace(bad_namespace.clone(), None),
             "test-subject",
             "test-body",
         );
 
-        let res = client1.send_message(msg, None);
+        let res = client1.send_message(msg, Recipient::namespace(bad_namespace.clone(), None), None);
 
         assert_that!(res).is_err().matches(|e| {
             e.root()
@@ -265,8 +272,6 @@ mod send_msg {
         let interchain =
             MockBech32InterchainEnv::new(vec![("juno-1", "juno"), ("archway-1", "archway")]);
 
-        // /Users/adair/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cw-orch-mock-0.22.0/src/queriers/env.rs:12:70:
-        // index out of bounds: the len is 1 but the index is 1 (when initializing with "juno")
         let arch_env = TestEnv::setup(interchain.get_chain("archway-1")?)?;
         let juno_env = TestEnv::setup(interchain.get_chain("juno-1")?)?;
 
@@ -277,15 +282,14 @@ mod send_msg {
 
         // the trait `From<&str>` is not implemented for `abstract_app::objects::chain_name::TruncatedChainId`
         let arch_to_juno_msg = Message::new(
-            Recipient::account(
-                juno_client.account().id()?,
-                Some(TruncatedChainId::from_string("juno".into())?),
-            ),
             "test-subject",
             "test-body",
         );
 
-        let res = arch_client.send_message(arch_to_juno_msg, None);
+        let res = arch_client.send_message(arch_to_juno_msg, Recipient::account(
+            juno_client.account().id()?,
+            Some(TruncatedChainId::from_string("juno".into())?),
+        ), None);
 
         assert_that!(res).is_ok();
 
@@ -340,8 +344,6 @@ mod send_msg {
         let interchain =
             MockBech32InterchainEnv::new(vec![("juno-1", "juno"), ("archway-1", "archway")]);
 
-        // /Users/adair/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cw-orch-mock-0.22.0/src/queriers/env.rs:12:70:
-        // index out of bounds: the len is 1 but the index is 1 (when initializing with "juno")
         let arch_env = TestEnv::setup(interchain.get_chain("archway-1")?)?;
         let juno_env = TestEnv::setup(interchain.get_chain("juno-1")?)?;
 
@@ -352,16 +354,16 @@ mod send_msg {
 
         // the trait `From<&str>` is not implemented for `abstract_app::objects::chain_name::TruncatedChainId`
         let arch_to_juno_msg = Message::new(
-            Recipient::account(
-                AccountId::local(420),
-                Some(TruncatedChainId::from_string("juno".into())?),
-            ),
             "test-subject",
             "test-body",
         );
 
         let res = arch_client.send_message(
             arch_to_juno_msg,
+            Recipient::account(
+                AccountId::local(420),
+                Some(TruncatedChainId::from_string("juno".into())?),
+            ),
             Some(Route::Remote(vec![TruncatedChainId::from_string(
                 "juno".into(),
             )?])),
@@ -424,16 +426,16 @@ mod send_msg {
 
         // the trait `From<&str>` is not implemented for `abstract_app::objects::chain_name::TruncatedChainId`
         let arch_to_neutron_msg = Message::new(
-            Recipient::account(
-                neutron_client.account().id()?,
-                Some(TruncatedChainId::from_string("neutron".into())?),
-            ),
             "test-subject",
             "test-body",
         );
 
         let res = arch_client.send_message(
             arch_to_neutron_msg,
+            Recipient::account(
+                neutron_client.account().id()?,
+                Some(TruncatedChainId::from_string("neutron".into())?),
+            ),
             Some(AccountTrace::Remote(vec![
                 "juno".parse()?,
                 TruncatedChainId::from_str("neutron")?,

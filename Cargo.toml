@@ -3,7 +3,7 @@ members = ["contracts/*", "packages/ibcmail", "tests"]
 resolver = "2"
 
 [workspace.package]
-version = "0.2.0"
+version = "0.3.0"
 
 [workspace.dependencies]
 cosmwasm-std = "1.5.3"
@@ -21,14 +21,16 @@ cw-orch = "0.24.1"
 ibcmail = { path = "packages/ibcmail", package = "ibcmail" }
 client = { path = "contracts/client", package = "ibcmail-client" }
 server = { path = "contracts/server", package = "ibcmail-server" }
-abstract-client = "0.23.0"
-abstract-app = "0.23.0"
-abstract-adapter = "0.23.0"
-abstract-interface = "0.23.0"
+
+abstract-client = "=0.23.0"
+abstract-app = "=0.23.0"
+abstract-adapter = "=0.23.0"
+abstract-interface = "0.23.1"
+
 speculoos = "0.11.0"
 semver = "1.0"
 dotenv = "0.15.0"
-env_logger = "0.10.0"
+env_logger = "0.11.3"
 clap = "4.3.7"
 const_format = "0.2.32"
 

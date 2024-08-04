@@ -16,6 +16,7 @@ pub fn deliver_message_reply(
     mut app: ServerAdapter,
     reply: Reply,
 ) -> ServerResult {
+    let current_chain = TruncatedChainId::new(&env);
     let delivery_status = match reply.result {
         SubMsgResult::Ok(_) => DeliveryStatus::Delivered,
         SubMsgResult::Err(error) => DeliveryFailure::Unknown(error).into(),
@@ -32,7 +33,7 @@ pub fn deliver_message_reply(
         chain: TruncatedChainId::new(&env),
     })?;
 
-    let msg = route_msg(deps, &mut app, delivery_msg, delivery_header)?;
+    let msg = route_msg(deps, &current_chain, &mut app, delivery_header, delivery_msg)?;
 
     Ok(app
         .response("deliver_message_reply")

@@ -11,15 +11,10 @@ use abstract_app::{
 use base64::prelude::*;
 use cosmwasm_std::{ensure_eq, Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo};
 use ibcmail::client::state::STATUS;
-use ibcmail::{
-    client::{
-        state::{RECEIVED, SENT},
-        ClientApp,
-    },
-    server::api::{MailServer, ServerInterface},
-    DeliveryStatus, IbcMailMessage, Message, MessageHash, Recipient, Route, Sender,
-    IBCMAIL_SERVER_ID,
-};
+use ibcmail::{client::{
+    state::{RECEIVED, SENT},
+    ClientApp,
+}, server::api::{MailServer, ServerInterface}, DeliveryStatus, IbcMailMessage, Message, MessageHash, Recipient, Route, Sender, IBCMAIL_SERVER_ID, Header};
 
 // # ANCHOR: execute_handler
 pub fn execute_handler(
@@ -30,10 +25,10 @@ pub fn execute_handler(
     msg: ClientExecuteMsg,
 ) -> ClientResult {
     match msg {
-        ClientExecuteMsg::SendMessage { message, route } => {
-            send_msg(deps, env, info, message, route, app)
+        ClientExecuteMsg::SendMessage { message, recipient, route } => {
+            send_msg(deps, env, info, app, message, recipient, route)
         }
-        ClientExecuteMsg::ReceiveMessage(message) => receive_msg(deps, info, app, message),
+        ClientExecuteMsg::ReceiveMessage { message, header } => receive_msg(deps, info, app, message, header),
         ClientExecuteMsg::UpdateDeliveryStatus { id, status } => {
             update_delivery_status(deps, info, app, id, status)
         }
@@ -46,12 +41,13 @@ fn send_msg(
     deps: DepsMut,
     env: Env,
     _info: MessageInfo,
-    msg: Message,
-    route: Option<Route>,
     app: ClientApp,
+    msg: Message,
+    recipient: Recipient,
+    route: Option<Route>,
 ) -> ClientResult {
     // validate basic fields of message, construct message to send to server
-    let to_hash = format!("{:?}{:?}{:?}", env.block.time, msg.subject, msg.recipient);
+    let to_hash = format!("{:?}{:?}{:?}", env.block.time, msg.subject, recipient);
     let hash = <sha2::Sha256 as sha2::Digest>::digest(to_hash);
     let base_64_hash = BASE64_STANDARD.encode(hash);
     let to_send = IbcMailMessage {
@@ -60,8 +56,8 @@ fn send_msg(
             app.account_id(deps.as_ref()).unwrap(),
             Some(TruncatedChainId::new(&env)),
         ),
+        recipient,
         message: Message {
-            recipient: msg.recipient,
             subject: msg.subject,
             body: msg.body,
         },
@@ -80,9 +76,9 @@ fn send_msg(
 
 /// Receive a message from the server
 // # ANCHOR: receive_msg
-fn receive_msg(deps: DepsMut, info: MessageInfo, app: App, msg: IbcMailMessage) -> ClientResult {
+fn receive_msg(deps: DepsMut, info: MessageInfo, app: App, msg: IbcMailMessage, header: Header) -> ClientResult {
     ensure_server_sender(deps.as_ref(), &app, info.sender)?;
-    ensure_correct_recipient(deps.as_ref(), &msg.message.recipient, &app)?;
+    ensure_correct_recipient(deps.as_ref(), &header.recipient, &app)?;
 
     RECEIVED.save(deps.storage, msg.id.clone(), &msg)?;
 

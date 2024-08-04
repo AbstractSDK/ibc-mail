@@ -1,3 +1,4 @@
+use abstract_adapter::objects::TruncatedChainId;
 use abstract_adapter::sdk::AbstractResponse;
 use abstract_adapter::std::ibc::ModuleIbcInfo;
 use cosmwasm_std::{from_json, Binary, DepsMut, Env};
@@ -12,7 +13,7 @@ use crate::{contract::ServerResult, handlers::execute::route_msg};
 // ANCHOR: module_ibc_handler
 pub fn module_ibc_handler(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     mut app: ServerAdapter,
     module_info: ModuleIbcInfo,
     msg: Binary,
@@ -26,9 +27,7 @@ pub fn module_ibc_handler(
 
     match server_msg {
         ServerIbcMessage::RouteMessage { msg, mut header } => {
-            header.current_hop += 1;
-
-            let msgs = route_msg(deps, &mut app, msg, header)?;
+            let msgs = route_msg(deps, &TruncatedChainId::new(&env), &mut app, header, msg)?;
 
             Ok(app
                 .response("module_ibc")
