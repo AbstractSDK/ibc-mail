@@ -23,7 +23,7 @@ use ibcmail::{
         state::{AWAITING, AWAITING_DELIVERY},
         ServerAdapter,
     },
-    ClientMetadata, Header, IbcMailMessage, Recipient, Route, Sender, ServerMetadata,
+    ClientMetadata, Header, MailMessage, Recipient, Route, Sender, ServerMetadata,
 };
 
 use crate::replies::DELIVER_MESSAGE_REPLY;
@@ -87,13 +87,13 @@ fn process_message(
     env: Env,
     _info: MessageInfo,
     mut module: Adapter,
-    message: IbcMailMessage,
+    message: MailMessage,
     header: Header,
     metadata: Option<ClientMetadata>,
 ) -> ServerResult {
     println!(
-        "processing message: {:?} with route {:?}",
-        message, metadata
+        "processing message: {:?} with header: {:?}, metadata {:?}",
+        message, header, metadata
     );
 
     let current_chain = TruncatedChainId::new(&env);
@@ -126,8 +126,8 @@ fn process_message(
         })
     } else {
         // We weren't provided a route
-        println!("processing message recipient: {:?}", message.recipient);
-        match message.recipient.clone() {
+        println!("processing message recipient: {:?}", header.recipient);
+        match header.recipient.clone() {
             // TODO: add smarter routing
             Recipient::Account { id: _, chain } => Ok(chain.map_or(AccountTrace::Local, |chain| {
                 if chain == current_chain {
@@ -208,7 +208,7 @@ pub(crate) fn route_message(
 
             // Awaiting callback
             // Save that we're awaiting callbacks from dest chain onwards.
-            AWAITING.save(deps.storage, &message.id(), dest_chain)?;
+            AWAITING.save(deps.storage, &header.id, dest_chain)?;
 
             let msg = remote_server_msg(
                 deps,
@@ -238,13 +238,13 @@ fn route_to_local_account(
     match msg {
         ServerMessage::Mail { message } => {
             AWAITING_DELIVERY.update(deps.storage, |mut awaiting| -> StdResult<Vec<_>> {
-                awaiting.push((message.id.clone(), header.clone(), metadata.clone()));
+                awaiting.push((header.id.clone(), header.clone(), metadata.clone()));
                 Ok(awaiting)
             })?;
 
             let mail_client = get_recipient_mail_client(deps.as_ref(), app, &header.recipient)?;
             Ok(vec![SubMsg::reply_always(
-                mail_client.receive_msg(message, header)?,
+                mail_client.receive_msg(message, header, metadata)?,
                 DELIVER_MESSAGE_REPLY,
             )])
         }

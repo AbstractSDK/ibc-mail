@@ -1,8 +1,8 @@
 use cosmwasm_schema::QueryResponses;
 
 use crate::{
-    client::ClientApp, ClientMetadata, DeliveryStatus, Header, IbcMailMessage, Message,
-    MessageHash, MessageKind, Recipient, Route, Sender,
+    client::ClientApp, ClientMetadata, DeliveryStatus, Header, MailMessage, MessageHash,
+    MessageKind, ReceivedMessage, Recipient, Sender, ServerMetadata,
 };
 
 // This is used for type safety and re-exporting the contract endpoint structs.
@@ -19,10 +19,7 @@ pub struct ClientInstantiateMsg {}
 #[cw_orch(impl_into(ExecuteMsg))]
 pub enum ClientExecuteMsg {
     /// Receive a message from the server.
-    ReceiveMessage {
-        header: Header,
-        message: IbcMailMessage,
-    },
+    ReceiveMessage(ReceivedMessage),
     /// Update the status of a message. only callable by the server
     UpdateDeliveryStatus {
         id: MessageHash,
@@ -31,7 +28,7 @@ pub enum ClientExecuteMsg {
     /// Send a message
     SendMessage {
         recipient: Recipient,
-        message: Message,
+        message: MailMessage,
         metadata: Option<ClientMetadata>,
     },
 }
@@ -43,18 +40,20 @@ pub enum ClientExecuteMsg {
 #[cw_orch(impl_into(QueryMsg))]
 #[derive(QueryResponses)]
 pub enum ClientQueryMsg {
-    #[returns(MessagesResponse)]
-    ListMessages {
-        kind: MessageKind,
+    #[returns(SentMessagesResponse)]
+    ListSentMessages {
         filter: Option<MessageFilter>,
         limit: Option<u32>,
         start_after: Option<MessageHash>,
     },
-    #[returns(MessagesResponse)]
-    Messages {
-        kind: MessageKind,
-        ids: Vec<MessageHash>,
+    #[returns(ReceivedMessagesResponse)]
+    ListReceivedMessages {
+        filter: Option<MessageFilter>,
+        limit: Option<u32>,
+        start_after: Option<MessageHash>,
     },
+    #[returns(ReceivedMessagesResponse)]
+    ReceivedMessages { ids: Vec<MessageHash> },
 }
 
 #[cosmwasm_schema::cw_serde]
@@ -69,6 +68,11 @@ pub struct AppMigrateMsg {}
 pub struct ConfigResponse {}
 
 #[cosmwasm_schema::cw_serde]
-pub struct MessagesResponse {
-    pub messages: Vec<IbcMailMessage>,
+pub struct SentMessagesResponse {
+    pub messages: Vec<(MailMessage, Header)>,
+}
+
+#[cosmwasm_schema::cw_serde]
+pub struct ReceivedMessagesResponse {
+    pub messages: Vec<ReceivedMessage>,
 }

@@ -1,8 +1,8 @@
 use cosmwasm_schema::QueryResponses;
 
 use crate::{
-    server::ServerAdapter, ClientMetadata, DeliveryStatus, Header, IbcMailMessage, MessageHash,
-    Route, ServerMetadata,
+    server::ServerAdapter, ClientMetadata, DeliveryStatus, Header, MailMessage, MessageHash,
+    ServerMetadata,
 };
 
 // This is used for type safety and re-exporting the contract endpoint structs.
@@ -17,7 +17,7 @@ pub struct ServerInstantiateMsg {}
 pub enum ServerExecuteMsg {
     /// Process a message sent by the client
     ProcessMessage {
-        message: IbcMailMessage,
+        message: MailMessage,
         header: Header,
         metadata: Option<ClientMetadata>,
     },
@@ -27,7 +27,7 @@ pub enum ServerExecuteMsg {
 #[cosmwasm_schema::cw_serde]
 pub enum ServerMessage {
     Mail {
-        message: IbcMailMessage,
+        message: MailMessage,
     },
     DeliveryStatus {
         id: MessageHash,
@@ -36,14 +36,7 @@ pub enum ServerMessage {
 }
 
 impl ServerMessage {
-    pub fn id(&self) -> MessageHash {
-        match self {
-            ServerMessage::Mail { message } => message.id.clone(),
-            ServerMessage::DeliveryStatus { id, .. } => id.clone(),
-        }
-    }
-
-    pub fn mail(message: IbcMailMessage) -> Self {
+    pub fn mail(message: MailMessage) -> Self {
         ServerMessage::Mail { message }
     }
 

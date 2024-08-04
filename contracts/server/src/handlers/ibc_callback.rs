@@ -45,7 +45,7 @@ pub fn ibc_callback_handler(
                 } => {
                     println!(
                         "ibc_callback_handler success route_msg id: {:?}, header: {:?}, metadata: {:?}",
-                        msg.id(),
+                        header.id,
                         header,
                         metadata
                     );
@@ -74,7 +74,7 @@ pub fn ibc_callback_handler(
                 } => {
                     println!(
                         "ibc_callback_handler execute error route_msg id: {:?}, header: {:?}, metadata: {:?}",
-                        msg.id(),
+                        header.id,
                         header,
                         metadata
                     );
@@ -92,10 +92,10 @@ pub fn ibc_callback_handler(
                                     chain: current_chain.clone(),
                                     address: _env.contract.address.to_string(),
                                 },
-                                recipient: message.sender.clone().try_into()?,
+                                recipient: header.sender.clone().try_into()?,
                                 // TODO: new message id
-                                id: message.id.clone(),
-                                version: message.version.clone(),
+                                id: header.id.clone(),
+                                version: header.version.clone(),
                                 timestamp: _env.block.time,
                                 reply_to: None,
                             };
@@ -113,7 +113,7 @@ pub fn ibc_callback_handler(
                             };
 
                             let status_message = ServerMessage::delivery_status(
-                                msg.id(),
+                                header.id,
                                 DeliveryFailure::Unknown(e).into(),
                             );
                             execute::route_message(

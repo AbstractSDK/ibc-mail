@@ -10,7 +10,7 @@ use cosmwasm_std::{CosmosMsg, Deps, Uint128};
 
 use crate::{
     server::msg::{ServerExecuteMsg, ServerQueryMsg},
-    ClientMetadata, Header, IbcMailMessage, Route, IBCMAIL_SERVER_ID,
+    ClientMetadata, Header, MailMessage, IBCMAIL_SERVER_ID,
 };
 
 // API for Abstract SDK users
@@ -49,7 +49,7 @@ impl<'a, T: ServerInterface> MailServer<'a, T> {
 
     pub fn process_msg(
         &self,
-        message: IbcMailMessage,
+        message: MailMessage,
         header: Header,
         metadata: Option<ClientMetadata>,
     ) -> AbstractSdkResult<CosmosMsg> {

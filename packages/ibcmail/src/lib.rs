@@ -26,13 +26,20 @@ pub type MessageHash = String;
 /// Struct representing new message to send to another client
 // # ANCHOR: message
 #[cosmwasm_schema::cw_serde]
-pub struct Message {
+pub struct MailMessage {
     pub subject: String,
     pub body: String,
 }
 // # ANCHOR_END: message
 
-impl Message {
+#[cosmwasm_schema::cw_serde]
+pub struct ReceivedMessage {
+    pub message: MailMessage,
+    pub header: Header,
+    pub metadata: ServerMetadata,
+}
+
+impl MailMessage {
     pub fn new(subject: impl Into<String>, body: impl Into<String>) -> Self {
         Self {
             subject: subject.into(),
@@ -40,18 +47,6 @@ impl Message {
         }
     }
 }
-
-#[cosmwasm_schema::cw_serde]
-pub struct IbcMailMessage {
-    pub id: MessageHash,
-    pub sender: Sender,
-    pub recipient: Recipient,
-    pub version: String,
-    pub timestamp: Timestamp,
-    pub message: Message,
-    pub reply_to: Option<MessageHash>,
-}
-
 #[cosmwasm_schema::cw_serde]
 pub struct Header {
     pub sender: Sender,
@@ -64,6 +59,7 @@ pub struct Header {
 
 pub type Route = AccountTrace;
 
+/// Metadata that can be set optionally by the client when they send a message
 #[derive(Default)]
 #[cosmwasm_schema::cw_serde]
 pub struct ClientMetadata {
@@ -76,6 +72,7 @@ impl ClientMetadata {
     }
 }
 
+/// Metadata used by the server for routing or other means
 #[cosmwasm_schema::cw_serde]
 pub struct ServerMetadata {
     pub route: Route,

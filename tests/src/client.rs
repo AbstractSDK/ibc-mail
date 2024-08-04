@@ -1,13 +1,14 @@
 use abstract_app::objects::{namespace::Namespace, AccountId};
 use abstract_client::{AbstractClient, Application};
+use cosmwasm_schema::schemars::schema::Metadata;
 use cw_orch::{anyhow, prelude::*};
 use speculoos::prelude::*;
 
 // Use prelude to get all the necessary imports
 use client::{contract::interface::ClientInterface, msg::ClientInstantiateMsg, *};
 use ibcmail::{
-    server::msg::ServerInstantiateMsg, Header, IbcMailMessage, Message, Recipient, Route, Sender,
-    IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID,
+    server::msg::ServerInstantiateMsg, Header, MailMessage, ReceivedMessage, Recipient, Route,
+    Sender, ServerMetadata, IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID,
 };
 use server::ServerInterface;
 
@@ -71,29 +72,21 @@ impl<Env: CwEnv> TestEnv<Env> {
     }
 }
 
-fn create_server_test_msg(from: AccountId, to: AccountId) -> IbcMailMessage {
-    IbcMailMessage {
-        id: "test-id".to_string(),
-        sender: Sender::account(from.clone(), None),
-        recipient: Recipient::account(to.clone(), None),
-        message: Message {
+fn create_received_message(from: AccountId, to: AccountId, route: Route) -> ReceivedMessage {
+    ReceivedMessage {
+        header: Header {
+            sender: Sender::account(from.clone(), None),
+            recipient: Recipient::account(to.clone(), None),
+            id: "test-id".to_string(),
+            version: "0.0.1".to_string(),
+            timestamp: Default::default(),
+            reply_to: None,
+        },
+        message: MailMessage {
             subject: "test-subject".to_string(),
             body: "test-body".to_string(),
         },
-        timestamp: Default::default(),
-        version: "0.0.1".to_string(),
-        reply_to: None,
-    }
-}
-
-fn temp_ibc_mail_msg_to_header(msg: IbcMailMessage, route: Route) -> Header {
-    Header {
-        recipient: msg.recipient.clone(),
-        id: msg.id.clone(),
-        version: msg.version.clone(),
-        sender: msg.sender.clone(),
-        timestamp: msg.timestamp,
-        reply_to: msg.reply_to,
+        metadata: ServerMetadata { route },
     }
 }
 
@@ -121,7 +114,11 @@ mod receive_msg {
             server_account_id, app_account_id
         );
 
-        let msg = create_server_test_msg(server_account_id.clone(), app_account_id.clone());
+        let received = create_received_message(
+            server_account_id.clone(),
+            app_account_id.clone(),
+            Route::Local,
+        );
         let server_addr = app
             .account()
             .module_addresses(vec![IBCMAIL_SERVER_ID.into()])?
@@ -130,14 +127,11 @@ mod receive_msg {
             .clone();
 
         println!("app_account_id: {:?}", app.account().id());
-        let res = app.call_as(&server_addr).receive_message(
-            temp_ibc_mail_msg_to_header(msg.clone(), Route::Local),
-            msg.clone(),
-        );
+        let res = app.call_as(&server_addr).receive_message(received.clone());
 
         assert_that!(res).is_ok();
 
-        let messages = app.list_messages(MessageKind::Received, None, None, None)?;
+        let messages = app.list_received_messages(None, None, None)?;
         assert_that!(messages.messages).has_length(1);
 
         Ok(())
@@ -152,8 +146,9 @@ mod receive_msg {
 
         let app_account_id = app.account().id().unwrap();
 
-        let msg = create_server_test_msg(app_account_id.clone(), app_account_id.clone());
-        let res = app.receive_message(temp_ibc_mail_msg_to_header(msg.clone(), Route::Local), msg);
+        let msg =
+            create_received_message(app_account_id.clone(), app_account_id.clone(), Route::Local);
+        let res = app.receive_message(msg);
 
         assert_that!(res)
             .is_err()
@@ -173,7 +168,8 @@ mod send_msg {
     use cw_orch_interchain::{InterchainEnv, MockBech32InterchainEnv};
 
     use ibcmail::{
-        server::error::ServerError, ClientMetadata, Message, MessageKind, Route, IBCMAIL_CLIENT_ID,
+        server::error::ServerError, ClientMetadata, MailMessage, MessageKind, Route,
+        IBCMAIL_CLIENT_ID,
     };
 
     use super::*;
@@ -187,7 +183,7 @@ mod send_msg {
         let client2 = env.client2;
 
         let recipient = Recipient::account(client2.account().id()?, None);
-        let msg = Message::new("test-subject", "test-body");
+        let msg = MailMessage::new("test-subject", "test-body");
 
         let res = client1.send_message(msg, recipient, None);
 
@@ -205,14 +201,12 @@ mod send_msg {
         let client2 = env.client2;
 
         let recipient = Recipient::account(client2.account().id()?, None);
-        let msg = Message::new("test-subject", "test-body");
+        let msg = MailMessage::new("test-subject", "test-body");
 
         let res = client1.send_message(msg, recipient, None);
         assert_that!(res).is_ok();
 
-        let received_messages = client2
-            .list_messages(MessageKind::Received, None, None, None)?
-            .messages;
+        let received_messages = client2.list_received_messages(None, None, None)?.messages;
         assert_that!(received_messages).has_length(1);
 
         Ok(())
@@ -232,7 +226,7 @@ mod send_msg {
             .version_control()
             .claim_namespace(client2.account().id()?, namespace.to_string())?;
 
-        let msg = Message::new("test-subject", "test-body");
+        let msg = MailMessage::new("test-subject", "test-body");
 
         let res =
             client1.send_message(msg, Recipient::namespace(namespace.try_into()?, None), None);
@@ -250,7 +244,7 @@ mod send_msg {
 
         let bad_namespace: Namespace = "nope".try_into()?;
 
-        let msg = Message::new("test-subject", "test-body");
+        let msg = MailMessage::new("test-subject", "test-body");
 
         let res =
             client1.send_message(msg, Recipient::namespace(bad_namespace.clone(), None), None);
@@ -279,7 +273,7 @@ mod send_msg {
         let juno_client = juno_env.client1;
 
         // the trait `From<&str>` is not implemented for `abstract_app::objects::chain_name::TruncatedChainId`
-        let arch_to_juno_msg = Message::new("test-subject", "test-body");
+        let arch_to_juno_msg = MailMessage::new("test-subject", "test-body");
 
         let res = arch_client.send_message(
             arch_to_juno_msg,
@@ -294,7 +288,7 @@ mod send_msg {
 
         interchain.await_and_check_packets("archway-1", res?)?;
 
-        let arch_messages = arch_client.list_messages(MessageKind::Received, None, None, None)?;
+        let arch_messages = arch_client.list_received_messages(None, None, None)?;
         assert_that!(arch_messages.messages).is_empty();
 
         let juno_client_1_module_addresses = juno_client
@@ -323,15 +317,15 @@ mod send_msg {
         let juno_mail_client = ClientInterface::new(IBCMAIL_CLIENT_ID, juno_env.env.clone());
         juno_mail_client.set_address(&juno_client_1_module_addresses.modules[0].1.clone());
         let juno_mail_client_messages =
-            juno_mail_client.list_messages(MessageKind::Received, None, None, None)?;
+            juno_mail_client.list_received_messages(None, None, None)?;
         assert_that!(juno_mail_client_messages.messages).has_length(1);
 
-        let juno_messages = juno_client.list_messages(MessageKind::Received, None, None, None)?;
+        let juno_messages = juno_client.list_received_messages(None, None, None)?;
         assert_that!(juno_messages.messages).has_length(1);
 
         // Sanity check messages method
-        let juno_message_id = juno_messages.messages.first().cloned().unwrap().id;
-        let juno_message = juno_client.messages(vec![juno_message_id], MessageKind::Received)?;
+        let juno_message_id = juno_messages.messages.first().cloned().unwrap().header.id;
+        let juno_message = juno_client.received_messages(vec![juno_message_id])?;
         assert_that!(juno_message.messages).has_length(1);
 
         Ok(())
@@ -352,7 +346,7 @@ mod send_msg {
         let juno_client = juno_env.client1;
 
         // the trait `From<&str>` is not implemented for `abstract_app::objects::chain_name::TruncatedChainId`
-        let arch_to_juno_msg = Message::new("test-subject", "test-body");
+        let arch_to_juno_msg = MailMessage::new("test-subject", "test-body");
 
         let res = arch_client.send_message(
             arch_to_juno_msg,
@@ -378,13 +372,13 @@ mod send_msg {
 
         assert_that!(
             arch_client
-                .list_messages(MessageKind::Received, None, None, None)?
+                .list_received_messages(None, None, None)?
                 .messages
         )
         .is_empty();
         assert_that!(
             juno_client
-                .list_messages(MessageKind::Received, None, None, None)?
+                .list_received_messages(None, None, None)?
                 .messages
         )
         .is_empty();
@@ -421,7 +415,7 @@ mod send_msg {
         let neutron_client = neutron_env.client1;
 
         // the trait `From<&str>` is not implemented for `abstract_app::objects::chain_name::TruncatedChainId`
-        let arch_to_neutron_msg = Message::new("test-subject", "test-body");
+        let arch_to_neutron_msg = MailMessage::new("test-subject", "test-body");
 
         let res = arch_client.send_message(
             arch_to_neutron_msg,
@@ -437,7 +431,7 @@ mod send_msg {
 
         interchain.await_and_check_packets("archway-1", res.clone())?;
 
-        let arch_messages = arch_client.list_messages(MessageKind::Received, None, None, None)?;
+        let arch_messages = arch_client.list_received_messages(None, None, None)?;
         assert_that!(arch_messages.messages).is_empty();
 
         let neutron_client_1_module_addresses = neutron_client
@@ -457,7 +451,7 @@ mod send_msg {
         let neutron_mail_client = ClientInterface::new(IBCMAIL_CLIENT_ID, neutron_env.env.clone());
         neutron_mail_client.set_address(&neutron_client_1_module_addresses.modules[0].1.clone());
         let neutron_mail_client_messages =
-            neutron_mail_client.list_messages(MessageKind::Received, None, None, None)?;
+            neutron_mail_client.list_received_messages(None, None, None)?;
         assert_that!(neutron_mail_client_messages.messages).has_length(1);
 
         // let juno_messages = neutron_client.list_messages(None, None, None)?;

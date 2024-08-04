@@ -9,7 +9,7 @@ use cw_orch_interchain::{ChannelCreationValidator, DaemonInterchainEnv, Intercha
 use networks::{HARPOON_4, PION_1};
 
 use client::ClientInterface;
-use ibcmail::{client::msg::ClientExecuteMsgFns, ClientMetadata, Message};
+use ibcmail::{client::msg::ClientExecuteMsgFns, ClientMetadata, MailMessage};
 use tests::TEST_NAMESPACE;
 
 const SRC: ChainInfo = PION_1;
@@ -39,7 +39,7 @@ fn test() -> anyhow::Result<()> {
         .namespace(Namespace::new(TEST_NAMESPACE)?)
         .build()?;
 
-    let mail_msg = Message::new("test-subject", "test-body");
+    let mail_msg = MailMessage::new("test-subject", "test-body");
 
     let send = src_client.send_message(
         mail_msg,

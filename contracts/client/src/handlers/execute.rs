@@ -17,8 +17,8 @@ use ibcmail::{
         ClientApp,
     },
     server::api::{MailServer, ServerInterface},
-    ClientMetadata, DeliveryStatus, Header, IbcMailMessage, Message, MessageHash, Recipient,
-    Sender, IBCMAIL_SERVER_ID,
+    ClientMetadata, DeliveryStatus, Header, MailMessage, MessageHash, ReceivedMessage, Recipient,
+    Sender, ServerMetadata, IBCMAIL_SERVER_ID,
 };
 
 // # ANCHOR: execute_handler
@@ -35,9 +35,7 @@ pub fn execute_handler(
             recipient,
             metadata,
         } => send_msg(deps, env, info, app, message, recipient, metadata),
-        ClientExecuteMsg::ReceiveMessage { message, header } => {
-            receive_msg(deps, info, app, message, header)
-        }
+        ClientExecuteMsg::ReceiveMessage(message) => receive_msg(deps, info, app, message),
         ClientExecuteMsg::UpdateDeliveryStatus { id, status } => {
             update_delivery_status(deps, info, app, id, status)
         }
@@ -51,12 +49,12 @@ fn send_msg(
     env: Env,
     _info: MessageInfo,
     app: ClientApp,
-    msg: Message,
+    message: MailMessage,
     recipient: Recipient,
     metadata: Option<ClientMetadata>,
 ) -> ClientResult {
     // validate basic fields of message, construct message to send to server
-    let to_hash = format!("{:?}{:?}{:?}", env.block.time, msg.subject, recipient);
+    let to_hash = format!("{:?}{:?}{:?}", env.block.time, message.subject, recipient);
     let hash = <sha2::Sha256 as sha2::Digest>::digest(to_hash);
     let base_64_hash = BASE64_STANDARD.encode(hash);
 
@@ -66,32 +64,23 @@ fn send_msg(
     );
     let version = app.version().to_string();
 
-    let to_send = IbcMailMessage {
-        id: base_64_hash.clone(),
-        sender: sender.clone(),
-        recipient: recipient.clone(),
-        message: Message {
-            subject: msg.subject,
-            body: msg.body,
-        },
-        timestamp: env.block.time,
-        version: version.clone(),
-        reply_to: None,
-    };
-
     let client_header = Header {
         sender,
         recipient,
         id: base_64_hash,
-        version: version,
+        version,
         timestamp: env.block.time,
         reply_to: None,
     };
 
-    SENT.save(deps.storage, to_send.id.clone(), &to_send)?;
+    SENT.save(
+        deps.storage,
+        client_header.id.clone(),
+        &(message.clone(), client_header.clone()),
+    )?;
 
     let server: MailServer<_> = app.mail_server(deps.as_ref());
-    let route_msg: CosmosMsg = server.process_msg(to_send, client_header, metadata)?;
+    let route_msg: CosmosMsg = server.process_msg(message, client_header, metadata)?;
 
     Ok(app.response("send").add_message(route_msg))
 }
@@ -103,17 +92,17 @@ fn receive_msg(
     deps: DepsMut,
     info: MessageInfo,
     app: App,
-    msg: IbcMailMessage,
-    header: Header,
+    received: ReceivedMessage,
 ) -> ClientResult {
     ensure_server_sender(deps.as_ref(), &app, info.sender)?;
-    ensure_correct_recipient(deps.as_ref(), &header.recipient, &app)?;
+    ensure_correct_recipient(deps.as_ref(), &received.header.recipient, &app)?;
 
-    RECEIVED.save(deps.storage, msg.id.clone(), &msg)?;
+    let msg_id = received.header.id.clone();
+    RECEIVED.save(deps.storage, msg_id.clone(), &received)?;
 
     Ok(app
         .response("received")
-        .add_attribute("message_id", &msg.id))
+        .add_attribute("message_id", &msg_id))
 }
 // # ANCHOR_END: receive_msg
 
