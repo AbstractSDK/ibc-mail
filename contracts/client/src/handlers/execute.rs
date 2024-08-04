@@ -11,10 +11,15 @@ use abstract_app::{
 use base64::prelude::*;
 use cosmwasm_std::{ensure_eq, Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo};
 use ibcmail::client::state::STATUS;
-use ibcmail::{client::{
-    state::{RECEIVED, SENT},
-    ClientApp,
-}, server::api::{MailServer, ServerInterface}, DeliveryStatus, IbcMailMessage, Message, MessageHash, Recipient, Route, Sender, IBCMAIL_SERVER_ID, Header};
+use ibcmail::{
+    client::{
+        state::{RECEIVED, SENT},
+        ClientApp,
+    },
+    server::api::{MailServer, ServerInterface},
+    DeliveryStatus, Header, IbcMailMessage, Message, MessageHash, Recipient, Route, Sender,
+    IBCMAIL_SERVER_ID,
+};
 
 // # ANCHOR: execute_handler
 pub fn execute_handler(
@@ -25,10 +30,14 @@ pub fn execute_handler(
     msg: ClientExecuteMsg,
 ) -> ClientResult {
     match msg {
-        ClientExecuteMsg::SendMessage { message, recipient, route } => {
-            send_msg(deps, env, info, app, message, recipient, route)
+        ClientExecuteMsg::SendMessage {
+            message,
+            recipient,
+            route,
+        } => send_msg(deps, env, info, app, message, recipient, route),
+        ClientExecuteMsg::ReceiveMessage { message, header } => {
+            receive_msg(deps, info, app, message, header)
         }
-        ClientExecuteMsg::ReceiveMessage { message, header } => receive_msg(deps, info, app, message, header),
         ClientExecuteMsg::UpdateDeliveryStatus { id, status } => {
             update_delivery_status(deps, info, app, id, status)
         }
@@ -76,7 +85,13 @@ fn send_msg(
 
 /// Receive a message from the server
 // # ANCHOR: receive_msg
-fn receive_msg(deps: DepsMut, info: MessageInfo, app: App, msg: IbcMailMessage, header: Header) -> ClientResult {
+fn receive_msg(
+    deps: DepsMut,
+    info: MessageInfo,
+    app: App,
+    msg: IbcMailMessage,
+    header: Header,
+) -> ClientResult {
     ensure_server_sender(deps.as_ref(), &app, info.sender)?;
     ensure_correct_recipient(deps.as_ref(), &header.recipient, &app)?;
 

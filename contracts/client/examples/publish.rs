@@ -8,7 +8,6 @@
 //! $ just publish uni-6 osmo-test-5
 //! ```
 
-use abstract_app::objects::module::ModuleVersion;
 use abstract_app::objects::namespace::Namespace;
 use abstract_client::{AbstractClient, Publisher};
 use clap::Parser;

@@ -1,11 +1,14 @@
 use abstract_app::objects::{namespace::Namespace, AccountId};
-use abstract_client::{AbstractClient, Application, Environment};
+use abstract_client::{AbstractClient, Application};
 use cw_orch::{anyhow, prelude::*};
 use speculoos::prelude::*;
 
 // Use prelude to get all the necessary imports
 use client::{contract::interface::ClientInterface, msg::ClientInstantiateMsg, *};
-use ibcmail::{server::msg::ServerInstantiateMsg, IbcMailMessage, Message, Recipient, Sender, IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID, MessageKind, Header, Route};
+use ibcmail::{
+    server::msg::ServerInstantiateMsg, Header, IbcMailMessage, Message, Recipient, Route, Sender,
+    IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID,
+};
 use server::ServerInterface;
 
 struct TestEnv<Env: CwEnv> {
@@ -84,13 +87,12 @@ fn create_server_test_msg(from: AccountId, to: AccountId) -> IbcMailMessage {
 
 fn temp_ibc_mail_msg_to_header(msg: IbcMailMessage, route: Route) -> Header {
     Header {
-
         route,
         recipient: msg.recipient.clone(),
         id: msg.id.clone(),
         version: msg.version.clone(),
         sender: msg.sender.clone(),
-        timestamp: msg.timestamp.clone(),
+        timestamp: msg.timestamp,
     }
 }
 
@@ -127,7 +129,10 @@ mod receive_msg {
             .clone();
 
         println!("app_account_id: {:?}", app.account().id());
-        let res = app.call_as(&server_addr).receive_message(temp_ibc_mail_msg_to_header(msg.clone(), Route::Local), msg.clone());
+        let res = app.call_as(&server_addr).receive_message(
+            temp_ibc_mail_msg_to_header(msg.clone(), Route::Local),
+            msg.clone(),
+        );
 
         assert_that!(res).is_ok();
 
@@ -162,7 +167,7 @@ mod send_msg {
 
     use abstract_app::objects::TruncatedChainId;
     use abstract_app::{objects::account::AccountTrace, std::version_control::ExecuteMsgFns};
-    use abstract_cw_orch_polytone::{Polytone, PolytoneConnection};
+    use abstract_cw_orch_polytone::PolytoneConnection;
     use abstract_interface::Abstract;
     use cw_orch_interchain::{InterchainEnv, MockBech32InterchainEnv};
 
@@ -179,10 +184,7 @@ mod send_msg {
         let client2 = env.client2;
 
         let recipient = Recipient::account(client2.account().id()?, None);
-        let msg = Message::new(
-            "test-subject",
-            "test-body",
-        );
+        let msg = Message::new("test-subject", "test-body");
 
         let res = client1.send_message(msg, recipient, None);
 
@@ -200,10 +202,7 @@ mod send_msg {
         let client2 = env.client2;
 
         let recipient = Recipient::account(client2.account().id()?, None);
-        let msg = Message::new(
-            "test-subject",
-            "test-body",
-        );
+        let msg = Message::new("test-subject", "test-body");
 
         let res = client1.send_message(msg, recipient, None);
         assert_that!(res).is_ok();
@@ -230,12 +229,10 @@ mod send_msg {
             .version_control()
             .claim_namespace(client2.account().id()?, namespace.to_string())?;
 
-        let msg = Message::new(
-            "test-subject",
-            "test-body",
-        );
+        let msg = Message::new("test-subject", "test-body");
 
-        let res = client1.send_message(msg, Recipient::namespace(namespace.try_into()?, None),None);
+        let res =
+            client1.send_message(msg, Recipient::namespace(namespace.try_into()?, None), None);
         assert_that!(res).is_ok();
 
         Ok(())
@@ -250,12 +247,10 @@ mod send_msg {
 
         let bad_namespace: Namespace = "nope".try_into()?;
 
-        let msg = Message::new(
-            "test-subject",
-            "test-body",
-        );
+        let msg = Message::new("test-subject", "test-body");
 
-        let res = client1.send_message(msg, Recipient::namespace(bad_namespace.clone(), None), None);
+        let res =
+            client1.send_message(msg, Recipient::namespace(bad_namespace.clone(), None), None);
 
         assert_that!(res).is_err().matches(|e| {
             e.root()
@@ -281,15 +276,16 @@ mod send_msg {
         let juno_client = juno_env.client1;
 
         // the trait `From<&str>` is not implemented for `abstract_app::objects::chain_name::TruncatedChainId`
-        let arch_to_juno_msg = Message::new(
-            "test-subject",
-            "test-body",
-        );
+        let arch_to_juno_msg = Message::new("test-subject", "test-body");
 
-        let res = arch_client.send_message(arch_to_juno_msg, Recipient::account(
-            juno_client.account().id()?,
-            Some(TruncatedChainId::from_string("juno".into())?),
-        ), None);
+        let res = arch_client.send_message(
+            arch_to_juno_msg,
+            Recipient::account(
+                juno_client.account().id()?,
+                Some(TruncatedChainId::from_string("juno".into())?),
+            ),
+            None,
+        );
 
         assert_that!(res).is_ok();
 
@@ -353,10 +349,7 @@ mod send_msg {
         let juno_client = juno_env.client1;
 
         // the trait `From<&str>` is not implemented for `abstract_app::objects::chain_name::TruncatedChainId`
-        let arch_to_juno_msg = Message::new(
-            "test-subject",
-            "test-body",
-        );
+        let arch_to_juno_msg = Message::new("test-subject", "test-body");
 
         let res = arch_client.send_message(
             arch_to_juno_msg,
@@ -425,10 +418,7 @@ mod send_msg {
         let neutron_client = neutron_env.client1;
 
         // the trait `From<&str>` is not implemented for `abstract_app::objects::chain_name::TruncatedChainId`
-        let arch_to_neutron_msg = Message::new(
-            "test-subject",
-            "test-body",
-        );
+        let arch_to_neutron_msg = Message::new("test-subject", "test-body");
 
         let res = arch_client.send_message(
             arch_to_neutron_msg,

@@ -5,7 +5,7 @@ use cosmwasm_std::{DepsMut, Env, Reply, SubMsgResult};
 use ibcmail::server::msg::ServerMessage;
 use ibcmail::server::state::AWAITING_DELIVERY;
 use ibcmail::server::ServerAdapter;
-use ibcmail::{DeliveryFailure, DeliveryStatus, Header, Sender};
+use ibcmail::{DeliveryFailure, DeliveryStatus, Sender};
 
 use crate::contract::ServerResult;
 use crate::handlers::execute::route_msg;
@@ -33,7 +33,13 @@ pub fn deliver_message_reply(
         chain: TruncatedChainId::new(&env),
     })?;
 
-    let msg = route_msg(deps, &current_chain, &mut app, delivery_header, delivery_msg)?;
+    let msg = route_msg(
+        deps,
+        &current_chain,
+        &mut app,
+        delivery_header,
+        delivery_msg,
+    )?;
 
     Ok(app
         .response("deliver_message_reply")

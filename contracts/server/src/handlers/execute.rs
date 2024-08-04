@@ -116,16 +116,21 @@ fn process_message(
     }?;
 
     let header = Header {
-
         route,
         recipient: msg.recipient.clone(),
         id: msg.id.clone(),
         version: msg.version.clone(),
         sender,
-        timestamp: msg.timestamp.clone()
+        timestamp: msg.timestamp,
     };
 
-    let msgs = route_msg(deps, &current_chain, &mut app, header, ServerMessage::mail(msg))?;
+    let msgs = route_msg(
+        deps,
+        &current_chain,
+        &mut app,
+        header,
+        ServerMessage::mail(msg),
+    )?;
 
     Ok(app.response("route").add_submessages(msgs))
 }
@@ -166,7 +171,7 @@ pub(crate) fn route_msg(
 
             let msg = remote_server_msg(
                 deps,
-                &app,
+                app,
                 &ServerIbcMessage::RouteMessage {
                     msg,
                     header: header.clone(),

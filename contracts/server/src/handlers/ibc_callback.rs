@@ -1,12 +1,12 @@
 use abstract_adapter::objects::TruncatedChainId;
 use abstract_adapter::std::ibc::{Callback, IbcResult};
-use cosmwasm_std::{DepsMut, Env, from_json, Response, SubMsg};
+use cosmwasm_std::{from_json, DepsMut, Env, Response, SubMsg};
 
-use ibcmail::{
-    DeliveryFailure,
-    Header, Route, Sender, server::{msg::ServerIbcMessage, ServerAdapter},
-};
 use ibcmail::server::msg::ServerMessage;
+use ibcmail::{
+    server::{msg::ServerIbcMessage, ServerAdapter},
+    DeliveryFailure, Header, Route, Sender,
+};
 
 use crate::contract::ServerResult;
 use crate::handlers::execute;
@@ -78,7 +78,6 @@ pub fn ibc_callback_handler(
                             // expected: juno archway
                             // need to remove anything after the current hop
                             let status_header = Header {
-
                                 route: match header.route {
                                     Route::Remote(mut chains) => {
                                         // keep the current hop but remove everything after it

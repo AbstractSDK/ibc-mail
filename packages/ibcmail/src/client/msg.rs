@@ -1,6 +1,9 @@
 use cosmwasm_schema::QueryResponses;
 
-use crate::{client::ClientApp, DeliveryStatus, Header, IbcMailMessage, Message, MessageHash, MessageKind, Recipient, Route, Sender};
+use crate::{
+    client::ClientApp, DeliveryStatus, Header, IbcMailMessage, Message, MessageHash, MessageKind,
+    Recipient, Route, Sender,
+};
 
 // This is used for type safety and re-exporting the contract endpoint structs.
 abstract_app::app_msg_types!(ClientApp, ClientExecuteMsg, ClientQueryMsg);
@@ -18,7 +21,7 @@ pub enum ClientExecuteMsg {
     /// Receive a message from the server.
     ReceiveMessage {
         header: Header,
-        message: IbcMailMessage
+        message: IbcMailMessage,
     },
     /// Update the status of a message. only callable by the server
     UpdateDeliveryStatus {

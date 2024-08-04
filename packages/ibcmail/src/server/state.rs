@@ -1,4 +1,4 @@
-use crate::{Header, Message, MessageHash};
+use crate::{Header, MessageHash};
 use abstract_app::objects::TruncatedChainId;
 use cw_storage_plus::{Item, Map};
 

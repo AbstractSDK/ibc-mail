@@ -159,7 +159,6 @@ pub fn approve_mail_modules<Env: CwEnv>(vc: &VersionControl<Env>) -> anyhow::Res
     Ok(())
 }
 
-
 #[derive(Parser, Default, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Arguments {}

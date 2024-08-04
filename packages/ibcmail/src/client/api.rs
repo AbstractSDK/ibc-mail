@@ -4,7 +4,10 @@ use abstract_app::sdk::AppInterface;
 
 use cosmwasm_std::{Addr, CosmosMsg, Deps};
 
-use crate::{client::msg::ClientExecuteMsg, DeliveryStatus, Header, IbcMailMessage, Message, MessageHash, Route, IBCMAIL_CLIENT_ID, Recipient};
+use crate::{
+    client::msg::ClientExecuteMsg, DeliveryStatus, Header, IbcMailMessage, Message, MessageHash,
+    Recipient, Route, IBCMAIL_CLIENT_ID,
+};
 
 // API for Abstract SDK users
 pub trait ClientInterface: AppInterface {
@@ -46,8 +49,17 @@ impl<'a, T: ClientInterface> MailClient<'a, T> {
     }
 
     /// Send message
-    pub fn send_msg(&self, recipient: Recipient, message: Message, route: Option<Route>) -> AbstractSdkResult<CosmosMsg> {
-        self.request(ClientExecuteMsg::SendMessage { recipient, message, route })
+    pub fn send_msg(
+        &self,
+        recipient: Recipient,
+        message: Message,
+        route: Option<Route>,
+    ) -> AbstractSdkResult<CosmosMsg> {
+        self.request(ClientExecuteMsg::SendMessage {
+            recipient,
+            message,
+            route,
+        })
     }
 
     /// Receive message

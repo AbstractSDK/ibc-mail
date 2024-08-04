@@ -1,6 +1,5 @@
 use crate::{
     contract::{App, ClientResult},
-    msg::AppMigrateMsg,
     CLIENT_FEATURES,
 };
 use abstract_app::traits::AbstractResponse;

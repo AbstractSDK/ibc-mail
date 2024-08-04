@@ -26,7 +26,7 @@ pub fn module_ibc_handler(
     let server_msg: ServerIbcMessage = from_json(msg)?;
 
     match server_msg {
-        ServerIbcMessage::RouteMessage { msg, mut header } => {
+        ServerIbcMessage::RouteMessage { msg, header } => {
             let msgs = route_msg(deps, &TruncatedChainId::new(&env), &mut app, header, msg)?;
 
             Ok(app

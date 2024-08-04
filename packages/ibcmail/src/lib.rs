@@ -10,7 +10,7 @@ use abstract_app::sdk::ModuleRegistry;
 use abstract_app::std::objects::AccountId;
 use abstract_app::std::objects::{account::AccountTrace, namespace::Namespace};
 use const_format::concatcp;
-use cosmwasm_std::{Addr, StdError, StdResult, Timestamp};
+use cosmwasm_std::{StdError, StdResult, Timestamp};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use thiserror::Error;
@@ -59,7 +59,7 @@ pub struct Header {
     pub recipient: Recipient,
     pub id: MessageHash,
     pub version: String,
-    pub timestamp: Timestamp
+    pub timestamp: Timestamp,
 }
 
 impl Header {
@@ -72,7 +72,6 @@ impl Header {
             Route::Local => Route::Local,
         };
         Ok(Header {
-
             route: reverse_route,
             recipient: self.sender.clone().try_into()?,
             sender,
@@ -89,7 +88,7 @@ impl Header {
                 let position = route.iter().position(|chain| chain == current_chain);
                 match position {
                     Some(position) => Ok(position as u32),
-                    None => Err(StdError::generic_err("Current chain not in route"))
+                    None => Err(StdError::generic_err("Current chain not in route")),
                 }
             }
         }
@@ -139,7 +138,7 @@ impl Recipient {
         &self,
         module_registry: ModuleRegistry<T>,
     ) -> Result<AccountId, ServerError> {
-        Ok(match self {
+        match self {
             Recipient::Account { id: account_id, .. } => Ok(account_id.clone()),
             Recipient::Namespace { namespace, .. } => {
                 // TODO: this only allows for addressing recipients via namespace of their email account directly.
@@ -148,14 +147,14 @@ impl Recipient {
                 match namespace_status {
                     NamespaceResponse::Claimed(info) => Ok(info.account_id),
                     NamespaceResponse::Unclaimed {} => {
-                        return Err(ServerError::UnclaimedNamespace(namespace.clone()));
+                        Err(ServerError::UnclaimedNamespace(namespace.clone()))
                     }
                 }
             }
             _ => Err(ServerError::NotImplemented(
                 "Non-account recipients not supported".to_string(),
             )),
-        }?)
+        }
     }
 }
 
@@ -189,7 +188,7 @@ impl TryFrom<Sender> for Recipient {
         match sender {
             Sender::Account { id, chain } => Ok(Recipient::Account { id, chain }),
             Sender::Server { chain, address } => Ok(Recipient::Server { chain, address }),
-            _ => Err(StdError::generic_err("Cannot convert Sender to Recipient").into()),
+            _ => Err(StdError::generic_err("Cannot convert Sender to Recipient")),
         }
     }
 }

@@ -13,7 +13,6 @@ use abstract_interface::Abstract;
 use clap::Parser;
 use cw_orch::{
     anyhow,
-    environment::TxHandler,
     prelude::{networks::parse_network, DaemonBuilder, *},
     tokio::runtime::Runtime,
 };

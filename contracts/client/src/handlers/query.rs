@@ -7,7 +7,7 @@ use ibcmail::{
         msg::{MessageFilter, MessagesResponse},
         state::{RECEIVED, SENT},
     },
-    DeliveryStatus, MessageHash, MessageKind,
+    MessageHash, MessageKind,
 };
 
 use crate::{
