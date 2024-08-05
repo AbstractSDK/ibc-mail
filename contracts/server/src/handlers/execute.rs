@@ -360,7 +360,7 @@ fn remote_server_msg(
     Ok(msg)
 }
 
-/// Send a delivery status update to the
+/// Send a delivery status update to the consumer
 pub(crate) fn send_delivery_status(
     deps: DepsMut,
     env: &Env,
