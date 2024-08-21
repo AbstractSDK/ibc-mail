@@ -4,7 +4,7 @@ use abstract_app::{objects::module::ModuleInfo, std::manager::ModuleInstallConfi
 use ibcmail::IBCMAIL_SERVER_ID;
 
 pub const MAIL_SERVER_DEP: StaticDependency =
-    StaticDependency::new(IBCMAIL_SERVER_ID, &[">=0.0.1"]);
+    StaticDependency::new(IBCMAIL_SERVER_ID, &[">=0.3.0"]);
 
 #[cfg(feature = "interface")]
 impl<Chain: cw_orch::environment::CwEnv> abstract_app::abstract_interface::DependencyCreation
@@ -21,6 +21,10 @@ impl<Chain: cw_orch::environment::CwEnv> abstract_app::abstract_interface::Depen
             None,
         );
 
-        Ok(vec![adapter_install_config])
+        // The IBC client is depended upon by the server
+        let ibc_client =
+            ModuleInstallConfig::new(ModuleInfo::from_id_latest("abstract:ibc-client")?, None);
+
+        Ok(vec![adapter_install_config, ibc_client])
     }
 }

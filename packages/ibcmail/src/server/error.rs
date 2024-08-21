@@ -1,3 +1,5 @@
+use crate::{DeliveryFailure, MessageHash};
+use abstract_adapter::objects::AccountId;
 use abstract_adapter::std::ibc::ModuleIbcInfo;
 use abstract_adapter::{
     sdk::AbstractSdkError, std::AbstractError, AdapterError as AbstractAdapterError,
@@ -26,6 +28,9 @@ pub enum ServerError {
     Admin(#[from] AdminError),
 
     #[error("{0}")]
+    DeliveryFailure(#[from] DeliveryFailure),
+
+    #[error("{0}")]
     AdapterError(#[from] AbstractAdapterError),
 
     #[error("{0} are not implemented")]
@@ -42,4 +47,16 @@ pub enum ServerError {
 
     #[error("Unclaimed namespace: {0}")]
     UnclaimedNamespace(Namespace),
+
+    #[error("Awaited message not found: {0}")]
+    AwaitedMsgNotFound(MessageHash),
+
+    #[error("No sending account")]
+    NoSenderAccount,
+
+    #[error("Mismatched sender. Expected: {expected:?}, Actual: {actual:?}")]
+    MismatchedSender {
+        expected: AccountId,
+        actual: AccountId,
+    },
 }

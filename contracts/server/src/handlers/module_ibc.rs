@@ -1,3 +1,4 @@
+use abstract_adapter::objects::TruncatedChainId;
 use abstract_adapter::sdk::AbstractResponse;
 use abstract_adapter::std::ibc::ModuleIbcInfo;
 use cosmwasm_std::{from_json, Binary, DepsMut, Env};
@@ -7,12 +8,12 @@ use ibcmail::{
     IBCMAIL_SERVER_ID,
 };
 
-use crate::{contract::ServerResult, handlers::execute::route_msg};
+use crate::{contract::ServerResult, handlers::execute::route_message};
 
 // ANCHOR: module_ibc_handler
 pub fn module_ibc_handler(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     mut app: ServerAdapter,
     module_info: ModuleIbcInfo,
     msg: Binary,
@@ -25,14 +26,26 @@ pub fn module_ibc_handler(
     let server_msg: ServerIbcMessage = from_json(msg)?;
 
     match server_msg {
-        ServerIbcMessage::RouteMessage { msg, mut header } => {
-            header.current_hop += 1;
+        ServerIbcMessage::RouteMessage {
+            msg,
+            header,
+            metadata,
+        } => {
+            let msgs = route_message(
+                deps,
+                &env,
+                &mut app,
+                &TruncatedChainId::new(&env),
+                header,
+                metadata,
+                msg,
+            )?;
 
-            let msg = route_msg(deps, msg, header, &mut app)?;
-
-            Ok(app.response("module_ibc").add_message(msg))
+            Ok(app
+                .response("module_ibc")
+                .add_attribute("method", "route")
+                .add_submessages(msgs))
         }
         _ => Err(ServerError::UnauthorizedIbcMessage {}),
     }
 }
-// ANCHOR_END: module_ibc_handler

@@ -1,11 +1,19 @@
 pub mod client;
+pub mod features;
 pub mod server;
 
+use crate::server::error::ServerError;
+use abstract_adapter::sdk::ModuleRegistryInterface;
+use abstract_adapter::std::version_control::NamespaceResponse;
 use abstract_app::objects::TruncatedChainId;
+use abstract_app::sdk::ModuleRegistry;
 use abstract_app::std::objects::AccountId;
 use abstract_app::std::objects::{account::AccountTrace, namespace::Namespace};
 use const_format::concatcp;
-use cosmwasm_std::Timestamp;
+use cosmwasm_std::{StdError, StdResult, Timestamp};
+use std::fmt;
+use std::fmt::{Display, Formatter};
+use thiserror::Error;
 
 pub const IBCMAIL_NAMESPACE: &str = "ibcmail";
 pub const IBCMAIL_CLIENT_ID: &str = concatcp!(IBCMAIL_NAMESPACE, ":", "client");
@@ -18,39 +26,89 @@ pub type MessageHash = String;
 /// Struct representing new message to send to another client
 // # ANCHOR: message
 #[cosmwasm_schema::cw_serde]
-pub struct Message {
-    pub recipient: Recipient,
+pub struct MailMessage {
     pub subject: String,
     pub body: String,
 }
 // # ANCHOR_END: message
 
-impl Message {
-    pub fn new(recipient: Recipient, subject: impl Into<String>, body: impl Into<String>) -> Self {
+#[cosmwasm_schema::cw_serde]
+pub struct SentMessage {
+    pub message: MailMessage,
+    pub header: Header,
+    pub status: DeliveryStatus,
+}
+
+#[cosmwasm_schema::cw_serde]
+pub struct ReceivedMessage {
+    pub message: MailMessage,
+    pub header: Header,
+    pub metadata: ServerMetadata,
+}
+
+impl MailMessage {
+    pub fn new(subject: impl Into<String>, body: impl Into<String>) -> Self {
         Self {
-            recipient,
             subject: subject.into(),
             body: body.into(),
         }
     }
 }
-
-#[cosmwasm_schema::cw_serde]
-pub struct IbcMailMessage {
-    pub id: MessageHash,
-    pub sender: Sender,
-    pub version: String,
-    pub timestamp: Timestamp,
-    pub message: Message,
-}
-
 #[cosmwasm_schema::cw_serde]
 pub struct Header {
-    pub current_hop: u32,
-    pub route: Route,
+    pub sender: Sender,
+    pub recipient: Recipient,
+    pub id: MessageHash,
+    pub version: String,
+    pub timestamp: Timestamp,
+    pub reply_to: Option<MessageHash>,
 }
 
 pub type Route = AccountTrace;
+
+/// Metadata that can be set optionally by the client when they send a message
+#[derive(Default)]
+#[cosmwasm_schema::cw_serde]
+pub struct ClientMetadata {
+    pub route: Option<Route>,
+}
+
+impl ClientMetadata {
+    pub fn new_with_route(route: Route) -> Self {
+        Self { route: Some(route) }
+    }
+}
+
+/// Metadata used by the server for routing or other means
+#[cosmwasm_schema::cw_serde]
+pub struct ServerMetadata {
+    pub route: Route,
+}
+
+impl ServerMetadata {
+    pub fn reverse_route(&self) -> StdResult<Route> {
+        match self.route.clone() {
+            Route::Remote(mut route) => {
+                route.reverse();
+                Ok(Route::Remote(route))
+            }
+            Route::Local => Ok(Route::Local),
+        }
+    }
+
+    pub fn current_hop(&self, current_chain: &TruncatedChainId) -> StdResult<u32> {
+        match self.route {
+            Route::Local => Ok(0),
+            Route::Remote(ref route) => {
+                let position = route.iter().position(|chain| chain == current_chain);
+                match position {
+                    Some(position) => Ok(position as u32),
+                    None => Err(StdError::generic_err("Current chain not in route")),
+                }
+            }
+        }
+    }
+}
 
 #[non_exhaustive]
 #[cosmwasm_schema::cw_serde]
@@ -62,6 +120,10 @@ pub enum Recipient {
     Namespace {
         namespace: Namespace,
         chain: Option<TruncatedChainId>,
+    },
+    Server {
+        chain: TruncatedChainId,
+        address: String,
     },
 }
 
@@ -84,6 +146,29 @@ impl Recipient {
     pub fn namespace(namespace: Namespace, chain: Option<TruncatedChainId>) -> Self {
         Recipient::Namespace { namespace, chain }
     }
+
+    pub fn resolve_account_id<T: ModuleRegistryInterface>(
+        &self,
+        module_registry: ModuleRegistry<T>,
+    ) -> Result<AccountId, ServerError> {
+        match self {
+            Recipient::Account { id: account_id, .. } => Ok(account_id.clone()),
+            Recipient::Namespace { namespace, .. } => {
+                // TODO: this only allows for addressing recipients via namespace of their email account directly.
+                // If they have the email application installed on a sub-account, this will not be able to identify the sub-account.
+                let namespace_status = module_registry.query_namespace(namespace.clone())?;
+                match namespace_status {
+                    NamespaceResponse::Claimed(info) => Ok(info.account_id),
+                    NamespaceResponse::Unclaimed {} => {
+                        Err(ServerError::UnclaimedNamespace(namespace.clone()))
+                    }
+                }
+            }
+            _ => Err(ServerError::NotImplemented(
+                "Non-account recipients not supported".to_string(),
+            )),
+        }
+    }
 }
 
 #[non_exhaustive]
@@ -92,6 +177,11 @@ pub enum Sender {
     Account {
         id: AccountId,
         chain: Option<TruncatedChainId>,
+    },
+    Server {
+        chain: TruncatedChainId,
+        // String because it's a different chain
+        address: String,
     },
 }
 
@@ -104,9 +194,63 @@ impl Sender {
     }
 }
 
-#[non_exhaustive]
+impl TryFrom<Sender> for Recipient {
+    type Error = StdError;
+
+    fn try_from(sender: Sender) -> Result<Self, Self::Error> {
+        match sender {
+            Sender::Account { id, chain } => Ok(Recipient::Account { id, chain }),
+            Sender::Server { chain, address } => Ok(Recipient::Server { chain, address }),
+            _ => Err(StdError::generic_err("Cannot convert Sender to Recipient")),
+        }
+    }
+}
+
 #[cosmwasm_schema::cw_serde]
-pub enum MessageStatus {
+pub enum MessageKind {
     Sent,
     Received,
+}
+
+impl Display for MessageKind {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            MessageKind::Sent => write!(f, "Sent"),
+            MessageKind::Received => write!(f, "Received"),
+        }
+    }
+}
+
+#[derive(Error)]
+#[non_exhaustive]
+#[cosmwasm_schema::cw_serde]
+pub enum DeliveryFailure {
+    #[error("Recipient not found")]
+    RecipientNotFound,
+    #[error("Unknown failure: {0}")]
+    Unknown(String),
+}
+
+#[non_exhaustive]
+#[cosmwasm_schema::cw_serde]
+pub enum DeliveryStatus {
+    Sent,
+    Delivered,
+    Failure(DeliveryFailure),
+}
+
+impl From<DeliveryFailure> for DeliveryStatus {
+    fn from(failure: DeliveryFailure) -> Self {
+        DeliveryStatus::Failure(failure)
+    }
+}
+
+impl Display for DeliveryStatus {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            DeliveryStatus::Sent => write!(f, "Sent"),
+            DeliveryStatus::Delivered => write!(f, "Received"),
+            DeliveryStatus::Failure(failure) => write!(f, "Failed: {}", failure),
+        }
+    }
 }

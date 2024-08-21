@@ -1,11 +1,10 @@
 use abstract_adapter::{sdk::AbstractSdkResult, std::objects::module::ModuleId};
-
 use abstract_app::sdk::AppInterface;
-
-use cosmwasm_std::{CosmosMsg, Deps};
+use cosmwasm_std::{Addr, CosmosMsg, Deps};
 
 use crate::{
-    client::msg::ClientExecuteMsg, Header, IbcMailMessage, Message, Route, IBCMAIL_CLIENT_ID,
+    client::msg::ClientExecuteMsg, ClientMetadata, DeliveryStatus, Header, MailMessage,
+    MessageHash, ReceivedMessage, Recipient, ServerMetadata, IBCMAIL_CLIENT_ID,
 };
 
 // API for Abstract SDK users
@@ -35,6 +34,12 @@ impl<'a, T: ClientInterface> MailClient<'a, T> {
         self.module_id
     }
 
+    pub fn module_address(&self) -> AbstractSdkResult<Addr> {
+        self.base
+            .modules(self.deps)
+            .module_address(self.module_id())
+    }
+
     // Execute a request on the ibc mail client
     fn request(&self, msg: ClientExecuteMsg) -> AbstractSdkResult<CosmosMsg> {
         let apps = self.base.apps(self.deps);
@@ -42,16 +47,39 @@ impl<'a, T: ClientInterface> MailClient<'a, T> {
     }
 
     /// Send message
-    pub fn send_msg(&self, message: Message, route: Option<Route>) -> AbstractSdkResult<CosmosMsg> {
-        self.request(ClientExecuteMsg::SendMessage { message, route })
+    pub fn send_msg(
+        &self,
+        recipient: Recipient,
+        message: MailMessage,
+        metadata: Option<ClientMetadata>,
+    ) -> AbstractSdkResult<CosmosMsg> {
+        self.request(ClientExecuteMsg::SendMessage {
+            recipient,
+            message,
+            metadata,
+        })
     }
 
     /// Receive message
     pub fn receive_msg(
         &self,
-        message: IbcMailMessage,
-        _header: Header,
+        message: MailMessage,
+        header: Header,
+        metadata: ServerMetadata,
     ) -> AbstractSdkResult<CosmosMsg> {
-        self.request(ClientExecuteMsg::ReceiveMessage(message))
+        self.request(ClientExecuteMsg::ReceiveMessage(ReceivedMessage {
+            message,
+            header,
+            metadata,
+        }))
+    }
+
+    /// Receive message
+    pub fn update_msg_status(
+        &self,
+        id: MessageHash,
+        status: DeliveryStatus,
+    ) -> AbstractSdkResult<CosmosMsg> {
+        self.request(ClientExecuteMsg::UpdateDeliveryStatus { id, status })
     }
 }

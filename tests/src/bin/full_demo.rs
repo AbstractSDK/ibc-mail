@@ -8,8 +8,8 @@ use abstract_app::{
     },
     std::{
         ibc_client::QueryMsgFns as IbcQueryFns,
-        IBC_HOST,
         version_control::{ExecuteMsgFns, ModuleFilter, QueryMsgFns},
+        IBC_HOST,
     },
 };
 use abstract_client::AbstractClient;
@@ -21,7 +21,7 @@ use cw_orch_interchain::{ChannelCreationValidator, DaemonInterchainEnv, Intercha
 use networks::{HARPOON_4, PION_1};
 
 use client::ClientInterface;
-use ibcmail::{client::msg::ClientExecuteMsgFns, IBCMAIL_NAMESPACE, Message};
+use ibcmail::{client::msg::ClientExecuteMsgFns, ClientMetadata, MailMessage, IBCMAIL_NAMESPACE};
 use tests::TEST_NAMESPACE;
 
 const SRC: ChainInfo = HARPOON_4;
@@ -100,10 +100,11 @@ fn test() -> anyhow::Result<()> {
     // )?;
 
     let send = dst_client.send_message(
-        Message::new(src_acc.id()?.into(), "test-subject", "test-body"),
-        Some(AccountTrace::Remote(vec![TruncatedChainId::from_chain_id(
-            SRC.chain_id,
-        )])),
+        MailMessage::new("test-subject", "test-body"),
+        src_acc.id()?.into(),
+        Some(ClientMetadata::new_with_route(AccountTrace::Remote(vec![
+            TruncatedChainId::from_chain_id(SRC.chain_id),
+        ]))),
     )?;
 
     interchain.await_and_check_packets(DST.chain_id, send)?;

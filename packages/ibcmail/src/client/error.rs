@@ -1,3 +1,4 @@
+use crate::MessageHash;
 use abstract_app::{sdk::AbstractSdkError, std::AbstractError, AppError as AbstractAppError};
 use cosmwasm_std::StdError;
 use cw_asset::AssetError;
@@ -29,6 +30,9 @@ pub enum ClientError {
 
     #[error("Recipient is not the current account")]
     NotRecipient {},
+
+    #[error("Message not found: {0}")]
+    MessageNotFound(MessageHash),
 
     #[error("{0} is not implemented")]
     NotImplemented(String),
