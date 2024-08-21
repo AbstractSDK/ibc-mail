@@ -10,6 +10,7 @@
 
 use abstract_app::objects::namespace::Namespace;
 use abstract_client::{AbstractClient, Publisher};
+use cw_orch::daemon::TxSender;
 use cw_orch::{anyhow, prelude::*, tokio::runtime::Runtime};
 use ibcmail::{client::msg::ClientInstantiateMsg, IBCMAIL_CLIENT_ID};
 use ibcmail_client::{ClientInterface, APP_VERSION};
@@ -24,8 +25,7 @@ fn main() -> anyhow::Result<()> {
     let _version: Version = APP_VERSION.parse().unwrap();
     let runtime = Runtime::new()?;
 
-    let daemon = Daemon::builder()
-        .chain(networks::LOCAL_JUNO)
+    let daemon = Daemon::builder(networks::LOCAL_JUNO)
         .mnemonic(LOCAL_MNEMONIC)
         .handle(runtime.handle())
         .build()
@@ -41,7 +41,7 @@ fn main() -> anyhow::Result<()> {
     let publisher: Publisher<_> = abstract_client.publisher_builder(app_namespace).build()?;
 
     // Ensure the current sender owns the namespace
-    if publisher.account().owner()? != daemon.sender() {
+    if publisher.account().owner()? != daemon.sender().address() {
         panic!("The current sender can not publish to this namespace. Please use the wallet that owns the Account that owns the Namespace.")
     }
 

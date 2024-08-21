@@ -1,7 +1,8 @@
+use abstract_adapter::std::ibc::ModuleIbcInfo;
 use abstract_adapter::{
     sdk::AbstractSdkError, std::AbstractError, AdapterError as AbstractAdapterError,
 };
-use abstract_app::std::objects::{account::AccountTrace, module::ModuleInfo, namespace::Namespace};
+use abstract_app::std::objects::{account::AccountTrace, namespace::Namespace};
 use cosmwasm_std::StdError;
 use cw_asset::AssetError;
 use cw_controllers::AdminError;
@@ -30,8 +31,8 @@ pub enum ServerError {
     #[error("{0} are not implemented")]
     NotImplemented(String),
 
-    #[error("Unauthorized IBC message from module: {0}")]
-    UnauthorizedIbcModule(ModuleInfo),
+    #[error("Unauthorized IBC message from module: {0:?}")]
+    UnauthorizedIbcModule(ModuleIbcInfo),
 
     #[error("Unauthorized IBC message")]
     UnauthorizedIbcMessage,
