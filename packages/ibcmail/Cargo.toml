@@ -18,5 +18,4 @@ cw-orch = { workspace = true }
 thiserror = { workspace = true }
 cw-asset = { workspace = true }
 cw-controllers = { workspace = true }
-cw-semver = { workspace = true }
 const_format = { workspace = true }

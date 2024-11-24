@@ -15,7 +15,7 @@ pub struct ClientInstantiateMsg {}
 // # ANCHOR: execute_msg
 #[cosmwasm_schema::cw_serde]
 #[derive(cw_orch::ExecuteFns)]
-#[cw_orch(impl_into(ExecuteMsg))]
+// #[cw_orch(impl_into(ExecuteMsg))]
 pub enum ClientExecuteMsg {
     /// Receive a message from the server
     ReceiveMessage(IbcMailMessage),
@@ -30,7 +30,7 @@ pub enum ClientExecuteMsg {
 /// App query messages
 #[cosmwasm_schema::cw_serde]
 #[derive(cw_orch::QueryFns)]
-#[cw_orch(impl_into(QueryMsg))]
+// #[cw_orch(impl_into(QueryMsg))]
 #[derive(QueryResponses)]
 pub enum ClientQueryMsg {
     #[returns(MessagesResponse)]

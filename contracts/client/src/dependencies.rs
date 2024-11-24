@@ -1,6 +1,6 @@
 use abstract_app::objects::dependency::StaticDependency;
 #[cfg(feature = "interface")]
-use abstract_app::{objects::module::ModuleInfo, std::manager::ModuleInstallConfig};
+use abstract_app::{objects::module::ModuleInfo, std::account::ModuleInstallConfig};
 use ibcmail::IBCMAIL_SERVER_ID;
 
 pub const MAIL_SERVER_DEP: StaticDependency =
