@@ -39,8 +39,7 @@ impl<Env: CwEnv> TestEnv<Env> {
 
         let acc = abs_client
             .account_builder()
-            .install_on_sub_account(false)
-            .build()?;
+                .build()?;
 
         let app = acc.install_app_with_dependencies::<ClientInterface<_>>(
             &ClientInstantiateMsg {},
@@ -52,8 +51,7 @@ impl<Env: CwEnv> TestEnv<Env> {
 
         let acc2 = abs_client
             .account_builder()
-            .install_on_sub_account(false)
-            .build()?;
+                .build()?;
         let app2 = acc2.install_app_with_dependencies::<ClientInterface<_>>(
             &ClientInstantiateMsg {},
             Empty {},
@@ -151,7 +149,7 @@ mod receive_msg {
 mod send_msg {
     use std::str::FromStr;
 
-    use abstract_app::{objects::account::AccountTrace, std::version_control::ExecuteMsgFns};
+    use abstract_app::{objects::account::AccountTrace, std::registry::ExecuteMsgFns};
     use abstract_app::objects::TruncatedChainId;
     use cw_orch_interchain::{InterchainEnv, MockBech32InterchainEnv};
 
@@ -191,7 +189,7 @@ mod send_msg {
         let namespace = "test";
 
         env.abs
-            .version_control()
+            .registry()
             .claim_namespace(client2.account().id()?, namespace.to_string())?;
 
         let msg = Message::new(

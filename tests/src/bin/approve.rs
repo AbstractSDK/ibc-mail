@@ -32,7 +32,7 @@ fn publish(networks: Vec<ChainInfo>) -> anyhow::Result<()> {
         // Create an [`AbstractClient`]
         let abs = Abstract::new(chain.clone());
 
-        abs.version_control.approve_all_modules_for_namespace(app_namespace)?;
+        abs.registry.approve_all_modules_for_namespace(app_namespace)?;
     }
     Ok(())
 }

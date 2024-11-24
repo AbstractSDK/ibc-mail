@@ -2,11 +2,11 @@ use abstract_adapter::objects::TruncatedChainId;
 use abstract_adapter::sdk::{
     features::ModuleIdentification, AccountVerification, ModuleRegistryInterface,
 };
-use abstract_adapter::std::version_control::AccountBase;
+use abstract_adapter::std::registry::Account;
 use abstract_adapter::std::{
     ibc_client,
     objects::{account::AccountTrace, module::ModuleInfo},
-    version_control::NamespaceResponse,
+    registry::NamespaceResponse,
     IBC_CLIENT,
 };
 use abstract_adapter::traits::AbstractResponse;
@@ -197,7 +197,7 @@ fn route_to_local_account(
 
     // ANCHOR: set_acc_and_send
     // Set target account for actions, is used by APIs to retrieve mail client address.
-    let recipient_acc: AccountBase = app.account_registry(deps)?.account_base(&account_id)?;
+    let recipient_acc: Account = app.account_registry(deps)?.account(&account_id)?;
     app.target_account = Some(recipient_acc);
 
     let mail_client: MailClient<_> = app.mail_client(deps);

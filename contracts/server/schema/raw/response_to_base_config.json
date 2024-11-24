@@ -5,7 +5,7 @@
   "required": [
     "ans_host_address",
     "dependencies",
-    "version_control_address"
+    "registry_address"
   ],
   "properties": {
     "ans_host_address": {
@@ -17,7 +17,7 @@
         "type": "string"
       }
     },
-    "version_control_address": {
+    "registry_address": {
       "$ref": "#/definitions/Addr"
     }
   },

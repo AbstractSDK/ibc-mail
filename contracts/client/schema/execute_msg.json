@@ -272,7 +272,7 @@
                     "null"
                   ]
                 },
-                "version_control_address": {
+                "registry_address": {
                   "type": [
                     "string",
                     "null"

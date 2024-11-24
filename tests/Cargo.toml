@@ -28,7 +28,7 @@ client = { workspace = true, features = ["interface"] }
 speculoos = { workspace = true }
 server = { workspace = true, features = ["interface"] }
 abstract-client = { workspace = true, features = ["interchain"] }
-clap = { workspace = true}
+clap = { workspace = true, features = ["derive"] }
 env_logger = { workspace = true }
 dotenv = { workspace = true }
 anyhow = "1.0.86"
