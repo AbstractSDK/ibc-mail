@@ -34,7 +34,10 @@ fn publish(networks: Vec<ChainInfo>) -> anyhow::Result<()> {
         let abstract_client: AbstractClient<Daemon> = AbstractClient::new(chain.clone())?;
 
         // Get the [`Publisher`] that owns the namespace, otherwise create a new one and claim the namespace
-        let publisher_acc = abstract_client.fetch_or_build_account(app_namespace.clone(), |builder| builder.namespace(app_namespace))?;
+        let publisher_acc = abstract_client
+            .fetch_or_build_account(app_namespace.clone(), |builder| {
+                builder.namespace(app_namespace)
+            })?;
         let publisher = Publisher::new(&publisher_acc)?;
 
         if publisher.account().owner()? != chain.sender().address() {

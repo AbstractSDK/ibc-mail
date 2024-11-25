@@ -1,13 +1,13 @@
-use abstract_app::objects::{AccountId, namespace::Namespace};
-use abstract_client::{AbstractClient, Application, Environment};
+use abstract_app::objects::{namespace::Namespace, AccountId};
+use abstract_client::{AbstractClient, Application, Publisher};
 use cw_orch::{anyhow, prelude::*};
 use speculoos::prelude::*;
 
 // Use prelude to get all the necessary imports
-use client::{*, contract::interface::ClientInterface, msg::ClientInstantiateMsg};
+use client::{contract::interface::ClientInterface, msg::ClientInstantiateMsg, *};
 use ibcmail::{
-    IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID, IbcMailMessage, Message, Recipient,
-    Sender, server::msg::ServerInstantiateMsg,
+    server::msg::ServerInstantiateMsg, IbcMailMessage, Message, Recipient, Sender,
+    IBCMAIL_NAMESPACE, IBCMAIL_SERVER_ID,
 };
 use server::ServerInterface;
 
@@ -32,14 +32,14 @@ impl<Env: CwEnv> TestEnv<Env> {
         // abs_client.set_balance(sender, &coins(123, "ucosm"))?;
 
         // Publish both the client and the server
-        let publisher = abs_client.publisher_builder(namespace).build()?;
+        let publisher_acc = abs_client
+            .fetch_or_build_account(namespace.clone(), |builder| builder.namespace(namespace))?;
+        let publisher: Publisher<_> = Publisher::new(&publisher_acc)?;
         publisher.publish_app::<ClientInterface<_>>()?;
         publisher
             .publish_adapter::<ServerInstantiateMsg, ServerInterface<_>>(ServerInstantiateMsg {})?;
 
-        let acc = abs_client
-            .account_builder()
-                .build()?;
+        let acc = abs_client.account_builder().build()?;
 
         let app = acc.install_app_with_dependencies::<ClientInterface<_>>(
             &ClientInstantiateMsg {},
@@ -49,9 +49,7 @@ impl<Env: CwEnv> TestEnv<Env> {
         app.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
         // acc.install_adapter::<ServerInterface<_>>(&[])?;
 
-        let acc2 = abs_client
-            .account_builder()
-                .build()?;
+        let acc2 = abs_client.account_builder().build()?;
         let app2 = acc2.install_app_with_dependencies::<ClientInterface<_>>(
             &ClientInstantiateMsg {},
             Empty {},
@@ -86,7 +84,7 @@ fn create_test_message(from: AccountId, to: AccountId) -> IbcMailMessage {
 mod receive_msg {
     use speculoos::assert_that;
 
-    use ibcmail::{IBCMAIL_SERVER_ID, MessageStatus};
+    use ibcmail::{MessageStatus, IBCMAIL_SERVER_ID};
 
     use super::*;
 
@@ -149,11 +147,11 @@ mod receive_msg {
 mod send_msg {
     use std::str::FromStr;
 
-    use abstract_app::{objects::account::AccountTrace, std::registry::ExecuteMsgFns};
     use abstract_app::objects::TruncatedChainId;
-    use cw_orch_interchain::{InterchainEnv, MockBech32InterchainEnv};
+    use abstract_app::{objects::account::AccountTrace, std::registry::ExecuteMsgFns};
+    use cw_orch_interchain::prelude::*;
 
-    use ibcmail::{IBCMAIL_CLIENT_ID, Message, MessageStatus, server::error::ServerError};
+    use ibcmail::{server::error::ServerError, Message, MessageStatus, IBCMAIL_CLIENT_ID};
 
     use super::*;
 

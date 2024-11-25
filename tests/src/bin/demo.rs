@@ -16,8 +16,7 @@ const SRC: ChainInfo = PION_1;
 const DST: ChainInfo = HARPOON_4;
 
 fn test() -> anyhow::Result<()> {
-    let interchain =
-        DaemonInterchain::new(vec![SRC, DST], &ChannelCreationValidator)?;
+    let interchain = DaemonInterchain::new(vec![SRC, DST], &ChannelCreationValidator)?;
 
     let src = interchain.get_chain(SRC.chain_id)?;
     let dst = interchain.get_chain(DST.chain_id)?;

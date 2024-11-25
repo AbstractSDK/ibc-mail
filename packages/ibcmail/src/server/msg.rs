@@ -25,19 +25,17 @@ pub enum ServerExecuteMsg {
 #[cosmwasm_schema::cw_serde]
 pub enum ServerIbcMessage {
     /// Route a message
-    RouteMessage { msg: IbcMailMessage, header: Header }
+    RouteMessage { msg: IbcMailMessage, header: Header },
 }
 
 /// App query messages
 #[cosmwasm_schema::cw_serde]
-#[derive(QueryResponses)]
-#[derive(cw_orch::QueryFns)]
+#[derive(QueryResponses, cw_orch::QueryFns)]
 // #[cw_orch(impl_into(QueryMsg))]
 pub enum ServerQueryMsg {
     #[returns(ConfigResponse)]
-    Config {}
+    Config {},
 }
-
 
 // impl From<ServerQueryMsg> for QueryMsg {
 //     fn from(msg: ServerQueryMsg) -> Self {

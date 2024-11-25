@@ -38,7 +38,11 @@ fn main() -> anyhow::Result<()> {
 
     // Get the [`Publisher`] that owns the namespace.
     // If there isn't one, it creates an Account and claims the namespace.
-    let publisher: Publisher<_> = abstract_client.publisher_builder(app_namespace).build()?;
+    let publisher_acc = abstract_client
+        .fetch_or_build_account(app_namespace.clone(), |builder| {
+            builder.namespace(app_namespace)
+        })?;
+    let publisher: Publisher<_> = Publisher::new(&publisher_acc)?;
 
     // Ensure the current sender owns the namespace
     if publisher.account().owner()? != daemon.sender().address() {

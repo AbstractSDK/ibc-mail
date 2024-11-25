@@ -13,8 +13,7 @@ use abstract_interface::Abstract;
 use clap::Parser;
 use cw_orch::{
     anyhow,
-    environment::TxHandler,
-    prelude::{*, DaemonBuilder, networks::parse_network},
+    prelude::{networks::parse_network, DaemonBuilder, *},
     tokio::runtime::Runtime,
 };
 
@@ -32,7 +31,8 @@ fn publish(networks: Vec<ChainInfo>) -> anyhow::Result<()> {
         // Create an [`AbstractClient`]
         let abs = Abstract::new(chain.clone());
 
-        abs.registry.approve_all_modules_for_namespace(app_namespace)?;
+        abs.registry
+            .approve_all_modules_for_namespace(app_namespace)?;
     }
     Ok(())
 }

@@ -8,8 +8,8 @@ use abstract_app::{
     },
     std::{
         ibc_client::QueryMsgFns as IbcQueryFns,
-        IBC_HOST,
         registry::{ExecuteMsgFns, ModuleFilter, QueryMsgFns},
+        IBC_HOST,
     },
 };
 use abstract_client::AbstractClient;
@@ -21,16 +21,15 @@ use cw_orch_interchain::prelude::*;
 use networks::{HARPOON_4, PION_1};
 
 use client::ClientInterface;
-use ibcmail::{client::msg::ClientExecuteMsgFns, IBCMAIL_NAMESPACE, Message};
+use ibcmail::{client::msg::ClientExecuteMsgFns, Message, IBCMAIL_NAMESPACE};
 use tests::TEST_NAMESPACE;
 
 const SRC: ChainInfo = HARPOON_4;
 const DST: ChainInfo = PION_1;
 
 fn test() -> anyhow::Result<()> {
-    let rt = Runtime::new()?;
-    let interchain =
-        DaemonInterchain::new(vec![SRC, DST], &ChannelCreationValidator)?;
+    let _rt = Runtime::new()?;
+    let interchain = DaemonInterchain::new(vec![SRC, DST], &ChannelCreationValidator)?;
 
     let src = interchain.get_chain(SRC.chain_id)?;
     let dst = interchain.get_chain(DST.chain_id)?;
@@ -70,9 +69,9 @@ fn test() -> anyhow::Result<()> {
 
     // src_acc.install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {}, &[])?;
     // let app = src_acc.install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {},&[])?;
-    let app = src_acc.application::<ClientInterface<_>>()?;
+    let _app = src_acc.application::<ClientInterface<_>>()?;
     // app.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
-    let src_client = src_acc.application::<ClientInterface<_>>()?;
+    let _src_client = src_acc.application::<ClientInterface<_>>()?;
 
     let dst_acc = abs_dst
         .account_builder()
@@ -85,7 +84,7 @@ fn test() -> anyhow::Result<()> {
     //     &[],
     // )?;
 
-    let app = dst_acc.application::<ClientInterface<_>>()?;
+    let _app = dst_acc.application::<ClientInterface<_>>()?;
     // app.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
 
     let dst_client = dst_acc.application::<ClientInterface<_>>()?;
