@@ -3,7 +3,7 @@ members = ["contracts/*", "packages/ibcmail", "tests"]
 resolver = "2"
 
 [workspace.package]
-version = "0.2.0"
+version = "0.3.0"
 
 [workspace.dependencies]
 cosmwasm-std = { version = "2.0.7", features = ["cosmwasm_2_0"] }
