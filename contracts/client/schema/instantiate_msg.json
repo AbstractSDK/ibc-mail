@@ -53,7 +53,7 @@
       "required": [
         "account_base",
         "ans_host_address",
-        "version_control_address"
+        "registry_address"
       ],
       "properties": {
         "account_base": {
@@ -62,7 +62,7 @@
         "ans_host_address": {
           "type": "string"
         },
-        "version_control_address": {
+        "registry_address": {
           "type": "string"
         }
       },

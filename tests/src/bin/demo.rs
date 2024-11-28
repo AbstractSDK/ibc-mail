@@ -1,11 +1,8 @@
 use abstract_app::objects::TruncatedChainId;
-use abstract_app::{
-    objects::{account::AccountTrace, namespace::Namespace},
-    std::version_control::QueryMsgFns,
-};
+use abstract_app::objects::{account::AccountTrace, namespace::Namespace};
 use abstract_client::AbstractClient;
 use cw_orch::{anyhow, prelude::*};
-use cw_orch_interchain::{ChannelCreationValidator, DaemonInterchainEnv, InterchainEnv};
+use cw_orch_interchain::prelude::*;
 use networks::{HARPOON_4, PION_1};
 
 use client::ClientInterface;
@@ -16,8 +13,7 @@ const SRC: ChainInfo = PION_1;
 const DST: ChainInfo = HARPOON_4;
 
 fn test() -> anyhow::Result<()> {
-    let interchain =
-        DaemonInterchainEnv::new(vec![(SRC, None), (DST, None)], &ChannelCreationValidator)?;
+    let interchain = DaemonInterchain::new(vec![SRC, DST], &ChannelCreationValidator)?;
 
     let src = interchain.get_chain(SRC.chain_id)?;
     let dst = interchain.get_chain(DST.chain_id)?;
@@ -27,7 +23,6 @@ fn test() -> anyhow::Result<()> {
 
     let src_acc = abs_src
         .account_builder()
-        .install_on_sub_account(false)
         .namespace(Namespace::new(TEST_NAMESPACE)?)
         .build()?;
 
@@ -35,7 +30,6 @@ fn test() -> anyhow::Result<()> {
 
     let dst_acc = abs_dst
         .account_builder()
-        .install_on_sub_account(false)
         .namespace(Namespace::new(TEST_NAMESPACE)?)
         .build()?;
 

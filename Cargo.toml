@@ -3,31 +3,32 @@ members = ["contracts/*", "packages/ibcmail", "tests"]
 resolver = "2"
 
 [workspace.package]
-version = "0.2.0"
+version = "0.3.1"
 
 [workspace.dependencies]
-cosmwasm-std = "1.5.3"
-cosmwasm-schema = "1.5.3"
-cw-controllers = "1.1.2"
-cw-storage-plus = "1.2.0"
+cosmwasm-std = { version = "2.0.7", features = ["cosmwasm_2_0"] }
+cosmwasm-schema = { version = "2.0.7" }
+cw-controllers = { version = "2.0.0" }
+cw-storage-plus = "2.0.0"
 thiserror = "1.0.50"
-cw-paginate = "0.2.1"
+cw-paginate = "2.0.0"
 schemars = "0.8"
-cw-asset = "3.0.0"
-cw-semver = { version = "1.0", features = ["serde"] }
-cw-orch = "0.24.1"
+cw-asset = "4.0.0"
+cw-orch = "0.26.0"
+cw-orch-interchain = { version = "0.8.1" }
+abstract-cw-orch-polytone = "6.0.0"
 
 ibcmail = { path = "packages/ibcmail", package = "ibcmail" }
 client = { path = "contracts/client", package = "ibcmail-client" }
 server = { path = "contracts/server", package = "ibcmail-server" }
-abstract-client = "0.23.0"
-abstract-app = "0.23.0"
-abstract-adapter = "0.23.0"
-abstract-interface = "0.23.0"
+abstract-client = { version = "0.25.0", git = "https://github.com/AbstractSDK/abstract", tag = "v0.25.0" }
+abstract-app = { version = "0.25.0", git = "https://github.com/AbstractSDK/abstract", tag = "v0.25.0" }
+abstract-adapter = { version = "0.25.0", git = "https://github.com/AbstractSDK/abstract", tag = "v0.25.0" }
+abstract-interface = { version = "0.25.0", git = "https://github.com/AbstractSDK/abstract", tag = "v0.25.0" }
 speculoos = "0.11.0"
 semver = "1.0"
 dotenv = "0.15.0"
-env_logger = "0.10.0"
+env_logger = { package = "pretty_env_logger", version = "0.5.0" }
 clap = "4.3.7"
 const_format = "0.2.32"
 

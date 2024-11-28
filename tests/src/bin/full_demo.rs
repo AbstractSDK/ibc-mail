@@ -8,29 +8,28 @@ use abstract_app::{
     },
     std::{
         ibc_client::QueryMsgFns as IbcQueryFns,
+        registry::{ExecuteMsgFns, ModuleFilter, QueryMsgFns},
         IBC_HOST,
-        version_control::{ExecuteMsgFns, ModuleFilter, QueryMsgFns},
     },
 };
 use abstract_client::AbstractClient;
-use abstract_interface::{Abstract, VersionControl};
+use abstract_interface::{Abstract, Registry};
 use clap::Parser;
 use cw_orch::tokio::runtime::Runtime;
 use cw_orch::{anyhow, prelude::*};
-use cw_orch_interchain::{ChannelCreationValidator, DaemonInterchainEnv, InterchainEnv};
+use cw_orch_interchain::prelude::*;
 use networks::{HARPOON_4, PION_1};
 
 use client::ClientInterface;
-use ibcmail::{client::msg::ClientExecuteMsgFns, IBCMAIL_NAMESPACE, Message};
+use ibcmail::{client::msg::ClientExecuteMsgFns, Message, IBCMAIL_NAMESPACE};
 use tests::TEST_NAMESPACE;
 
 const SRC: ChainInfo = HARPOON_4;
 const DST: ChainInfo = PION_1;
 
 fn test() -> anyhow::Result<()> {
-    let rt = Runtime::new()?;
-    let interchain =
-        DaemonInterchainEnv::new(vec![(SRC, None), (DST, None)], &ChannelCreationValidator)?;
+    let _rt = Runtime::new()?;
+    let interchain = DaemonInterchain::new(vec![SRC, DST], &ChannelCreationValidator)?;
 
     let src = interchain.get_chain(SRC.chain_id)?;
     let dst = interchain.get_chain(DST.chain_id)?;
@@ -45,13 +44,13 @@ fn test() -> anyhow::Result<()> {
 
     println!("hosts: {:?}", hosts);
 
-    // update_ibc_host(abs_src.version_control())?;
-    // update_ibc_host(abs_dst.version_control())?;
+    // update_ibc_host(abs_src.registry())?;
+    // update_ibc_host(abs_dst.registry())?;
 
-    // approve_mail_modules(abs_src.version_control())?;
-    // approve_mail_modules(abs_dst.version_control())?;
+    // approve_mail_modules(abs_src.registry())?;
+    // approve_mail_modules(abs_dst.registry())?;
 
-    let module_list = abs_src.version_control().module_list(
+    let module_list = abs_src.registry().module_list(
         Some(ModuleFilter {
             namespace: Some(IBCMAIL_NAMESPACE.to_string()),
             name: None,
@@ -65,19 +64,17 @@ fn test() -> anyhow::Result<()> {
 
     let src_acc = abs_src
         .account_builder()
-        .install_on_sub_account(false)
         .namespace(Namespace::new(TEST_NAMESPACE)?)
         .build()?;
 
     // src_acc.install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {}, &[])?;
     // let app = src_acc.install_app_with_dependencies::<ClientInterface<_>>(&ClientInstantiateMsg {}, Empty {},&[])?;
-    let app = src_acc.application::<ClientInterface<_>>()?;
+    let _app = src_acc.application::<ClientInterface<_>>()?;
     // app.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
-    let src_client = src_acc.application::<ClientInterface<_>>()?;
+    let _src_client = src_acc.application::<ClientInterface<_>>()?;
 
     let dst_acc = abs_dst
         .account_builder()
-        .install_on_sub_account(false)
         .namespace(Namespace::new(TEST_NAMESPACE)?)
         .build()?;
     // let dst_acc = abs_dst.account_builder().sub_account(&abs_dst.account_from(AccountId::local(1))?).namespace(Namespace::new("mailtest")?).build()?;
@@ -87,7 +84,7 @@ fn test() -> anyhow::Result<()> {
     //     &[],
     // )?;
 
-    let app = dst_acc.application::<ClientInterface<_>>()?;
+    let _app = dst_acc.application::<ClientInterface<_>>()?;
     // app.authorize_on_adapters(&[IBCMAIL_SERVER_ID])?;
 
     let dst_client = dst_acc.application::<ClientInterface<_>>()?;
@@ -111,7 +108,7 @@ fn test() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn update_ibc_host<Env: CwEnv>(vc: &VersionControl<Env>) -> anyhow::Result<()> {
+fn _update_ibc_host<Env: CwEnv>(vc: &Registry<Env>) -> anyhow::Result<()> {
     let ibc_host_module = vc
         .modules(vec![ModuleInfo::from_id_latest(IBC_HOST)?])?
         .modules
@@ -132,7 +129,7 @@ fn update_ibc_host<Env: CwEnv>(vc: &VersionControl<Env>) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn approve_mail_modules<Env: CwEnv>(vc: &VersionControl<Env>) -> anyhow::Result<()> {
+pub fn approve_mail_modules<Env: CwEnv>(vc: &Registry<Env>) -> anyhow::Result<()> {
     let proposed_abstract_modules = vc.module_list(
         Some(ModuleFilter {
             namespace: Some(IBCMAIL_NAMESPACE.to_string()),

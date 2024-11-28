@@ -13,12 +13,10 @@ default = []
 
 [dependencies]
 abstract-app = { workspace = true, features = ["test-utils"] }
-abstract-cw-orch-polytone = "4.0.1"
+abstract-cw-orch-polytone = { workspace = true }
 abstract-interface = { workspace = true }
-abstract-interchain-tests = { git = "https://github.com/AbstractSDK/abstract", version = "0.23.0", tag = "v0.23.0" }
-#abstract-interchain-tests = { git = "https://github.com/AbstractSDK/abstract", version = "0.22.1", branch = "removemm" }
 #cw-orch = { workspace = true }
-cw-orch-interchain = { version = "0.3.1", features = ["daemon"] }
+cw-orch-interchain = { workspace = true, features = ["daemon"] }
 cw-orch = { workspace = true, features = ["daemon"] }
 ibcmail = { workspace = true }
 cosmwasm-std = { workspace = true }
@@ -30,7 +28,7 @@ client = { workspace = true, features = ["interface"] }
 speculoos = { workspace = true }
 server = { workspace = true, features = ["interface"] }
 abstract-client = { workspace = true, features = ["interchain"] }
-clap.workspace = true
-env_logger = "0.11.3"
+clap = { workspace = true, features = ["derive"] }
+env_logger = { workspace = true }
 dotenv = { workspace = true }
 anyhow = "1.0.86"

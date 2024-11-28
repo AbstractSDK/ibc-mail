@@ -11,6 +11,7 @@ pub struct ServerInstantiateMsg {}
 
 /// App execute messages
 #[cosmwasm_schema::cw_serde]
+#[derive(cw_orch::ExecuteFns)]
 pub enum ServerExecuteMsg {
     /// Route a message
     ProcessMessage {
@@ -29,13 +30,18 @@ pub enum ServerIbcMessage {
 
 /// App query messages
 #[cosmwasm_schema::cw_serde]
-#[derive(cw_orch::QueryFns)]
-#[cw_orch(impl_into(QueryMsg))]
-#[derive(QueryResponses)]
+#[derive(QueryResponses, cw_orch::QueryFns)]
+// #[cw_orch(impl_into(QueryMsg))]
 pub enum ServerQueryMsg {
     #[returns(ConfigResponse)]
     Config {},
 }
+
+// impl From<ServerQueryMsg> for QueryMsg {
+//     fn from(msg: ServerQueryMsg) -> Self {
+//         QueryMsg::Module(msg)
+//     }
+// }
 
 #[cosmwasm_schema::cw_serde]
 pub struct ConfigResponse {}

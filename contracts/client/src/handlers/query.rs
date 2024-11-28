@@ -1,6 +1,7 @@
-use abstract_app::sdk::cw_helpers::load_many;
-use cosmwasm_std::{to_json_binary, Binary, Deps, Env};
-use cw_storage_plus::Bound;
+use cosmwasm_schema::serde::de::DeserializeOwned;
+use cosmwasm_schema::serde::Serialize;
+use cosmwasm_std::{to_json_binary, Binary, Deps, Env, StdResult, Storage};
+use cw_storage_plus::{Bound, Map, PrimaryKey};
 use ibcmail::{
     client::{
         error::ClientError,
@@ -39,6 +40,26 @@ pub fn query_handler(
         )?),
     }
     .map_err(Into::into)
+}
+
+/// Load a batch of values by their keys from a [`Map`].
+pub fn load_many<'a, K, V>(
+    map: Map<K, V>,
+    storage: &dyn Storage,
+    keys: Vec<K>,
+) -> StdResult<Vec<(K, V)>>
+where
+    K: PrimaryKey<'a>,
+    V: DeserializeOwned + Serialize,
+{
+    let mut res: Vec<(K, V)> = vec![];
+
+    for key in keys.into_iter() {
+        let value = map.load(storage, key.clone())?;
+        res.push((key, value));
+    }
+
+    Ok(res)
 }
 
 fn query_messages(
