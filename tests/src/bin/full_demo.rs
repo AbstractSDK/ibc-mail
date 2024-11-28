@@ -108,7 +108,7 @@ fn test() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn update_ibc_host<Env: CwEnv>(vc: &Registry<Env>) -> anyhow::Result<()> {
+fn _update_ibc_host<Env: CwEnv>(vc: &Registry<Env>) -> anyhow::Result<()> {
     let ibc_host_module = vc
         .modules(vec![ModuleInfo::from_id_latest(IBC_HOST)?])?
         .modules

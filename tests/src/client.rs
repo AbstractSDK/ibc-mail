@@ -35,9 +35,9 @@ impl<Env: CwEnv> TestEnv<Env> {
         let publisher_acc = abs_client
             .fetch_or_build_account(namespace.clone(), |builder| builder.namespace(namespace))?;
         let publisher: Publisher<_> = Publisher::new(&publisher_acc)?;
-        publisher.publish_app::<ClientInterface<_>>()?;
         publisher
             .publish_adapter::<ServerInstantiateMsg, ServerInterface<_>>(ServerInstantiateMsg {})?;
+        publisher.publish_app::<ClientInterface<_>>()?;
 
         let acc = abs_client.account_builder().build()?;
 

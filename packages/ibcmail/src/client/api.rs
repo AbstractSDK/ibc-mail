@@ -2,7 +2,7 @@ use abstract_adapter::{sdk::AbstractSdkResult, std::objects::module::ModuleId};
 
 use abstract_app::sdk::AppInterface;
 use abstract_app::std::app;
-use cosmwasm_std::{CosmosMsg, Deps, wasm_execute};
+use cosmwasm_std::{wasm_execute, CosmosMsg, Deps};
 
 use crate::{
     client::msg::ClientExecuteMsg, Header, IbcMailMessage, Message, Route, IBCMAIL_CLIENT_ID,
@@ -40,7 +40,7 @@ impl<'a, T: ClientInterface> MailClient<'a, T> {
         let app_msg: app::ExecuteMsg<_> = msg.into();
 
         let modules = self.base.modules(self.deps);
-        let app_address = modules.module_address(self.module_id)?;
+        let app_address = modules.module_address(self.module_id())?;
 
         Ok(wasm_execute(app_address, &app_msg, vec![])?.into())
     }

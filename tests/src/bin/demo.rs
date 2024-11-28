@@ -1,8 +1,5 @@
 use abstract_app::objects::TruncatedChainId;
-use abstract_app::{
-    objects::{account::AccountTrace, namespace::Namespace},
-    std::registry::QueryMsgFns,
-};
+use abstract_app::objects::{account::AccountTrace, namespace::Namespace};
 use abstract_client::AbstractClient;
 use cw_orch::{anyhow, prelude::*};
 use cw_orch_interchain::prelude::*;
